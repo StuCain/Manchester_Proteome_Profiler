@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pretty flower</title>
+  </head>
+  <style>
+  .flex-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+img {
+  max-width: 100%;
+  max-height:100%;
+}
+
+.text {
+  font-size: 14px;
+  padding-left: 20px;
+}
+
+  </style>
+  <body>
+   <h1>Quick Instructions<h1>
+   <h2>Sidebar Menu<h2>
+   <div class="flex-container">
+   <div class="image">
+        <img src="file_all.jpg" width=250px>
+   </div>
+   <div class="text">
+        <h3>Choose data type</h3>
+		<p>You can load either the proteinGroups.txt out put from MaxQuant or the Abundance data from Proteome Discovery</p>
+		<h3>Load Data</h3>
+        <p>Use the browse button to upload data file, the input box will change depending on the Data File selected</p>
+		<h3>Load Experimental Design template</h3>
+        <p>The experiemtal template matches the column titles from your data file to the sample conditions of your data. It consists of three columns (label, condition and replicate). The label must match the coloumn titles, the condition can be any (short) desciption (use only _ or . special characters). Replicate column just contains a replicate number.</p>
+		<h3>Generate Experimental template</h3>
+        <p>A template for the experiemntal design file can be generated using thid button. This will have the label column automatically filled in from the data file.</p>
+   </div>
+   </div>
+      <div class="flex-container">
+   <div class="image">
+        <img src="pick_comp.jpg" width=250px>
+   </div>
+   <div class="text">
+        <h3>Choose Comparisons</h3>
+        <p>The app can process either one set of comparisons or two sets of comparisons.</p>
+		<p>The comparisons choices are generated automatically from the condition column, and are in both orientations. Eg. Cond.A_vs_Cond.B will be found i the forward comparisons list and Cond.B_vs_Cond.A will be found in the reverse comparisons list. Multiple comparisons can be selected from either drop down box, and then they are combined to give the total comparison list.</p>
+		<h3>Second round of comparisons</h3>
+        <p>If the "2 Rounds of comparisons" is selected a further set of two drop boxes will appear. This allows two independant comparisons with different cut-off values, to be analysed, which are then  combined to generate a protein list that common to both. </p>
+		<p>The 2nd round comparisons are chosen in the same manner as the 1st. </p>
+		<h3>Start Analysis</h3>
+        <p>After the comparisons have been selected press the "Analyse" button to begin the calculations. </p>
+   </div>
+   </div>
+      <h2>Main Dashboard<h2>
+       <div class="flex-container">
+   <div class="image">
+        <img src="miss_val.jpg" width=150px>
+   </div>
+   <div class="text">
+        <h3>Missing Values</h3>
+        <p>Filters out proteins that contain to many missing values. A value of 1 = protein identified in all or all but one replicate for at least one condtion. Value of 0 (most stringent) protein identified in all replicates for atleast one condition.</p>
+   </div>
+   </div>
+       <div class="flex-container">
+   <div class="image">
+        <img src="p_fc_values.jpg" width=150px>
+   </div>
+   <div class="text">
+        <h3>Set Fold-change and p-adj. cut off values</h3>
+        <p>Fold-change cut off values will be converted to log2Fold-Change. For an identified protein to be included in the significant list the fold change must be >= the the chosen value in one of the chosen comparisons. </p>
+		<p>p-adj vale cut-off. For an identified protein to be included in the significant list the p-adj value must be <= the the chosen value in one of the chosen comparisons. </p>
+   </div>
+   </div>
+   <h2>DEP Tab<h2>
+   
+   
+   <h2>Cluster Analysis Tab<h2>   
+
+  </body>
+</html>
