@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.2.8-beta"
+Version = "0.1.0-beta"
 
 
 ####UI####
@@ -60,552 +60,577 @@ ui <- fluidPage(
                                 #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
                                 downloadButton('downloadexp_template', 'Save Exp. template')
                        ),
-                       menuItemOutput("columns"),
-                       menuItem(
-                         radioButtons("comp_type",
-                                      "Comparisons",
-                                      choices = c("1 Round of comparisons", "2 Rounds of comparisons"),
-                                      #selected = "1 Round of comparisons"
-                         )
+                       menuItem("SAINT Files", selected = FALSE,
+                                fileInput('saintfile1',
+                                          'saint_file1.txt',
+                                          accept=c('text/csv',
+                                                   'text/comma-separated-values,text/plain',
+                                                   '.csv')),
+                                fileInput('saintfile2',
+                                          'saint_file2.txt',
+                                          accept=c('text/csv',
+                                                   'text/comma-separated-values,text/plain',
+                                                   '.csv')),
+                                fileInput('saintfile3',
+                                          'saint_file3.txt',
+                                          accept=c('text/csv',
+                                                   'text/comma-separated-values,text/plain',
+                                                   '.csv'))
                        ),
-                       menuItemOutput("comparisons"),
-                       menuItem("Imputation options",
-                                radioButtons("imputation",
-                                             "Imputation type",
-                                             choices = c("man", MsCoreUtils::imputeMethods())[1:9],
-                                             selected = "man"),
-                                p(a("Detailed information link",
-                                    href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
-                                    target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
-                       ),
-                       actionButton("analyze", "Analyze"),
-                       tags$hr(),
-                       uiOutput("downloadTable"),
-                       uiOutput("downloadButton"),
-                       tags$hr(), #adds a line
-                       helpText("Supported by"),
-                       imageOutput("logo_img", fill = TRUE)
-                     )
+                     
+                     menuItemOutput("columns"),
+                     menuItem(
+                       radioButtons("comp_type",
+                                    "Comparisons",
+                                    choices = c("1 Round of comparisons", "2 Rounds of comparisons", "Use SaintExpress"),
+                                    #selected = "1 Round of comparisons"
+                       )
+                     ),
+                     menuItemOutput("comparisons"),
+                     menuItem("Imputation options",
+                              radioButtons("imputation",
+                                           "Imputation type",
+                                           choices = c("man", MsCoreUtils::imputeMethods())[1:9],
+                                           selected = "man"),
+                              p(a("Detailed information link",
+                                  href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
+                                  target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
+                     ),
+                     actionButton("analyze", "Analyze"),
+                     tags$hr(),
+                     uiOutput("downloadTable"),
+                     uiOutput("downloadButton"),
+                     tags$hr(), #adds a line
+                     helpText("Supported by"),
+                     imageOutput("logo_img", fill = TRUE)
+    )
+  ),
+  
+  #Body
+  dashboardBody(
+    helpText(paste("By Stuart Cain, Version:", Version)),
+    #Top row of boxes
+    fluidRow(
+      box(numericInput("thr",
+                       "Missing value threshold",
+                       min = 0, max = 3, value = 1),
+          width = 1),
+      box(numericInput("bfdr",
+                       "BFDR Cut-Off",
+                       min = 0, max = 1, value = 0.1),
+          width = 1),
+      box(numericInput("p",
+                       "adj. P value",
+                       min = 0.0001, max = 0.1, value = 0.05),
+          width = 1),
+      box(numericInput("lfc",
+                       "Fold change",
+                       min = 0, max = 32, value = 2),
+          width = 1),
+      infoBoxOutput("significantBox"), #shows number of Sig. Proteins
+      box(numericInput("p2",
+                       "adj. P value (Comp2)",
+                       min = 0.0001, max = 0.1, value = 0.05),
+          width = 1),
+      box(numericInput("lfc2",
+                       "Fold change (Comp2)",
+                       min = 0, max = 32, value = 2),
+          width = 1),
+      box(radioButtons("pres",
+                       "Data presentation",
+                       c("contrast", "centered"),
+                       selected = "contrast"),
+          width = 1),
+      infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
+      infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
+      infoBoxOutput("significantBox_bfdr") #shows number of Sig. Proteins (BFDR)
     ),
     
-    #Body
-    dashboardBody(
-      helpText(paste("By Stuart Cain, Version:", Version)),
-      #Top row of boxes
-      fluidRow(
-        box(numericInput("thr",
-                         "Missing value threshold",
-                         min = 0, max = 3, value = 1),
-            width = 2),
-        box(numericInput("p",
-                         "adj. P value",
-                         min = 0.0001, max = 0.1, value = 0.05),
-            width = 1),
-        box(numericInput("lfc",
-                         "Fold change",
-                         min = 0, max = 32, value = 2),
-            width = 1),
-        infoBoxOutput("significantBox"), #shows number of Sig. Proteins
-        box(numericInput("p2",
-                         "adj. P value (Comp2)",
-                         min = 0.0001, max = 0.1, value = 0.05),
-            width = 1),
-        box(numericInput("lfc2",
-                         "Fold change (Comp2)",
-                         min = 0, max = 32, value = 2),
-            width = 1),
-        box(radioButtons("pres",
-                         "Data presentation",
-                         c("contrast", "centered"),
-                         selected = "contrast"),
-            width = 1),
-        infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
-        infoBoxOutput("significantBox3") #shows number of Sig. Proteins
-        
-      ),
-      
-      #Main body of
-      tabsetPanel(
-        tabPanel("DEP", 
-                 fluidRow(
-                   column(width = 6,
-                          box(title = "Top Table",
-                              DT::dataTableOutput("table"), width = 12)
-                   ),
-                   column(width = 6,
-                          tabBox(id = "result_plots",
-                                 title = "Result Plots", width = 12,
-                                 tabPanel(title = "Selected Protein",
-                                          plotOutput("selected_plot"),
-                                          downloadButton('downloadPlot', 'Save plot')),
-                                 tabPanel(title = "Heatmap",
-                                          fluidRow(
-                                            box(numericInput("limit",
-                                                             "Color limit (log2)",
-                                                             min = 0, max = 16, value = 6),
-                                                width = 3),
-                                            box(numericInput("size",
-                                                             "Heatmap size (4-30)",
-                                                             min = 4, max = 30, value = 10),
-                                                width = 3),
-                                            #Kmeans Cluster box
-                                            box(numericInput("k",
-                                                             "Kmeans clusters",
-                                                             min = 1, max = 6, value = 4),
-                                                width = 3)
-                                            
-                                          ),
-                                          fluidRow(
-                                            uiOutput("plot"),
-                                            downloadButton('downloadHeatmap', 'Save heatmap'))
-                                 ),
-                                 tabPanel(title = "Volcano plot",
-                                          fluidRow(
-                                            box(uiOutput("volcano_cntrst"), width = 6),
-                                            box(numericInput("fontsize",
-                                                             "Font size",
-                                                             min = 0, max = 8, value = 4),
-                                                width = 3),
-                                            box(checkboxInput("check_names",
-                                                              "Display names",
-                                                              value = TRUE),
-                                                checkboxInput("p_adj",
-                                                              "Adjusted p values",
-                                                              value = FALSE),
-                                                width = 3)
-                                          ),
-                                          fluidRow(
-                                            plotOutput("volcano", height = 600),
-                                            downloadButton('downloadVolcano', 'Save volcano')
-                                          )
-                                 ),
-                                 tabPanel(title = "Volcano plot (Comp2)",
-                                          fluidRow(
-                                            box(uiOutput("volcano_cntrst_c2"), width = 6),
-                                            box(numericInput("fontsize_c2",
-                                                             "Font size",
-                                                             min = 0, max = 8, value = 4),
-                                                width = 3),
-                                            box(checkboxInput("check_names_c2",
-                                                              "Display names",
-                                                              value = TRUE),
-                                                checkboxInput("p_adj_c2",
-                                                              "Adjusted p values",
-                                                              value = FALSE),
-                                                width = 3)
-                                          ),
-                                          fluidRow(
-                                            plotOutput("volcano_c2", height = 600),
-                                            downloadButton('downloadVolcano_c2', 'Save volcano')
-                                          )
-                                 )
-                          ),
-                          fluidRow(
-                            box(numericInput("pdfwidth",
-                                             "PDF Width",
-                                             min = 3, max = 30, value = 7),
-                                width = 6),
-                            box(numericInput("pdfheight",
-                                             "PDF Height",
-                                             min = 3, max = 30, value = 7),
-                                width = 6)
-                            
-                          ),
-                          tabBox(id = "correlation_plots",
-                                 title = "Correlation Plots", width = 12,
-                                 tabPanel(title = "PCA",
-                                          plotOutput("pca", height = 600),
-                                          downloadButton('downloadpca', 'Save')
-                                 ),
-                                 tabPanel(title = "Correlation",
-                                          plotOutput("cor", height = 600),
-                                          downloadButton('downloadcor', 'Save')
-                                 ),
-                                 tabPanel(title = "Freq. Plot",
-                                          plotOutput("cond", height = 600),
-                                          downloadButton('downloadcond', 'Save')
-                                 ),
-#                                 tabPanel(title = "PCA (Comp2)",
-#                                          plotOutput("pca_c2", height = 600),
-#                                          downloadButton('downloadpca_c2', 'Save')
-#                                 ),
-                                 tabPanel(title = "Correlation (Comp2)",
-                                          plotOutput("cor_c2", height = 600),
-                                          downloadButton('downloadcor_c2', 'Save')
-                                 ),
-                                 tabPanel(title = "Freq. Plot (Comp2)",
-                                          plotOutput("cond_c2", height = 600),
-                                          downloadButton('downloadcond_c2', 'Save')
-                                 )
-                                 
-                          ),
-                          tabBox(title = "QC Plots", width = 12,
-                                 tabPanel(title = "Protein Numbers",
-                                          plotOutput("numbers", height = 600),
-                                          downloadButton('downloadNumbers', 'Save')
-                                 ),
-                                 tabPanel(title = "Sample coverage",
-                                          plotOutput("coverage", height = 600),
-                                          downloadButton('downloadCoverage', 'Save')
-                                 ),
-                                 tabPanel(title = "Normalization",
-                                          plotOutput("norm", height = 600),
-                                          downloadButton('downloadNorm', 'Save')
-                                 ),
-                                 tabPanel(title = "Missing values - Quant",
-                                          plotOutput("detect", height = 600),
-                                          downloadButton('downloadDetect', 'Save')
-                                 ),
-                                 tabPanel(title = "Missing values - Heatmap",
-                                          plotOutput("missval", height = 600),
-                                          downloadButton('downloadMissval', 'Save')
-                                 ),
-                                 tabPanel(title = "Imputation",
-                                          plotOutput("imputation", height = 600),
-                                          downloadButton('downloadImputation', 'Save')
-                                 ),
-                          )
-                   )
-                 )
-        ),
-        ####UI for Complex Heatmap tab####
-        tabPanel("Cluster Analysis",
-                 fluidRow(
-                   column(width = 4,
-                          #colour functions
-                          fluidRow(
-                            #Kmeans Cluster box
-                            box(numericInput("k1",
-                                             "Kmeans clusters",
-                                             min = 1, max = 6, value = 4),
-                                checkboxInput("cluster_cols",
-                                              "Cluster columns",
-                                              value = TRUE),
-                                width = 6),
-                            box(
-                              selectizeInput("high_col",
-                                             "High Colour",
-                                             choices=c("red","orangered","yellow","green", "darkgreen", "cornflowerblue","blue", "brown", "black"),
-                                             selected = "red"),
-                              width = 3),
-                            box(
-                              selectizeInput("low_col",
-                                             "Low Colour",
-                                             choices=c("red","orangered","yellow","green","darkgreen","cornflowerblue","blue", "brown", "black"),
-                                             selected = "blue"),
-                              width = 3),
-                          ),
-                          fluidRow(
-                            box(
-                              selectizeInput("palette_choice",
-                                             "Choose palette",
-                                             choices=c("default","Set1","Set2","Set3","Pastel1","Pastel2", "Paired", "Dark2", "Accent", "Reds", "Blues", "Greens", "Greys"),
-                                             selected = "default"),
+    #Main body of
+    tabsetPanel(
+      tabPanel("DEP", 
+               fluidRow(
+                 column(width = 6,
+                        box(title = "Top Table",
+                            DT::dataTableOutput("table"), width = 12)
+                 ),
+                 column(width = 6,
+                        tabBox(id = "result_plots",
+                               title = "Result Plots", width = 12,
+                               tabPanel(title = "Selected Protein",
+                                        plotOutput("selected_plot"),
+                                        downloadButton('downloadPlot', 'Save plot')),
+                               tabPanel(title = "Heatmap",
+                                        fluidRow(
+                                          box(numericInput("limit",
+                                                           "Color limit (log2)",
+                                                           min = 0, max = 16, value = 6),
+                                              width = 3),
+                                          box(numericInput("size",
+                                                           "Heatmap size (4-30)",
+                                                           min = 4, max = 30, value = 10),
+                                              width = 3),
+                                          #Kmeans Cluster box
+                                          box(numericInput("k",
+                                                           "Kmeans clusters",
+                                                           min = 1, max = 6, value = 4),
+                                              width = 3)
+                                          
+                                        ),
+                                        fluidRow(
+                                          uiOutput("plot"),
+                                          downloadButton('downloadHeatmap', 'Save heatmap'))
+                               ),
+                               tabPanel(title = "Volcano plot",
+                                        fluidRow(
+                                          box(uiOutput("volcano_cntrst"), width = 6),
+                                          box(numericInput("fontsize",
+                                                           "Font size",
+                                                           min = 0, max = 8, value = 4),
+                                              width = 3),
+                                          box(checkboxInput("check_names",
+                                                            "Display names",
+                                                            value = TRUE),
+                                              checkboxInput("p_adj",
+                                                            "Adjusted p values",
+                                                            value = FALSE),
+                                              width = 3)
+                                        ),
+                                        fluidRow(
+                                          plotOutput("volcano", height = 600),
+                                          downloadButton('downloadVolcano', 'Save volcano')
+                                        )
+                               ),
+                               tabPanel(title = "Volcano plot (Comp2)",
+                                        fluidRow(
+                                          box(uiOutput("volcano_cntrst_c2"), width = 6),
+                                          box(numericInput("fontsize_c2",
+                                                           "Font size",
+                                                           min = 0, max = 8, value = 4),
+                                              width = 3),
+                                          box(checkboxInput("check_names_c2",
+                                                            "Display names",
+                                                            value = TRUE),
+                                              checkboxInput("p_adj_c2",
+                                                            "Adjusted p values",
+                                                            value = FALSE),
+                                              width = 3)
+                                        ),
+                                        fluidRow(
+                                          plotOutput("volcano_c2", height = 600),
+                                          downloadButton('downloadVolcano_c2', 'Save volcano')
+                                        )
+                               )
+                        ),
+                        fluidRow(
+                          box(numericInput("pdfwidth",
+                                           "PDF Width",
+                                           min = 3, max = 30, value = 7),
                               width = 6),
-                            box(numericInput("alpha_input",
-                                             "Alpha",
-                                             min = 0, max = 10, value = 10),
-                                width = 3),
-                            box(numericInput("limit_comp",
-                                             "Color limit (log2)",
-                                             min = 0, max = 16, value = 6),
-                                width = 3)
-                          ),
+                          box(numericInput("pdfheight",
+                                           "PDF Height",
+                                           min = 3, max = 30, value = 7),
+                              width = 6)
                           
-                          #Heatmap in variable box
-                          fluidRow(
-                            uiOutput("plot_comp"),
-                            box(numericInput("pdfwidth_ht",
-                                             "PDF Width",
-                                             min = 3, max = 30, value = 5),
-                                width = 6),
-                            box(numericInput("pdfheight_ht",
-                                             "PDF Height",
-                                             min = 3, max = 30, value = 14),
-                                width = 6),
-                            downloadButton('downloadcomplexheatmap', 'Save ComplexHeatmap')
-                          ),
-                          fluidRow(
-                            plotOutput("swatch", height = 600),
-                            downloadButton('downloadswatch', 'Save Swatch')
-                          ),
-                          
-                   ),
-                   
-                   #Second Column
-                   
-                   column(width = 8,
-                          tabBox(id = "comp_heat_tab",
-                                 title = "Cluster Analysis Plots", width = 12,
-                                 tabPanel(title = "Results",
-                                          DT::dataTableOutput("table2"), width = 12
-                                 ),
-                                 tabPanel(title = "Comparison Heatmaps",
-                                          fluidRow(
-                                            column(width = 6,
-                                                   fluidRow(
-                                                     #Kmeans Cluster box
-                                                     box(numericInput("k1_c1",
-                                                                      "Kmeans clusters",
-                                                                      min = 1, max = 6, value = 4),
-                                                         width = 3),
-                                                   ),
-                                                   #Heatmap in variable box
-                                                   fluidRow(
-                                                     uiOutput("plot_comp_c1"),
-                                                     box(numericInput("pdfwidth_ht_c1",
-                                                                      "PDF Width",
-                                                                      min = 3, max = 30, value = 5),
-                                                         width = 6),
-                                                     box(numericInput("pdfheight_ht_c1",
-                                                                      "PDF Height",
-                                                                      min = 3, max = 30, value = 14),
-                                                         width = 6),
-                                                     downloadButton('downloadcomplexheatmap_c1', 'Save ComplexHeatmap')
-                                                   ),
-                                            ),
-                                            #Second Column
-                                            column(width = 6,
-                                                   fluidRow(
-                                                     #Kmeans Cluster box
-                                                     box(numericInput("k1_c2",
-                                                                      "Kmeans clusters",
-                                                                      min = 1, max = 6, value = 4),
-                                                         width = 3),
-                                                   ),
-                                                   #Heatmap in variable box
-                                                   fluidRow(
-                                                     uiOutput("plot_comp_c2"),
-                                                     box(numericInput("pdfwidth_ht_c2",
-                                                                      "PDF Width",
-                                                                      min = 3, max = 30, value = 5),
-                                                         width = 6),
-                                                     box(numericInput("pdfheight_ht_c2",
-                                                                      "PDF Height",
-                                                                      min = 3, max = 30, value = 14),
-                                                         width = 6),
-                                                     downloadButton('downloadcomplexheatmap_c2', 'Save ComplexHeatmap')
-                                                   ),
-                                            ),
-                                          ),
-                                          
-                                 ),
-                                 
-                                 tabPanel(title = "Cluster",
-                                          fluidRow(
-                                            column(width = 8,
-                                                   fluidRow(
-                                                     box(numericInput("cluster_no",
-                                                                      "Cluster No.",
-                                                                      min = 1, max = 6, value = 1),
-                                                         width = 4),
-                                                   ),
-                                                   fluidRow(
-                                                     uiOutput("plot_clust"),
-                                                     box(numericInput("pdfwidth_htc",
-                                                                      "PDF Width",
-                                                                      min = 3, max = 30, value = 5),
-                                                         width = 6),
-                                                     box(numericInput("pdfheight_htc",
-                                                                      "PDF Height",
-                                                                      min = 3, max = 30, value = 6),
-                                                         width = 6),
-                                                     downloadButton('downloadcomplexheatmapcluster', 'Save ComplexHeatmap')
-                                                   )
-                                            ),
-                                            column(width = 4,
-                                                   title = "Results",
-                                                   DT::dataTableOutput("table3"), #add table for cluster
-                                                   downloadButton('downloadclustertable', 'Save Cluster Table')
-                                            )
-                                          ),
-                                 ),
-                                 tabPanel(title = "Enhanced Volcano Plots",
-                                          fluidRow(
-                                            column(width = 6,
-                                                   fluidRow(
-                                                     box(uiOutput("volcano_cntrst_enh1"), width = 8),
-                                                     box( radioButtons("p_adj_enh1",
-                                                                       "Label type",
-                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values")
-                                                     ),
-                                                     width = 4)
-                                                   ),
-                                                   fluidRow(
-                                                     plotOutput("enh_volcano_1", height = 600),
-                                                     downloadButton('downloadVolcano_enh1', 'Save volcano')
-                                                   )
-                                            ),
-                                            
-                                            #Second Column
-                                            
-                                            column(width = 6,
-                                                   fluidRow(
-                                                     box(uiOutput("volcano_cntrst_enh2"), width = 8),
-                                                     box( radioButtons("p_adj_enh2",
-                                                                       "Label type",
-                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values")
-                                                     ),
-                                                     width = 4)
-                                                   ),
-                                                   fluidRow(
-                                                     plotOutput("enh_volcano_2", height = 600),
-                                                     downloadButton('downloadVolcano_enh2', 'Save volcano')
-                                                   )
-                                            ),
-                                          )
-                                          
-                                 ),
-                                 tabPanel(title = "Box Plots",
-                                          fluidRow(
-                                            box(numericInput("cluster_no_box",
-                                                             "Cluster No.",
-                                                             min = 1, max = 6, value = 1),
-                                                width = 3),
-                                            box(radioButtons("pres_box",
-                                                             "Data Type",
-                                                             c("normalised", "imputed"),
-                                                             selected = "imputed"),
-                                                width = 3),
-                                            box(numericInput("pdfwidth_box",
-                                                             "PDF Width",
-                                                             min = 3, max = 30, value = 12),
-                                                width = 3),
-                                            box(numericInput("pdfheight_box",
-                                                             "PDF Height",
-                                                             min = 3, max = 30, value = 12),
-                                                width = 3)
-                                          ),
-                                          fluidRow(
-                                            plotOutput("box_plot", height = 800),
-                                            downloadButton('download_box_plot', 'Save Plot')
-                                          ),
-                                 ),
-                                 tabPanel(title = "Molecular Function",
-                                          fluidRow(
-                                            actionButton("analyze_MF", "Analyze Molecular Function"),
-                                            helpText("Warning: This can take a couple of minutes"),
-                                          ),
-                                          fluidRow(
-                                            column(width = 5,
-                                                   fluidRow(
-                                                     plotOutput("GOMF_plot", height = 800),
-                                                     downloadButton('download_MF_plot', 'Save Plot')
-                                                   )
-                                            ),
-                                            
-                                            #Second Column
-                                            
-                                            column(width = 7,
-                                                   fluidRow(
-                                                     plotOutput("GOMF_cnet", height = 800),
-                                                     downloadButton('download_MF_cnet', 'Save Plot')
-                                                   )
-                                            ),
-                                          ),
-                                          fluidRow(
-                                            box(numericInput("pdfwidth_MF",
-                                                             "PDF Width",
-                                                             min = 3, max = 30, value = 6),
-                                                width = 3),
-                                            box(numericInput("pdfheight_MF",
-                                                             "PDF Height",
-                                                             min = 3, max = 30, value = 8),
-                                                width = 3)
-                                          ),
-                                 ),
-                                 tabPanel(title = "Cellular Components",
-                                          fluidRow(
-                                            actionButton("analyze_CC", "Analyze Cellular Components"),
-                                            helpText("Warning: This can take a couple of minutes"),
-                                          ),
-                                          fluidRow(
-                                            column(width = 5,
-                                                   fluidRow(
-                                                     plotOutput("GOCC_plot", height = 800),
-                                                     downloadButton('download_CC_plot', 'Save Plot')
-                                                   )
-                                            ),
-                                            
-                                            #Second Column
-                                            
-                                            column(width = 7,
-                                                   fluidRow(
-                                                     plotOutput("GOCC_cnet", height = 800),
-                                                     downloadButton('download_CC_cnet', 'Save Plot')
-                                                   )
-                                            ),
-                                          ),
-                                          fluidRow(
-                                            box(numericInput("pdfwidth_CC",
-                                                             "PDF Width",
-                                                             min = 3, max = 30, value = 6),
-                                                width = 3),
-                                            box(numericInput("pdfheight_CC",
-                                                             "PDF Height",
-                                                             min = 3, max = 30, value = 8),
-                                                width = 3)
-                                          ),
-                                          
-                                 ),
-                                 tabPanel(title = "Biological Process",
-                                          fluidRow(
-                                            actionButton("analyze_BP", "Analyze Biological Process"),
-                                            helpText("Warning: This can take a couple of minutes"),
-                                          ),
-                                          fluidRow(
-                                            column(width = 5,
-                                                   fluidRow(
-                                                     plotOutput("GOBP_plot", height = 800),
-                                                     downloadButton('download_BP_plot', 'Save Plot')
-                                                   )
-                                            ),
-                                            
-                                            #Second Column
-                                            
-                                            column(width = 7,
-                                                   fluidRow(
-                                                     plotOutput("GOBP_cnet", height = 800),
-                                                     downloadButton('download_BP_cnet', 'Save Plot')
-                                                   )
-                                            ),
-                                          ),
-                                          fluidRow(
-                                            box(numericInput("pdfwidth_BP",
-                                                             "PDF Width",
-                                                             min = 3, max = 30, value = 6),
-                                                width = 3),
-                                            box(numericInput("pdfheight_BP",
-                                                             "PDF Height",
-                                                             min = 3, max = 30, value = 8),
-                                                width = 3)
-                                          ),
-                                 ),
-                                 tabPanel(title = "App Variables",
-                                          fluidRow(
-                                            helpText("Save settings to reproduce results in future sessions"),
-                                          ),
-                                          fluidRow(
-                                            DT::dataTableOutput("table4"), #Setting Table
-                                            downloadButton('downloadsettings', 'Save Settings')
-                                          )
-                                 )
-                                 
-                          )
-                   )
+                        ),
+                        tabBox(id = "correlation_plots",
+                               title = "Correlation Plots", width = 12,
+                               tabPanel(title = "PCA",
+                                        plotOutput("pca", height = 600),
+                                        downloadButton('downloadpca', 'Save')
+                               ),
+                               tabPanel(title = "Correlation",
+                                        plotOutput("cor", height = 600),
+                                        downloadButton('downloadcor', 'Save')
+                               ),
+                               tabPanel(title = "Freq. Plot",
+                                        plotOutput("cond", height = 600),
+                                        downloadButton('downloadcond', 'Save')
+                               ),
+                               #                                 tabPanel(title = "PCA (Comp2)",
+                               #                                          plotOutput("pca_c2", height = 600),
+                               #                                          downloadButton('downloadpca_c2', 'Save')
+                               #                                 ),
+                               tabPanel(title = "Correlation (Comp2)",
+                                        plotOutput("cor_c2", height = 600),
+                                        downloadButton('downloadcor_c2', 'Save')
+                               ),
+                               tabPanel(title = "Freq. Plot (Comp2)",
+                                        plotOutput("cond_c2", height = 600),
+                                        downloadButton('downloadcond_c2', 'Save')
+                               )
+                               
+                        ),
+                        tabBox(title = "QC Plots", width = 12,
+                               tabPanel(title = "Protein Numbers",
+                                        plotOutput("numbers", height = 600),
+                                        downloadButton('downloadNumbers', 'Save')
+                               ),
+                               tabPanel(title = "Sample coverage",
+                                        plotOutput("coverage", height = 600),
+                                        downloadButton('downloadCoverage', 'Save')
+                               ),
+                               tabPanel(title = "Normalization",
+                                        plotOutput("norm", height = 600),
+                                        downloadButton('downloadNorm', 'Save')
+                               ),
+                               tabPanel(title = "Missing values - Quant",
+                                        plotOutput("detect", height = 600),
+                                        downloadButton('downloadDetect', 'Save')
+                               ),
+                               tabPanel(title = "Missing values - Heatmap",
+                                        plotOutput("missval", height = 600),
+                                        downloadButton('downloadMissval', 'Save')
+                               ),
+                               tabPanel(title = "Imputation",
+                                        plotOutput("imputation", height = 600),
+                                        downloadButton('downloadImputation', 'Save')
+                               ),
+                        )
                  )
-        ),
-        #Third Tab (Instructions)
-        tabPanel("Instructions",
-                 mainPanel(
-                   style = "background-color: #ffffff;",
-                   width = 12,
-                   htmlOutput("inc")
+               )
+      ),
+      ####UI for Complex Heatmap tab####
+      tabPanel("Cluster Analysis",
+               fluidRow(
+                 column(width = 4,
+                        #colour functions
+                        fluidRow(
+                          #Kmeans Cluster box
+                          box(numericInput("k1",
+                                           "Kmeans clusters",
+                                           min = 1, max = 6, value = 4),
+                              checkboxInput("cluster_cols",
+                                            "Cluster columns",
+                                            value = TRUE),
+                              width = 6),
+                          box(
+                            selectizeInput("high_col",
+                                           "High Colour",
+                                           choices=c("red","orangered","yellow","green", "darkgreen", "cornflowerblue","blue", "brown", "black"),
+                                           selected = "red"),
+                            width = 3),
+                          box(
+                            selectizeInput("low_col",
+                                           "Low Colour",
+                                           choices=c("red","orangered","yellow","green","darkgreen","cornflowerblue","blue", "brown", "black"),
+                                           selected = "blue"),
+                            width = 3),
+                        ),
+                        fluidRow(
+                          box(
+                            selectizeInput("palette_choice",
+                                           "Choose palette",
+                                           choices=c("default","Set1","Set2","Set3","Pastel1","Pastel2", "Paired", "Dark2", "Accent", "Reds", "Blues", "Greens", "Greys"),
+                                           selected = "default"),
+                            width = 6),
+                          box(numericInput("alpha_input",
+                                           "Alpha",
+                                           min = 0, max = 10, value = 10),
+                              width = 3),
+                          box(numericInput("limit_comp",
+                                           "Color limit (log2)",
+                                           min = 0, max = 16, value = 6),
+                              width = 3)
+                        ),
+                        
+                        #Heatmap in variable box
+                        fluidRow(
+                          uiOutput("plot_comp"),
+                          box(numericInput("pdfwidth_ht",
+                                           "PDF Width",
+                                           min = 3, max = 30, value = 5),
+                              width = 6),
+                          box(numericInput("pdfheight_ht",
+                                           "PDF Height",
+                                           min = 3, max = 30, value = 14),
+                              width = 6),
+                          downloadButton('downloadcomplexheatmap', 'Save ComplexHeatmap')
+                        ),
+                        fluidRow(
+                          plotOutput("swatch", height = 600),
+                          downloadButton('downloadswatch', 'Save Swatch')
+                        ),
+                        
+                 ),
+                 
+                 #Second Column
+                 
+                 column(width = 8,
+                        tabBox(id = "comp_heat_tab",
+                               title = "Cluster Analysis Plots", width = 12,
+                               tabPanel(title = "SAINT Analysis",
+                                        DT::dataTableOutput("tablesaint"), width = 12
+                               ),
+                               tabPanel(title = "Results",
+                                        DT::dataTableOutput("table2"), width = 12
+                               ),
+                               tabPanel(title = "Comparison Heatmaps",
+                                        fluidRow(
+                                          column(width = 6,
+                                                 fluidRow(
+                                                   #Kmeans Cluster box
+                                                   box(numericInput("k1_c1",
+                                                                    "Kmeans clusters",
+                                                                    min = 1, max = 6, value = 4),
+                                                       width = 3),
+                                                 ),
+                                                 #Heatmap in variable box
+                                                 fluidRow(
+                                                   uiOutput("plot_comp_c1"),
+                                                   box(numericInput("pdfwidth_ht_c1",
+                                                                    "PDF Width",
+                                                                    min = 3, max = 30, value = 5),
+                                                       width = 6),
+                                                   box(numericInput("pdfheight_ht_c1",
+                                                                    "PDF Height",
+                                                                    min = 3, max = 30, value = 14),
+                                                       width = 6),
+                                                   downloadButton('downloadcomplexheatmap_c1', 'Save ComplexHeatmap')
+                                                 ),
+                                          ),
+                                          #Second Column
+                                          column(width = 6,
+                                                 fluidRow(
+                                                   #Kmeans Cluster box
+                                                   box(numericInput("k1_c2",
+                                                                    "Kmeans clusters",
+                                                                    min = 1, max = 6, value = 4),
+                                                       width = 3),
+                                                 ),
+                                                 #Heatmap in variable box
+                                                 fluidRow(
+                                                   uiOutput("plot_comp_c2"),
+                                                   box(numericInput("pdfwidth_ht_c2",
+                                                                    "PDF Width",
+                                                                    min = 3, max = 30, value = 5),
+                                                       width = 6),
+                                                   box(numericInput("pdfheight_ht_c2",
+                                                                    "PDF Height",
+                                                                    min = 3, max = 30, value = 14),
+                                                       width = 6),
+                                                   downloadButton('downloadcomplexheatmap_c2', 'Save ComplexHeatmap')
+                                                 ),
+                                          ),
+                                        ),
+                                        
+                               ),
+                               
+                               tabPanel(title = "Cluster",
+                                        fluidRow(
+                                          column(width = 8,
+                                                 fluidRow(
+                                                   box(numericInput("cluster_no",
+                                                                    "Cluster No.",
+                                                                    min = 1, max = 6, value = 1),
+                                                       width = 4),
+                                                 ),
+                                                 fluidRow(
+                                                   uiOutput("plot_clust"),
+                                                   box(numericInput("pdfwidth_htc",
+                                                                    "PDF Width",
+                                                                    min = 3, max = 30, value = 5),
+                                                       width = 6),
+                                                   box(numericInput("pdfheight_htc",
+                                                                    "PDF Height",
+                                                                    min = 3, max = 30, value = 6),
+                                                       width = 6),
+                                                   downloadButton('downloadcomplexheatmapcluster', 'Save ComplexHeatmap')
+                                                 )
+                                          ),
+                                          column(width = 4,
+                                                 title = "Results",
+                                                 DT::dataTableOutput("table3"), #add table for cluster
+                                                 downloadButton('downloadclustertable', 'Save Cluster Table')
+                                          )
+                                        ),
+                               ),
+                               tabPanel(title = "Enhanced Volcano Plots",
+                                        fluidRow(
+                                          column(width = 6,
+                                                 fluidRow(
+                                                   box(uiOutput("volcano_cntrst_enh1"), width = 8),
+                                                   box( radioButtons("p_adj_enh1",
+                                                                     "Label type",
+                                                                     choices = c("p-adj sig.","p-Val sig.", "p-adj values")
+                                                   ),
+                                                   width = 4)
+                                                 ),
+                                                 fluidRow(
+                                                   plotOutput("enh_volcano_1", height = 600),
+                                                   downloadButton('downloadVolcano_enh1', 'Save volcano')
+                                                 )
+                                          ),
+                                          
+                                          #Second Column
+                                          
+                                          column(width = 6,
+                                                 fluidRow(
+                                                   box(uiOutput("volcano_cntrst_enh2"), width = 8),
+                                                   box( radioButtons("p_adj_enh2",
+                                                                     "Label type",
+                                                                     choices = c("p-adj sig.","p-Val sig.", "p-adj values")
+                                                   ),
+                                                   width = 4)
+                                                 ),
+                                                 fluidRow(
+                                                   plotOutput("enh_volcano_2", height = 600),
+                                                   downloadButton('downloadVolcano_enh2', 'Save volcano')
+                                                 )
+                                          ),
+                                        )
+                                        
+                               ),
+                               tabPanel(title = "Box Plots",
+                                        fluidRow(
+                                          box(numericInput("cluster_no_box",
+                                                           "Cluster No.",
+                                                           min = 1, max = 6, value = 1),
+                                              width = 3),
+                                          box(radioButtons("pres_box",
+                                                           "Data Type",
+                                                           c("normalised", "imputed"),
+                                                           selected = "imputed"),
+                                              width = 3),
+                                          box(numericInput("pdfwidth_box",
+                                                           "PDF Width",
+                                                           min = 3, max = 30, value = 12),
+                                              width = 3),
+                                          box(numericInput("pdfheight_box",
+                                                           "PDF Height",
+                                                           min = 3, max = 30, value = 12),
+                                              width = 3)
+                                        ),
+                                        fluidRow(
+                                          plotOutput("box_plot", height = 800),
+                                          downloadButton('download_box_plot', 'Save Plot')
+                                        ),
+                               ),
+                               tabPanel(title = "Molecular Function",
+                                        fluidRow(
+                                          actionButton("analyze_MF", "Analyze Molecular Function"),
+                                          helpText("Warning: This can take a couple of minutes"),
+                                        ),
+                                        fluidRow(
+                                          column(width = 5,
+                                                 fluidRow(
+                                                   plotOutput("GOMF_plot", height = 800),
+                                                   downloadButton('download_MF_plot', 'Save Plot')
+                                                 )
+                                          ),
+                                          
+                                          #Second Column
+                                          
+                                          column(width = 7,
+                                                 fluidRow(
+                                                   plotOutput("GOMF_cnet", height = 800),
+                                                   downloadButton('download_MF_cnet', 'Save Plot')
+                                                 )
+                                          ),
+                                        ),
+                                        fluidRow(
+                                          box(numericInput("pdfwidth_MF",
+                                                           "PDF Width",
+                                                           min = 3, max = 30, value = 6),
+                                              width = 3),
+                                          box(numericInput("pdfheight_MF",
+                                                           "PDF Height",
+                                                           min = 3, max = 30, value = 8),
+                                              width = 3)
+                                        ),
+                               ),
+                               tabPanel(title = "Cellular Components",
+                                        fluidRow(
+                                          actionButton("analyze_CC", "Analyze Cellular Components"),
+                                          helpText("Warning: This can take a couple of minutes"),
+                                        ),
+                                        fluidRow(
+                                          column(width = 5,
+                                                 fluidRow(
+                                                   plotOutput("GOCC_plot", height = 800),
+                                                   downloadButton('download_CC_plot', 'Save Plot')
+                                                 )
+                                          ),
+                                          
+                                          #Second Column
+                                          
+                                          column(width = 7,
+                                                 fluidRow(
+                                                   plotOutput("GOCC_cnet", height = 800),
+                                                   downloadButton('download_CC_cnet', 'Save Plot')
+                                                 )
+                                          ),
+                                        ),
+                                        fluidRow(
+                                          box(numericInput("pdfwidth_CC",
+                                                           "PDF Width",
+                                                           min = 3, max = 30, value = 6),
+                                              width = 3),
+                                          box(numericInput("pdfheight_CC",
+                                                           "PDF Height",
+                                                           min = 3, max = 30, value = 8),
+                                              width = 3)
+                                        ),
+                                        
+                               ),
+                               tabPanel(title = "Biological Process",
+                                        fluidRow(
+                                          actionButton("analyze_BP", "Analyze Biological Process"),
+                                          helpText("Warning: This can take a couple of minutes"),
+                                        ),
+                                        fluidRow(
+                                          column(width = 5,
+                                                 fluidRow(
+                                                   plotOutput("GOBP_plot", height = 800),
+                                                   downloadButton('download_BP_plot', 'Save Plot')
+                                                 )
+                                          ),
+                                          
+                                          #Second Column
+                                          
+                                          column(width = 7,
+                                                 fluidRow(
+                                                   plotOutput("GOBP_cnet", height = 800),
+                                                   downloadButton('download_BP_cnet', 'Save Plot')
+                                                 )
+                                          ),
+                                        ),
+                                        fluidRow(
+                                          box(numericInput("pdfwidth_BP",
+                                                           "PDF Width",
+                                                           min = 3, max = 30, value = 6),
+                                              width = 3),
+                                          box(numericInput("pdfheight_BP",
+                                                           "PDF Height",
+                                                           min = 3, max = 30, value = 8),
+                                              width = 3)
+                                        ),
+                               ),
+                               tabPanel(title = "App Variables",
+                                        fluidRow(
+                                          helpText("Save settings to reproduce results in future sessions"),
+                                        ),
+                                        fluidRow(
+                                          DT::dataTableOutput("table4"), #Setting Table
+                                          downloadButton('downloadsettings', 'Save Settings')
+                                        )
+                               )
+                               
+                        )
                  )
-        )
+               )
+      ),
+      #Third Tab (Instructions)
+      tabPanel("Instructions",
+               mainPanel(
+                 style = "background-color: #ffffff;",
+                 width = 12,
+                 htmlOutput("inc")
+               )
       )
     )
   )
+)
 )
 #End of UI
 
@@ -708,11 +733,15 @@ server <- shinyServer(function(input, output) {
     if (input$comp_type == "1 Round of comparisons") {
       hideTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")
     }else{showTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")}
+    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "2 Rounds of comparisons") {
+      hideTab(inputId =  "comp_heat_tab", target = "SAINT Analysis")
+    }else{showTab(inputId =  "comp_heat_tab", target = "SAINT Analysis")}
+    
   })
   
   #Hide/show Volcano Plts
   observeEvent(input$comp_type, {
-    if (input$comp_type == "1 Round of comparisons") {
+    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SaintExpress") {
       hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
     }else{showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
   })
@@ -772,6 +801,58 @@ server <- shinyServer(function(input, output) {
       
     }
     return(data1)
+  })
+  
+  #SAINT File imports
+  saintfile1 <- reactive({
+    inFile <- input$saintfile1
+    if (is.null(inFile))
+      return(NULL)
+    data<-read.csv(inFile$datapath, header = TRUE,
+             sep = "\t", stringsAsFactors = FALSE)
+    data<-data.frame(data)
+    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
+    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
+    return(saint_BFDR)
+  })
+  
+  saintfile2 <- reactive({
+    inFile <- input$saintfile2
+    if (is.null(inFile))
+      return(NULL)
+    data<-read.csv(inFile$datapath, header = TRUE,
+                   sep = "\t", stringsAsFactors = FALSE)
+    data<-data.frame(data)
+    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
+    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
+    return(saint_BFDR)
+  })
+  
+  saintfile3 <- reactive({
+    inFile <- input$saintfile3
+    if (is.null(inFile))
+      return(NULL)
+    data<-read.csv(inFile$datapath, header = TRUE,
+                   sep = "\t", stringsAsFactors = FALSE)
+    data<-data.frame(data)
+    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
+    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
+    return(saint_BFDR)
+  })
+  
+  saintlist <- reactive({
+    unfilt_saint<- c(saintfile1()) #Make single list
+    if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
+    if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
+    unfilt_saint<-data.frame(unfilt_saint)
+#    return(unfilt_saint)
+    
+    saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
+    saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
+    saint_count_no <-nrow(saint_count)
+    saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
+    return(saintlist_out)
+    
   })
   
   #make experimental template
@@ -1071,6 +1152,53 @@ server <- shinyServer(function(input, output) {
       info_box
     })
     
+    output$significantBox_bfdr <- renderInfoBox({
+      info_box<-box(width = 1, height = 0)
+      
+      if (input$comp_type == "Use SaintExpress")
+      {
+        num_total <- dep() %>%
+          nrow()
+        num_signif <- saintlist()[[2]] %>%
+          nrow()
+        frac <- num_signif / num_total
+        
+        if(frac > 0.2) {
+          info_box <- infoBox("Significant proteins (BFDR)",
+                              paste0(num_signif,
+                                     " out of ",
+                                     num_total),
+                              paste0("Too large fraction (",
+                                     signif(frac * 100, digits = 3),
+                                     "%) of proteins differentially expressed"),
+                              icon = icon("minus", lib = "glyphicon"),
+                              color = "orange",
+                              width = 2)
+        }
+        if(frac == 0) {
+          info_box <- infoBox("Significant proteins (BFDR)",
+                              paste0(num_signif,
+                                     " out of ",
+                                     num_total),
+                              "No proteins differentially expressed",
+                              icon = icon("thumbs-down", lib = "glyphicon"),
+                              color = "red",
+                              width = 2)
+        }
+        if(frac > 0 & frac <= 0.2) {
+          info_box <- 		infoBox("Significant proteins (BFDR)",
+                                paste0(num_signif,
+                                       " out of ",
+                                       num_total),
+                                paste0(signif(frac * 100, digits = 3),
+                                       "% of proteins differentially expressed"),
+                                icon = icon("thumbs-up", lib = "glyphicon"),
+                                color = "green",
+                                width = 2)
+        }
+      }
+      info_box
+    })
     
     output$ibox <- renderInfoBox({
       infoBox(
@@ -1583,9 +1711,12 @@ server <- shinyServer(function(input, output) {
     #settings table
     output$table4 <- DT::renderDataTable({
       settings_input()
-    }, 
-    )
-    
+    }) 
+    #Saint table
+    output$tablesaint <- DT::renderDataTable({
+      saintlist()[[2]]
+    }) 
+
     output$selected_plot <- renderPlot({
       selected_plot_input()
     })
