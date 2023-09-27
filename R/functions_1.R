@@ -27,10 +27,11 @@ library("RColorBrewer")
 
 set.seed(123) #random seed to give consistent kmeans clustering
 #hash out-----------
-data_results<-read.csv("displayed_subset.txt", head=T, sep="\t", stringsAsFactors = F)
-data_results1<-read.csv("displayed_subset.txt", head=T, sep="\t", stringsAsFactors = F)
+data_results<-read.csv("displayed_subset_1st.txt", head=T, sep="\t", stringsAsFactors = F)
+data_results1<-read.csv("displayed_subset_1st.txt", head=T, sep="\t", stringsAsFactors = F)
 data_results2<-read.csv("displayed_subset_single.txt", head=T, sep="\t", stringsAsFactors = F)
-
+data_results4<-read.csv("displayed_subset_saint.txt", head=T, sep="\t", stringsAsFactors = F)
+saintlist<-read.csv("saintlist.txt", head=T, sep="\t", stringsAsFactors = F)
 data_unique_defn<-read.csv("data_unique_defn.txt", head=T, sep="\t", stringsAsFactors = F)
 kmeans<-4
 switch<-3
@@ -44,6 +45,7 @@ alpha_input<-10
 high_col="red"
 low_col="blue"
 alpha_input=10
+cluster_cols=TRUE
 ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(", "some", " Proteins)", "<br>",kmeans," Clusters ", "contrast" , sep="")
 
 
@@ -556,6 +558,246 @@ my_mat<- htcompx2[[2]]
 dfdata_sig2<-htcompx2[[3]]
 #hash out-----------
 
+
+#BDFR Heatmap
+plot_complex_heatmap_BDFR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, data_results1, saintlist) {
+  set.seed(123)
+  FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
+  #Change column names
+  for ( col in 1:ncol(FC_data)){
+    colnames(FC_data)[col] <-  sub("_ratio", "", colnames(FC_data)[col])
+  }
+  FC_matrix <- FC_data %>% remove_rownames %>% column_to_rownames(var="name")
+  
+  
+  
+  #Set up label data
+  if (switch == 1){
+    label = "Imputed_Int_Sig"
+  }
+  if (switch == 2){
+    label = "Orig_Int_Sig"
+  }
+  if (switch == 3) {
+    label = "Contrast"
+  } 
+  
+  
+  ####Set up Heatmaps####
+  #Choose which set ofdata to use (Intensities or Log2FC)
+  if (switch == 3) {
+    #  my_mat <-
+    #    as.matrix(dfdata2) #converts table into matrix called my_mat
+    my_mat<-FC_matrix
+    my_mat <- as.matrix(my_mat)
+    CS = colMeans(FC_matrix) #creates a mean of each column
+    col_fun = col_fun
+    kmeans<-kmeans
+  } 
+  if (switch == 1) {
+    my_mat <- as.matrix(imp_matrix_filt)
+    #my_mat <- log2(my_mat)
+    CSr = rowMeans(my_mat)
+    my_mat <- my_mat - CSr
+    CSi = colMeans(my_mat)
+    col_fun = col_int
+    kmeans<-kmeans
+  }
+  
+  if (switch == 2) {
+    my_mat <- as.matrix(norm_matrix_filt)
+    #my_mat <- log2(my_mat)
+    CSr = rowMeans(my_mat,na.rm=TRUE)
+    my_mat <- my_mat - CSr
+    my_mat[is.na(my_mat)] = 0
+    CSi = colMeans(my_mat)
+    col_fun = col_int
+    kmeans<-kmeans
+  }
+  
+  #Set Proteins count
+  LFQ_GL_Count<-nrow(my_mat)
+  
+  
+  ####Generate Annotated Heatmap####
+  
+  CS= colMeans(my_mat) #creates a mean of each column
+  
+  #Set up Heatmap annotations
+  if (switch == 3) {
+    ha = HeatmapAnnotation(
+      log2FC = anno_density(
+        my_mat,
+        type = "violin",
+        height = unit(2, "cm"),
+        gp = gpar(fill = mypal[c(1:8)])
+      ),
+      FC_mean = CS,
+      col = list(FC_mean = col_fun),
+      gp = gpar(col = "black"),
+      show_legend=FALSE
+    )
+    htname = "log2FC" 
+  }else{
+    ha = HeatmapAnnotation(
+      log2Int = anno_density(
+        my_mat,
+        type = "violin",
+        height = unit(2, "cm"),
+        gp = gpar(fill = mypal[c(1:8)])
+      ),
+      Int_mean = CS,
+      col = list(Int_mean = col_fun),
+      gp = gpar(col = "black"),
+      show_legend=FALSE
+    )
+    htname = "Log2 Int."
+  }
+  
+  #Right Annotation
+  #For RA
+  dfdata_sig<-data_results[, c(1,grep("_significant",colnames(data_results)))]
+  dfdata_sig_c1<-data_results1[, c(1,grep("_significant",colnames(data_results1)))]
+  #dfdata_sig_c2<-saintlist
+  
+  #dfdata_sig2 <- dfdata_sig%>% mutate(sigcount = rowSums(dfdata_sig[-1], na.rm = TRUE))
+  dfdata_sig2_c1 <- dfdata_sig_c1%>% mutate(sigcount_c1 = rowSums(dfdata_sig_c1[-1], na.rm = TRUE))
+  dfdata_sig2_c2<-saintlist 
+  
+  dfdata_sig2=merge(dfdata_sig, dfdata_sig2_c1, by.x = "name", by.y = "name", all.x = TRUE, all.y = FALSE)
+  dfdata_sig_c1m<-dfdata_sig2
+  dfdata_sig_c1m=merge(dfdata_sig_c1m, dfdata_sig2_c2, by.x = "name", by.y = "PreyGene", all.x = TRUE, all.y = FALSE)
+  dfdata_sig2<-dfdata_sig_c1m[, c("name", "sigcount_c1", "BFDR_Freq")]
+  dfdata_sig2[is.na(dfdata_sig2)] <- 0
+  
+  #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
+  sc3max_c1<- max(dfdata_sig2$sigcount_c1)
+  sc3max_c2<- max(dfdata_sig2$BFDR_Freq)
+  
+  ra_2 =  rowAnnotation("Sig.
+Freq1" = anno_barplot(
+  dfdata_sig2$sigcount_c1,
+  ylim = c(0 , sc3max_c1),
+  gp = gpar(fill = mypal[1], fontsize = 8), 
+)) +
+    rowAnnotation("BDFR
+Freq" = anno_barplot(
+  dfdata_sig2$BFDR_Freq,
+  ylim = c(0 , sc3max_c2),
+  gp = gpar(fill = mypal[3], fontsize = 6), 
+))
+  
+  
+  
+  
+  #Set up left annotation to match kmeans number
+  if (kmeans == 1) {
+    la = rowAnnotation(foo = anno_block(
+      gp = gpar(fill = mypal[c(1:8)]),
+      labels = c("Cluster 1"),
+      labels_gp = gpar(col = "white", fontsize = font_size+4)
+    ))
+  } else{
+    if (kmeans == 2) {
+      la = rowAnnotation(foo = anno_block(
+        gp = gpar(fill = mypal[c(1:8)]),
+        labels = c("Cluster 1", "Cluster 2"),
+        labels_gp = gpar(col = "white", fontsize = font_size+4)
+      ))
+    } else{
+      if (kmeans == 3) {
+        la = rowAnnotation(foo = anno_block(
+          gp = gpar(fill = mypal[c(1:8)]),
+          labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
+          labels_gp = gpar(col = "white", fontsize = font_size+4)
+        ))
+      } else{
+        if (kmeans == 4) {
+          la = rowAnnotation(foo = anno_block(
+            gp = gpar(fill = mypal[c(1:8)]),
+            labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
+            labels_gp = gpar(col = "white", fontsize = font_size+4)
+          ))
+        } else{
+          if (kmeans == 5) {
+            la = rowAnnotation(foo = anno_block(
+              gp = gpar(fill = mypal[c(1:8)]),
+              labels = c(
+                "Cluster 1",
+                "Cluster 2",
+                "Cluster 3",
+                "Cluster 4",
+                "Cluster 5"
+              ),
+              labels_gp = gpar(col = "white", fontsize = font_size+4)
+            ))
+          } else{
+            if (kmeans == 6) {
+              la = rowAnnotation(foo = anno_block(
+                gp = gpar(fill = mypal[c(1:8)]),
+                labels = c(
+                  "Cluster 1",
+                  "Cluster 2",
+                  "Cluster 3",
+                  "Cluster 4",
+                  "Cluster 5",
+                  "Cluster 6"
+                ),
+                labels_gp = gpar(col = "white", fontsize = font_size+4)
+              ))
+            } else{
+              if (kmeans > 6) {
+                la = rowAnnotation(" " = anno_empty(
+                  border = FALSE,
+                  zoom = FALSE,
+                  width = unit(0.01, "cm")
+                ))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  #ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(",LFQ_GL_Count, " Proteins)", "<br>",kmeans," Clusters ",label , sep="")
+  
+  ht = Heatmap(my_mat,
+               name = htname,
+               cluster_rows = TRUE, 
+               cluster_columns = cluster_cols,
+               column_dend_side = "bottom",
+               top_annotation = ha,
+               left_annotation = la,
+               #right_annotation = ra,
+               #bottom_annotation = ba,
+               row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
+               cluster_row_slices = FALSE,
+               #column_km = 5, column_km_repeats = 2000, # kmeans clustering
+               col = col_fun,
+               #column_split = column_split,
+               border = TRUE,
+               row_names_gp = gpar(fontsize = font_size),
+               column_names_gp = gpar(fontsize = font_size+2),
+               column_title = gt_render (ht_title))
+  
+  ht = draw(ht+ra_2, auto_adjust = FALSE)
+  
+  
+  compht<-list(ht, my_mat, dfdata_sig2)
+  
+  return(compht)
+  
+}
+
+#hash out-----
+htcomp_BDFR<- plot_complex_heatmap_BDFR(data_results, kmeans, ht_title, col_fun, mypal, data_results1=data_results1, data_results2=saintlist)
+
+#Function Output
+ht<- htcomp_BDFR[[1]]
+draw(ht)
+my_mat<- htcomp_BDFR[[2]]
+dfdata_sig2<-htcomp_BDFR[[3]]
+#hash out-----------
 
 ####Heatmap Clusters Function####
 plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.05, col_fun, mypal, switch=3, font_size=6, data_unique_defn){
