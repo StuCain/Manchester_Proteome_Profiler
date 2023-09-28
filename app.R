@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.1-beta"
+Version = "0.1.0-beta"
 
 
 ####UI####
@@ -143,8 +143,7 @@ ui <- fluidPage(
           width = 1),
       infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
       infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
-      infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
-      infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
+      infoBoxOutput("significantBox_bfdr") #shows number of Sig. Proteins (BFDR)
     ),
     
     #Main body of
@@ -810,7 +809,7 @@ server <- shinyServer(function(input, output) {
     if (is.null(inFile))
       return(NULL)
     data<-read.csv(inFile$datapath, header = TRUE,
-             sep = "\t", stringsAsFactors = FALSE)
+                   sep = "\t", stringsAsFactors = FALSE)
     data<-data.frame(data)
     data<-data %>% dplyr::filter(BFDR <= input$bfdr)
     saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
@@ -846,7 +845,7 @@ server <- shinyServer(function(input, output) {
     if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
     if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
     unfilt_saint<-data.frame(unfilt_saint)
-#    return(unfilt_saint)
+    #    return(unfilt_saint)
     
     saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
     saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
@@ -1201,55 +1200,6 @@ server <- shinyServer(function(input, output) {
       info_box
     })
     
-    output$significantBox_bfdr_filtered <- renderInfoBox({
-      info_box<-box(width = 1, height = 0)
-      
-      if (input$comp_type == "Use SaintExpress")
-      {
-        num_total <- dep() %>%
-          nrow()
-        num_signif <- data_results5() %>%
-          nrow()
-        frac <- num_signif / num_total
-        
-        if(frac > 0.2) {
-          info_box <- infoBox("Significant proteins (BFDR Overlap)",
-                              paste0(num_signif,
-                                     " out of ",
-                                     num_total),
-                              paste0("Too large fraction (",
-                                     signif(frac * 100, digits = 3),
-                                     "%) of proteins differentially expressed"),
-                              icon = icon("minus", lib = "glyphicon"),
-                              color = "orange",
-                              width = 2)
-        }
-        if(frac == 0) {
-          info_box <- infoBox("Significant proteins (BFDR Overlap)",
-                              paste0(num_signif,
-                                     " out of ",
-                                     num_total),
-                              "No proteins differentially expressed",
-                              icon = icon("thumbs-down", lib = "glyphicon"),
-                              color = "red",
-                              width = 2)
-        }
-        if(frac > 0 & frac <= 0.2) {
-          info_box <- 		infoBox("Significant proteins (BFDR Overlap)",
-                                paste0(num_signif,
-                                       " out of ",
-                                       num_total),
-                                paste0(signif(frac * 100, digits = 3),
-                                       "% of proteins differentially expressed"),
-                                icon = icon("thumbs-up", lib = "glyphicon"),
-                                color = "green",
-                                width = 2)
-        }
-      }
-      info_box
-    })
-    
-    
     output$ibox <- renderInfoBox({
       infoBox(
         "Title",
@@ -1330,6 +1280,8 @@ server <- shinyServer(function(input, output) {
     data_dep2 <- reactive({
       if (input$comp_type == "1 Round of comparisons")
         return(NULL)
+      if (input$comp_type == "Use SaintExpress")
+        return(NULL)
       get_results(dep2()) %>% filter(significant) %>% select(-significant) 
     })
     
@@ -1340,11 +1292,15 @@ server <- shinyServer(function(input, output) {
     data_results2<- reactive({
       if (input$comp_type == "1 Round of comparisons")
         return(NULL)
+      if (input$comp_type == "Use SaintExpress")
+        return(NULL)
       data.frame(data_dep2())
     })
     
     data_results3<- reactive({
       if (input$comp_type == "1 Round of comparisons")
+        return(NULL)
+      if (input$comp_type == "Use SaintExpress")
         return(NULL)
       data_results2() [data_results2()$name %in% data_results1()$name, ]
     })
@@ -1365,14 +1321,14 @@ server <- shinyServer(function(input, output) {
     })
     
     
-    
     data_results<- reactive({
+      if (input$comp_type == "1 Round of comparisons")
+      {data<-data_results1()}
       if (input$comp_type == "2 Rounds of comparisons"){
-        data_results3()}
+        data<-data_results3()}
       if (input$comp_type == "Use SaintExpress"){
-        data_results5()
-      }
-      else{data_results1()}
+        data<-data_results5()}
+      return(data)
     })
     
     dep_num <- reactive({
@@ -1386,6 +1342,11 @@ server <- shinyServer(function(input, output) {
     dep_num_c2 <- reactive({
       num_signif <- data_results2() %>% nrow()
     })
+    
+    dep_num_bfdr <- reactive({
+      num_signif <- data_results4() %>% nrow()
+    })
+    
     
     selected_plot_input <- reactive ({
       if(!is.null(input$table_rows_selected)) {
@@ -1492,50 +1453,50 @@ server <- shinyServer(function(input, output) {
         if (input$comp_type == "1 Round of comparisons"){
           ht_title<-paste("FC=", input$lfc, " pVal=", input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ",input$pres , sep="")
           
-          plot_complex_heatmap(data_results(),
-                               #                     input$pres,
-                               #                     kmeans = TRUE,
-                               input$k1,
-                               ht_title,
-                               colour_functions_input()[[1]],
-                               colour_functions_input()[[2]],
-                               font_size=8,
-                               cluster_cols=input$cluster_cols
+          ht<-plot_complex_heatmap(data_results(),
+                                   #                     input$pres,
+                                   #                     kmeans = TRUE,
+                                   input$k1,
+                                   ht_title,
+                                   colour_functions_input()[[1]],
+                                   colour_functions_input()[[2]],
+                                   font_size=8,
+                                   cluster_cols=input$cluster_cols
           )
         }
-
+        
         if (input$comp_type == "Use SaintExpress"){
           ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BDFR_Cutoff=", input$bdfr,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
           
-          plot_complex_heatmap_BDFR(data_results(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=8,
-                                      cluster_cols=input$cluster_cols,
-                                      data_results1=data_results1(),
-                                      saintlist=saintlist()[[2]])
+          ht<-plot_complex_heatmap_BDFR(data_results(),
+                                        #                     input$pres,
+                                        #                     kmeans = TRUE,
+                                        input$k1,
+                                        ht_title,
+                                        colour_functions_input()[[1]],
+                                        colour_functions_input()[[2]],
+                                        font_size=8,
+                                        cluster_cols=input$cluster_cols,
+                                        data_results1=data_results1(),
+                                        saintlist=saintlist()[[2]])
         }
         
         if (input$comp_type == "2 Rounds of comparisons"){
           ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
           
-          plot_complex_heatmap_2xcomp(data_results(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=8,
-                                      cluster_cols=input$cluster_cols,
-                                      data_results1=data_results1(),
-                                      data_results2=data_results2())
+          ht<- plot_complex_heatmap_2xcomp(data_results(),
+                                           #                     input$pres,
+                                           #                     kmeans = TRUE,
+                                           input$k1,
+                                           ht_title,
+                                           colour_functions_input()[[1]],
+                                           colour_functions_input()[[2]],
+                                           font_size=8,
+                                           cluster_cols=input$cluster_cols,
+                                           data_results1=data_results1(),
+                                           data_results2=data_results2())
         }
-        
+        return(ht)
       })
     })
     
@@ -1544,22 +1505,7 @@ server <- shinyServer(function(input, output) {
         if (input$comp_type == "1 Round of comparisons"){
           ht_title<-paste("FC=", input$lfc, " pVal=", input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ",input$pres , sep="")
           
-          plot_complex_heatmap(data_results(),
-                               #                     input$pres,
-                               #                     kmeans = TRUE,
-                               input$k1,
-                               ht_title,
-                               colour_functions_input()[[1]],
-                               colour_functions_input()[[2]],
-                               font_size=6,
-                               cluster_cols=input$cluster_cols
-          )
-        }
-        
-        if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BDFR_Cutoff=", input$bdfr,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
-          
-          plot_complex_heatmap_BDFR(data_results(),
+          ht<- plot_complex_heatmap(data_results(),
                                     #                     input$pres,
                                     #                     kmeans = TRUE,
                                     input$k1,
@@ -1567,33 +1513,47 @@ server <- shinyServer(function(input, output) {
                                     colour_functions_input()[[1]],
                                     colour_functions_input()[[2]],
                                     font_size=6,
-                                    cluster_cols=input$cluster_cols,
-                                    data_results1=data_results1(),
-                                    saintlist=saintlist()[[2]])
+                                    cluster_cols=input$cluster_cols
+          )
+        }
+        
+        if (input$comp_type == "Use SaintExpress"){
+          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BDFR_Cutoff=", input$bdfr,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
+          
+          ht<- plot_complex_heatmap_BDFR(data_results(),
+                                         #                     input$pres,
+                                         #                     kmeans = TRUE,
+                                         input$k1,
+                                         ht_title,
+                                         colour_functions_input()[[1]],
+                                         colour_functions_input()[[2]],
+                                         font_size=6,
+                                         cluster_cols=input$cluster_cols,
+                                         data_results1=data_results1(),
+                                         saintlist=saintlist()[[2]])
         }
         
         if (input$comp_type == "2 Rounds of comparisons"){
           ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
           
-          plot_complex_heatmap_2xcomp(data_results(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=6,
-                                      cluster_cols=input$cluster_cols,
-                                      data_results1=data_results1(),
-                                      data_results2=data_results2())
+          ht->plot_complex_heatmap_2xcomp(data_results(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=6,
+                                          cluster_cols=input$cluster_cols,
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
         }
-        
+        return(ht)
       })
     })
     
     comp_heatmap_input_c1 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "2 Rounds of comparisons"){
         ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ",input$pres, sep="")
         plot_complex_heatmap_2xcomp(data_results1(),
                                     #                     input$pres,
@@ -1606,24 +1566,6 @@ server <- shinyServer(function(input, output) {
                                     cluster_cols=input$cluster_cols,
                                     data_results1=data_results1(),
                                     data_results2=data_results2())
-        }
-        
-        if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ",input$pres, sep="")
-          
-          plot_complex_heatmap_BDFR(data_results1(),
-                                    #                     input$pres,
-                                    #                     kmeans = TRUE,
-                                    input$k1_c1,
-                                    ht_title,
-                                    colour_functions_input()[[1]],
-                                    colour_functions_input()[[2]],
-                                    font_size=8,
-                                    cluster_cols=input$cluster_cols,
-                                    data_results1=data_results1(),
-                                    saintlist=saintlist()[[2]])
-        }
-        
       })
     })
     
@@ -1647,26 +1589,9 @@ server <- shinyServer(function(input, output) {
     
     comp_heatmap_input_c2 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
-          
-          plot_complex_heatmap_2xcomp(data_results2(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1_c2,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=8,
-                                      cluster_cols=input$cluster_cols,
-                                      data_results1=data_results1(),
-                                      data_results2=data_results2())
-        }
+        ht_title<-paste("Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
         
-        if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("SAINTexpress List", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
-          data<-data.frame(data_results4())
-          plot_complex_heatmap_BDFR(data,
+        plot_complex_heatmap_2xcomp(data_results2(),
                                     #                     input$pres,
                                     #                     kmeans = TRUE,
                                     input$k1_c2,
@@ -1676,8 +1601,7 @@ server <- shinyServer(function(input, output) {
                                     font_size=8,
                                     cluster_cols=input$cluster_cols,
                                     data_results1=data_results1(),
-                                    saintlist=saintlist()[[2]])
-        }
+                                    data_results2=data_results2())
       })
     })
     
@@ -1725,25 +1649,7 @@ server <- shinyServer(function(input, output) {
                                        font_size=8,
                                        data_unique_defn = data_defn()
           )
-        }
-        
-        if (input$comp_type == "Use SaintExpress"){
-          plot_heatmap_clusters_2xcomp(comp_heatmap_input()[[1]],
-                                       comp_heatmap_input()[[2]],
-                                       comp_heatmap_input()[[3]],
-                                       #                     input$pres,
-                                       #                     kmeans = TRUE,
-                                       input$k1,
-                                       input$lfc,
-                                       input$p,
-                                       colour_functions_input()[[1]],
-                                       colour_functions_input()[[2]],
-                                       font_size=8,
-                                       data_unique_defn = data_defn()
-          )
-        }
-        
-        if (input$comp_type == "1 Round of comparisons"){
+        }else{
           plot_heatmap_clusters(comp_heatmap_input()[[1]],
                                 comp_heatmap_input()[[2]],
                                 comp_heatmap_input()[[3]],
@@ -1854,16 +1760,15 @@ server <- shinyServer(function(input, output) {
     
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
-      data_results4()
-      #data_results()
+      #data_results4()
+      data_results()
       #     data() to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
     
     #Output of table on 2nd tab
     output$table2 <- DT::renderDataTable({
-      #data_results_mat()
-      comp_heatmap_input()[[3]]
+      data_results_mat()
     }, options = list(pageLength = 25, scrollX = T),
     )
     
@@ -1881,7 +1786,7 @@ server <- shinyServer(function(input, output) {
     output$tablesaint <- DT::renderDataTable({
       saintlist()[[2]]
     }) 
-
+    
     output$selected_plot <- renderPlot({
       selected_plot_input()
     })
@@ -2147,8 +2052,8 @@ server <- shinyServer(function(input, output) {
                filter(significant) %>%
                select(-significant),
              "displayed_subset" = data_results(), #%>%
-               #filter(significant) %>%
-               #select(-significant),
+             #filter(significant) %>%
+             #select(-significant),
              "full_dataset" = get_df_wide(dep()))
     })
     
