@@ -509,8 +509,8 @@ Freq2" = anno_barplot(
   
 }
 
-#BDFR Heatmap
-plot_complex_heatmap_BDFR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, data_results1, saintlist) {
+#BFDR Heatmap
+plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, data_results1, saintlist) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
   #Change column names
@@ -630,7 +630,7 @@ Freq1" = anno_barplot(
   ylim = c(0 , sc3max_c1),
   gp = gpar(fill = mypal[1], fontsize = 8), 
 )) +
-    rowAnnotation("BDFR
+    rowAnnotation("BFDR
 Freq" = anno_barplot(
   dfdata_sig2$BFDR_Freq,
   ylim = c(0 , sc3max_c2),
