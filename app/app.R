@@ -34,12 +34,12 @@ Version = "0.1.2-beta"
 
 ####UI####
 ui <- fluidPage(
-  theme = shinytheme("cerulean"),
+  theme = shinytheme("spacelab"),
   #autoWaiter(html = spin_loaders(id = 12, color = "#2fa3e6", style = NULL), color = "white"),
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
-    dashboardHeader(title = "DEP + Cluster"),
-    dashboardSidebar(width=250,#changed with of sidebar
+    dashboardHeader(title = "SAINT_DEP + Cluster"),
+    dashboardSidebar(width=300,#changed with of sidebar
                      sidebarMenu(
                        menuItem(
                          radioButtons("data_type",
@@ -1694,7 +1694,7 @@ server <- shinyServer(function(input, output) {
         if (input$comp_type == "Use SaintExpress"){
           ht_title<-paste("SAINTexpress List", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
           
-          ht<-plot_complex_heatmap_BFDR(data_results(),
+          ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
                                         #                     kmeans = TRUE,
                                         input$k1,
