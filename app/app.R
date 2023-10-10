@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.3-beta"
+Version = "0.1.4-beta"
 
 
 ####UI####
@@ -364,7 +364,16 @@ ui <- fluidPage(
                  column(width = 8,
                         tabBox(id = "comp_heat_tab",
                                title = "Cluster Analysis Plots", width = 12,
-                               tabPanel(title = "SAINT Analysis",
+                               tabPanel(title = "SAINT Input",
+                                        #DT::dataTableOutput("tablesaint"), width = 12
+                               ),
+                               tabPanel(title = "SAINT Output",
+                                        DT::dataTableOutput("tablesaint_output1"), width = 12,
+                                        DT::dataTableOutput("tablesaint_output2"), width = 12,
+                                        DT::dataTableOutput("tablesaint_output3"), width = 12,
+                                        DT::dataTableOutput("tablesaint_output4"), width = 12
+                               ),
+                               tabPanel(title = "BFDR Filtering",
                                         DT::dataTableOutput("tablesaint"), width = 12
                                ),
                                tabPanel(title = "Results",
@@ -739,9 +748,13 @@ server <- shinyServer(function(input, output) {
       hideTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")
     }else{showTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")}
     if (input$comp_type == "1 Round of comparisons"|input$comp_type == "2 Rounds of comparisons") {
-      hideTab(inputId =  "comp_heat_tab", target = "SAINT Analysis")
-    }else{showTab(inputId =  "comp_heat_tab", target = "SAINT Analysis")}
-    
+      hideTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
+      hideTab(inputId =  "comp_heat_tab", target = "SAINT Input")
+      hideTab(inputId =  "comp_heat_tab", target = "SAINT Output")
+    }else{showTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
+      showTab(inputId =  "comp_heat_tab", target = "SAINT Input")
+      showTab(inputId =  "comp_heat_tab", target = "SAINT Output")
+      }
   })
   
   #Hide/show Volcano Plts
@@ -999,6 +1012,65 @@ server <- shinyServer(function(input, output) {
     num_signif <- dep2() %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
+  })
+  
+  #SAINTexpress Processing
+  saint_output <- reactive({
+    norm_long <-get_df_long(norm())
+    saint_list<-list()
+    experimental_design<-data.frame(expdesign())
+    
+    for(i in sort(unique(experimental_design$condition_type))){
+      #norm_df<-pg_filt[, c(1, grep("Norm",colnames(pg_filt)))]
+      
+      #bait
+      bait<-experimental_design[experimental_design$condition_type==i,c(1,2,7)]
+      baitfile<-paste("data/bait_", i, ".txt",sep="")
+      write.table(bait, baitfile, sep="\t", quote = F, row.names = F, col.names = F)
+      
+      #prey
+      prey<-data.frame(PROT_ID=norm_long$Protein.IDs,
+                       LENGTH=norm_long$Sequence.length ,
+                       GENE_ID=norm_long$Gene.names)
+      prey$PROT_ID  <- sub('\\;.*', '', prey$PROT_ID)
+      prey$GENE_ID  <- sub('\\;.*', '', prey$GENE_ID)
+      prey<-prey %>% 
+        distinct(across(-PROT_ID), # reduces data frame to only unique rows (keeps first one of any duplicates)
+                 .keep_all = TRUE) 
+      
+      preyfile<-paste("data/prey_", i, ".txt",sep="")
+      write.table(prey, preyfile, sep="\t", quote = F, row.names = F, col.names = F)
+      
+      #inter
+      inter<-norm_long[norm_long$condition_type==i, c(grep("label", colnames(norm_long)),grep("\\condition\\b", colnames(norm_long)),grep("Protein.IDs", colnames(norm_long)), grep ("intensity", colnames(norm_long)) )]
+      inter$Protein.IDs  <- sub('\\;.*', '', inter$Protein.IDs)
+      
+      #remove NA's and reverse log2 transformation
+      inter<-inter[!is.na(inter$intensity),]
+      inter$intensity<-2^(inter$intensity)
+      
+      ##reorder columns for ease
+      #inter<-inter[, c("EXP", "Bait", "PROT_ID", "INT")]
+      
+      interfile<-paste("data/inter_", i, ".txt",sep="")
+      write.table(inter, interfile, sep="\t", quote = F, row.names = F, col.names = F)
+      
+      #run SAINT
+      saintfile<-paste("SAINT_", i, ".txt",sep="")
+      #system(paste(saint_location,interfile, preyfile, baitfile, ">" , logfile))
+      saint_location<-"data/SAINTexpress-spc.exe"
+      system(paste(saint_location,interfile, preyfile, baitfile))
+      #system(paste("mv list.txt ", saintfile, sep=""))
+      saint_df<-read.csv("list.txt", head=T, sep="\t", stringsAsFactors = FALSE)
+      
+      saintexpressfile<-paste("SAINTexpress_new_", i, ".txt",sep="")
+      #write.table(saint_df, saintexpressfile, sep="\t", quote = F, row.names = F, col.names = T)
+      
+      #add BAIT name and save to Excel
+      saint_list[[i]]<-saint_df
+    }
+    return(saint_list)
+    
   })
   
   ### All object and functions upon 'Analyze' input ----------------------
@@ -1892,6 +1964,22 @@ server <- shinyServer(function(input, output) {
     output$table4 <- DT::renderDataTable({
       settings_input()
     }) 
+    
+    #Saint Outputs
+    output$tablesaint_output1 <- DT::renderDataTable({
+      saint_output()[[1]]
+    })
+    output$tablesaint_output2 <- DT::renderDataTable({
+      saint_output()[[2]]
+    }) 
+    output$tablesaint_output3 <- DT::renderDataTable({
+      saint_output()[[3]]
+    }) 
+    output$tablesaint_output4 <- DT::renderDataTable({
+      saint_output()[[4]]
+    }) 
+    
+
     #Saint table
     output$tablesaint <- DT::renderDataTable({
       saintlist()[[2]]
