@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.4-beta"
+Version = "0.1.5-beta"
 
 
 ####UI####
@@ -858,21 +858,21 @@ server <- shinyServer(function(input, output) {
     return(saint_BFDR)
   })
   
-  saintlist <- reactive({
-    unfilt_saint<- c(saintfile1()) #Make single list
-    if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
-    if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
-    unfilt_saint<-data.frame(unfilt_saint)
+#  saintlist <- reactive({
+#    unfilt_saint<- c(saintfile1()) #Make single list
+#    if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
+#    if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
+#    unfilt_saint<-data.frame(unfilt_saint)
     #    return(unfilt_saint)
     
-    saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
-    saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
-    saint_count <- saint_count[saint_count$BFDR_Freq>=input$bfdr_freq, ]#filter by BFDR_Freq
-    saint_count_no <-nrow(saint_count)
-    saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
-    return(saintlist_out)
+#    saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
+#    saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
+#    saint_count <- saint_count[saint_count$BFDR_Freq>=input$bfdr_freq, ]#filter by BFDR_Freq
+#    saint_count_no <-nrow(saint_count)
+#    saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
+#    return(saintlist_out)
     
-  })
+#  })
   
   #make experimental template
   exp_template<- reactive({
@@ -1057,10 +1057,8 @@ server <- shinyServer(function(input, output) {
       
       #run SAINT
       saintfile<-paste("SAINT_", i, ".txt",sep="")
-      #system(paste(saint_location,interfile, preyfile, baitfile, ">" , logfile))
       saint_location<-"data/SAINTexpress-spc.exe"
       system(paste(saint_location,interfile, preyfile, baitfile))
-      #system(paste("mv list.txt ", saintfile, sep=""))
       saint_df<-read.csv("list.txt", head=T, sep="\t", stringsAsFactors = FALSE)
       
       saintexpressfile<-paste("SAINTexpress_new_", i, ".txt",sep="")
@@ -1072,6 +1070,33 @@ server <- shinyServer(function(input, output) {
     return(saint_list)
     
   })
+  
+  saintlist <- reactive({
+    experimental_design<-data.frame(expdesign())
+    cond_num<-length(unique(experimental_design$condition_type))
+    
+    if(cond_num==1){unfilt_saint<-saint_output()[[1]]}
+    if(cond_num==2){unfilt_saint<-rbind(saint_output()[[1]],saint_output()[[2]])}
+    if(cond_num==3){unfilt_saint<-rbind(saint_output()[[1]],saint_output()[[2]],saint_output()[[3]])}
+    if(cond_num==4){unfilt_saint<-rbind(saint_output()[[1]],saint_output()[[2]],saint_output()[[3]],saint_output()[[4]])}
+    
+    
+    #unfilt_saint<- c(saintfile1()) #Make single list
+    #if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
+    #if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
+    unfilt_saint<-data.frame(unfilt_saint)
+    unfilt_saint<-unfilt_saint %>% dplyr::filter(BFDR <= input$bfdr)
+    #    return(unfilt_saint)
+    
+    saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
+    saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
+    saint_count <- saint_count[saint_count$BFDR_Freq>=input$bfdr_freq, ]#filter by BFDR_Freq
+    saint_count_no <-nrow(saint_count)
+    saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
+    return(saintlist_out)
+    
+  })
+  
   
   ### All object and functions upon 'Analyze' input ----------------------
   
