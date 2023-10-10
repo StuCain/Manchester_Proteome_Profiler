@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.5-beta"
+Version = "0.1.6-beta"
 
 
 ####UI####
@@ -60,23 +60,23 @@ ui <- fluidPage(
                                 #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
                                 downloadButton('downloadexp_template', 'Save Exp. template')
                        ),
-                       menuItem("SAINT Files", selected = FALSE,
-                                fileInput('saintfile1',
-                                          'saint_file1.txt',
-                                          accept=c('text/csv',
-                                                   'text/comma-separated-values,text/plain',
-                                                   '.csv')),
-                                fileInput('saintfile2',
-                                          'saint_file2.txt',
-                                          accept=c('text/csv',
-                                                   'text/comma-separated-values,text/plain',
-                                                   '.csv')),
-                                fileInput('saintfile3',
-                                          'saint_file3.txt',
-                                          accept=c('text/csv',
-                                                   'text/comma-separated-values,text/plain',
-                                                   '.csv'))
-                       ),
+#                       menuItem("SAINT Files", selected = FALSE,
+#                                fileInput('saintfile1',
+#                                          'saint_file1.txt',
+#                                          accept=c('text/csv',
+#                                                   'text/comma-separated-values,text/plain',
+#                                                   '.csv')),
+#                                fileInput('saintfile2',
+#                                          'saint_file2.txt',
+#                                          accept=c('text/csv',
+#                                                   'text/comma-separated-values,text/plain',
+#                                                   '.csv')),
+#                                fileInput('saintfile3',
+#                                          'saint_file3.txt',
+#                                          accept=c('text/csv',
+#                                                   'text/comma-separated-values,text/plain',
+#                                                   '.csv'))
+#                       ),
                      
                      menuItemOutput("columns"),
                      menuItem(
@@ -821,42 +821,42 @@ server <- shinyServer(function(input, output) {
     return(data1)
   })
   
-  #SAINT File imports
-  saintfile1 <- reactive({
-    inFile <- input$saintfile1
-    if (is.null(inFile))
-      return(NULL)
-    data<-read.csv(inFile$datapath, header = TRUE,
-                   sep = "\t", stringsAsFactors = FALSE)
-    data<-data.frame(data)
-    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
-    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
-    return(saint_BFDR)
-  })
+#  #SAINT File imports
+ # saintfile1 <- reactive({
+#    inFile <- input$saintfile1
+#    if (is.null(inFile))
+#      return(NULL)
+#    data<-read.csv(inFile$datapath, header = TRUE,
+#                   sep = "\t", stringsAsFactors = FALSE)
+#    data<-data.frame(data)
+#    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
+#    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
+#    return(saint_BFDR)
+#  })
   
-  saintfile2 <- reactive({
-    inFile <- input$saintfile2
-    if (is.null(inFile))
-      return(NULL)
-    data<-read.csv(inFile$datapath, header = TRUE,
-                   sep = "\t", stringsAsFactors = FALSE)
-    data<-data.frame(data)
-    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
-    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
-    return(saint_BFDR)
-  })
+#  saintfile2 <- reactive({
+#    inFile <- input$saintfile2
+#    if (is.null(inFile))
+#      return(NULL)
+#    data<-read.csv(inFile$datapath, header = TRUE,
+#                   sep = "\t", stringsAsFactors = FALSE)
+#    data<-data.frame(data)
+#    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
+#    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
+#    return(saint_BFDR)
+#  })
   
-  saintfile3 <- reactive({
-    inFile <- input$saintfile3
-    if (is.null(inFile))
-      return(NULL)
-    data<-read.csv(inFile$datapath, header = TRUE,
-                   sep = "\t", stringsAsFactors = FALSE)
-    data<-data.frame(data)
-    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
-    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
-    return(saint_BFDR)
-  })
+#  saintfile3 <- reactive({
+#    inFile <- input$saintfile3
+#    if (is.null(inFile))
+#      return(NULL)
+#    data<-read.csv(inFile$datapath, header = TRUE,
+#                   sep = "\t", stringsAsFactors = FALSE)
+#    data<-data.frame(data)
+#    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
+#    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
+#    return(saint_BFDR)
+#  })
   
 #  saintlist <- reactive({
 #    unfilt_saint<- c(saintfile1()) #Make single list
