@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.2-beta"
+Version = "0.1.3-beta"
 
 
 ####UI####
@@ -118,6 +118,10 @@ ui <- fluidPage(
       box(numericInput("bfdr",
                        "BFDR Cut-Off",
                        min = 0, max = 1, value = 0.1),
+          width = 1),
+      box(numericInput("bfdr_freq",
+                       "BFDR Freq. Min",
+                       min = 0, max = 10, value = 1),
           width = 1),
       box(numericInput("p",
                        "adj. P value",
@@ -782,7 +786,7 @@ server <- shinyServer(function(input, output) {
       maxdata<-read.csv(inFile$datapath, header = TRUE,
                         sep = "\t", stringsAsFactors = FALSE) %>%
         mutate(id = row_number())
-      data1<-maxdata[, c(grep("Protein.IDs", colnames(maxdata)),grep("Protein.names", colnames(maxdata)),grep("Gene.names", colnames(maxdata)),  grep("LFQ.",colnames(maxdata)), grep("Reverse",colnames(maxdata)), grep("Potential.contaminant",colnames(maxdata)))]
+      data1<-maxdata[, c(grep("Protein.IDs", colnames(maxdata)),grep("Protein.names", colnames(maxdata)),grep("Gene.names", colnames(maxdata)),  grep("LFQ.",colnames(maxdata)), grep ("\\Sequence.length\\b", colnames(maxdata)), grep("Reverse",colnames(maxdata)), grep("Potential.contaminant",colnames(maxdata)))]
     }
     
     if (input$data_type == "Proteome Discoverer"){
@@ -850,6 +854,7 @@ server <- shinyServer(function(input, output) {
     
     saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
     saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
+    saint_count <- saint_count[saint_count$BFDR_Freq>=input$bfdr_freq, ]#filter by BFDR_Freq
     saint_count_no <-nrow(saint_count)
     saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
     return(saintlist_out)
