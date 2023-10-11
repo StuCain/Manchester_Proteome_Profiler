@@ -1019,6 +1019,7 @@ server <- shinyServer(function(input, output) {
     norm_long <-get_df_long(norm())
     saint_list<-list()
     experimental_design<-data.frame(expdesign())
+    SysName <- Sys.info()['sysname']
     
     for(i in sort(unique(experimental_design$condition_type))){
       #norm_df<-pg_filt[, c(1, grep("Norm",colnames(pg_filt)))]
@@ -1057,7 +1058,9 @@ server <- shinyServer(function(input, output) {
       
       #run SAINT
       saintfile<-paste("SAINT_", i, ".txt",sep="")
-      saint_location<-"data/SAINTexpress-spc.exe"
+      if(SysName=="Linux"){saint_location<-"data/SAINTexpress-spc"}
+      if(SysName=="Windows"){saint_location<-"data/SAINTexpress-spc.exe"}
+      
       system(paste(saint_location,interfile, preyfile, baitfile))
       saint_df<-read.csv("list.txt", head=T, sep="\t", stringsAsFactors = FALSE)
       
