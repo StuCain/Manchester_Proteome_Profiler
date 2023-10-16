@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.6-beta"
+Version = "0.1.7-beta"
 
 
 ####UI####
@@ -885,7 +885,9 @@ server <- shinyServer(function(input, output) {
         substr(x, nchar(x)-n+1, nchar(x))
       }
       replicate<-substrRight(label, 1)
-      exp_template_new<- data.frame(label, condition, replicate)
+      condition_type<-""
+      bait_id<-""
+      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
     
     if (input$data_type == "Proteome Discoverer"){
@@ -1025,7 +1027,7 @@ server <- shinyServer(function(input, output) {
       #norm_df<-pg_filt[, c(1, grep("Norm",colnames(pg_filt)))]
       
       #bait
-      bait<-experimental_design[experimental_design$condition_type==i,c(1,2,7)]
+      bait<-experimental_design[experimental_design$condition_type==i, c(1,2,grep("bait_id",colnames(experimental_design)))]
       baitfile<-paste("data/bait_", i, ".txt",sep="")
       write.table(bait, baitfile, sep="\t", quote = F, row.names = F, col.names = F)
       
@@ -1056,10 +1058,11 @@ server <- shinyServer(function(input, output) {
       interfile<-paste("data/inter_", i, ".txt",sep="")
       write.table(inter, interfile, sep="\t", quote = F, row.names = F, col.names = F)
       
-      #run SAINT
+      #run SAINT (-int for intensities and -spc for spectral counts)
       saintfile<-paste("SAINT_", i, ".txt",sep="")
-      if(SysName=="Linux"){saint_location<-"data/SAINTexpress-spc"}
-      if(SysName=="Windows"){saint_location<-"data/SAINTexpress-spc.exe"}
+      if(SysName=="Linux"){saint_location<-"data/SAINTexpress-int"}
+      #if(SysName=="Windows"){saint_location<-"data/SAINTexpress-spc.exe"}
+      if(SysName=="Windows"){saint_location<-"data/SAINTexpress-int.exe"}
       
       system(paste(saint_location,interfile, preyfile, baitfile))
       saint_df<-read.csv("list.txt", head=T, sep="\t", stringsAsFactors = FALSE)

@@ -1,0 +1,6 @@
+Con_BirA_KP4_Exp1	Con_KP4	C
+Con_BirA_KP4_Exp2	Con_KP4	C
+Con_BirA_KP4_Exp3	Con_KP4	C
+BirA_KRas_KP4_Exp1	KRas_KP4	T
+BirA_KRas_KP4_Exp2	KRas_KP4	T
+BirA_KRas_KP4_Exp3	KRas_KP4	T
