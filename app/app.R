@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.1.7-beta"
+Version = "0.1.8-beta"
 
 
 ####UI####
@@ -812,10 +812,11 @@ server <- shinyServer(function(input, output) {
         dplyr::rename(
           Gene.names=Gene.Symbol,
           Protein.IDs=Accession,
-          Protein.names=Description  
+          Protein.names=Description,
+          Sequence.length=..AAs
         ) 
       #      data1<-data[, c(1,2,3,  grep("Abundance..*Sample..", colnames(data)))]
-      data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep("Abundance..*Sample..", colnames(data)), grep("Abundance..*Control..", colnames(data)))]
+      data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep("Abundance..*Sample..", colnames(data)), grep("Abundance..*Control..", colnames(data)), grep ("Sequence.length", colnames(data)))]
       
     }
     return(data1)
@@ -1975,7 +1976,7 @@ server <- shinyServer(function(input, output) {
     output$table <- DT::renderDataTable({
       #data_results4()
       data_results()
-      #     data() to test data input
+      #     data() #to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
     
