@@ -1,0 +1,6 @@
+Bait_Exp1	Con_288	C
+Bait_Exp2	Con_288	C
+Bait_Exp3	BAIT_288	T
+Control_Exp1	BAIT_288	T
+Control_Exp2	BAIT_288	T
+Control_Exp3	Con_288	C

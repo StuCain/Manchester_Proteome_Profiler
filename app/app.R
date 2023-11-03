@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.2.0-beta"
+Version = "0.2.1-beta"
 
 
 ####UI####
@@ -904,6 +904,31 @@ server <- shinyServer(function(input, output) {
                   sep ="\t") }
   )
   
+  #Comparisons Template
+  comp_template<- reactive({
+    inFile <- input$file2
+    expfile<-expdesign()
+    if (!is.null(inFile)){
+      condition<-unique(expfile$condition)
+      comp1_A<-""
+      comp1_B<-""
+      comp2_A<-""
+      comp2_B<-""
+      comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
+    }
+    
+      if (is.null(inFile)){
+        condition<-""
+        comp1_A<-""
+        comp1_B<-""
+        comp2_A<-""
+        comp2_B<-""
+        comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
+      }
+      
+    return(comp_template_new)
+  })
+  
   
   #data annotations for clusters
   data_defn <- reactive({
@@ -1594,7 +1619,7 @@ server <- shinyServer(function(input, output) {
     
     #PCA Input
     pca_input <- reactive({
-      plot_pca(dep(), x = 1, y = 2, point_size = 4)
+      plot_pca(dep(), x = 1, y = 2, n=dep_num(), point_size = 4)
     })
     
     #    #PCA Input (Comp2)
@@ -2020,7 +2045,7 @@ server <- shinyServer(function(input, output) {
     
     #comp table
     output$table5 <- DT::renderDataTable({
-      comp()
+      comp_template()
     }) 
     
     
