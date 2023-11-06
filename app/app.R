@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.2.1-beta"
+Version = "0.2.2-beta"
 
 
 ####UI####
@@ -727,7 +727,8 @@ server <- shinyServer(function(input, output) {
                        'comparisons.txt',
                        accept=c('text/csv',
                                 'text/comma-separated-values,text/plain',
-                                '.csv'))
+                                '.csv')),
+             downloadButton('downloadcomp_template', 'Save Comp. template')
     )
   })
   #Hide/show comparison heatmaps
@@ -929,7 +930,18 @@ server <- shinyServer(function(input, output) {
     return(comp_template_new)
   })
   
-  
+  #Comparison table download
+  output$downloadcomp_template <- downloadHandler(
+    filename = "ComparisonsTemplate.txt",
+    content = function(file) {
+      write.table(comp_template(),
+                  file,
+                  col.names =TRUE,
+                  row.names=FALSE,
+                  quote=FALSE,
+                  sep ="\t") }
+  )
+
   #data annotations for clusters
   data_defn <- reactive({
     data_unique <- make_unique(data(), "Gene.names", "Protein.IDs", delim = ";")
