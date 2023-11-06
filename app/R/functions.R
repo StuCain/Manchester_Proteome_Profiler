@@ -73,7 +73,7 @@ colour_functions <- function( limit_comp=6, high_col="red", low_col="blue", pale
 
 
 ####Complex Heatmap function####
-plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE) {
+plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
   #Change column names
@@ -103,6 +103,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     #    as.matrix(dfdata2) #converts table into matrix called my_mat
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
+    my_mat<-my_mat[,comp_list]
     CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
@@ -280,7 +281,7 @@ Freq" = anno_barplot(
 }
 
 
-plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, data_results1, data_results2) {
+plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, data_results2) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
   #Change column names
@@ -310,6 +311,7 @@ plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun,
     #    as.matrix(dfdata2) #converts table into matrix called my_mat
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
+    my_mat<-my_mat[,comp_list]
     CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
@@ -510,7 +512,7 @@ Freq2" = anno_barplot(
 }
 
 #BFDR Heatmap
-plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, data_results1, saintlist) {
+plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, saintlist) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
   #Change column names
@@ -540,6 +542,7 @@ plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, m
     #    as.matrix(dfdata2) #converts table into matrix called my_mat
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
+    my_mat<-my_mat[,comp_list]
     CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans

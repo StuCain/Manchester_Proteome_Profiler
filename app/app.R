@@ -1678,12 +1678,13 @@ server <- shinyServer(function(input, output) {
                                    colour_functions_input()[[1]],
                                    colour_functions_input()[[2]],
                                    font_size=8,
-                                   cluster_cols=input$cluster_cols
+                                   cluster_cols=input$cluster_cols,
+                                   comp_list=comp()
           )
         }
         
         if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
+          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results(),
                                         #                     input$pres,
@@ -1694,6 +1695,7 @@ server <- shinyServer(function(input, output) {
                                         colour_functions_input()[[2]],
                                         font_size=8,
                                         cluster_cols=input$cluster_cols,
+                                        comp_list=comp(),
                                         data_results1=data_results1(),
                                         saintlist=saintlist()[[2]])
         }
@@ -1710,6 +1712,7 @@ server <- shinyServer(function(input, output) {
                                            colour_functions_input()[[2]],
                                            font_size=8,
                                            cluster_cols=input$cluster_cols,
+                                           comp_list=comp2(),
                                            data_results1=data_results1(),
                                            data_results2=data_results2())
         }
@@ -1730,12 +1733,13 @@ server <- shinyServer(function(input, output) {
                                     colour_functions_input()[[1]],
                                     colour_functions_input()[[2]],
                                     font_size=6,
-                                    cluster_cols=input$cluster_cols
+                                    cluster_cols=input$cluster_cols,
+                                    comp_list=comp()
           )
         }
         
         if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
+          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
           
           ht<- plot_complex_heatmap_BFDR(data_results(),
                                          #                     input$pres,
@@ -1746,6 +1750,7 @@ server <- shinyServer(function(input, output) {
                                          colour_functions_input()[[2]],
                                          font_size=6,
                                          cluster_cols=input$cluster_cols,
+                                         comp_list=comp(),
                                          data_results1=data_results1(),
                                          saintlist=saintlist()[[2]])
         }
@@ -1762,6 +1767,7 @@ server <- shinyServer(function(input, output) {
                                           colour_functions_input()[[2]],
                                           font_size=6,
                                           cluster_cols=input$cluster_cols,
+                                          comp_list=comp2(),
                                           data_results1=data_results1(),
                                           data_results2=data_results2())
         }
@@ -1782,12 +1788,13 @@ server <- shinyServer(function(input, output) {
                                       colour_functions_input()[[2]],
                                       font_size=8,
                                       cluster_cols=input$cluster_cols,
+                                      comp_list=comp(),
                                       data_results1=data_results1(),
                                       data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ",input$pres, sep="")
+          ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ",input$pres, sep="")
           
           plot_complex_heatmap_BFDR(data_results1(),
                                     #                     input$pres,
@@ -1798,6 +1805,7 @@ server <- shinyServer(function(input, output) {
                                     colour_functions_input()[[2]],
                                     font_size=8,
                                     cluster_cols=input$cluster_cols,
+                                    comp_list=comp(),
                                     data_results1=data_results1(),
                                     saintlist=saintlist()[[2]])
         }
@@ -1818,12 +1826,13 @@ server <- shinyServer(function(input, output) {
                                       colour_functions_input()[[2]],
                                       font_size=6,
                                       cluster_cols=input$cluster_cols,
+                                      comp_list=comp(),
                                       data_results1=data_results1(),
                                       data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ",input$pres, sep="")
+          ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ",input$pres, sep="")
           
           plot_complex_heatmap_BFDR(data_results1(),
                                     #                     input$pres,
@@ -1834,6 +1843,7 @@ server <- shinyServer(function(input, output) {
                                     colour_functions_input()[[2]],
                                     font_size=6,
                                     cluster_cols=input$cluster_cols,
+                                    comp_list=comp(),
                                     data_results1=data_results1(),
                                     saintlist=saintlist()[[2]])
         }
@@ -1854,12 +1864,13 @@ server <- shinyServer(function(input, output) {
                                     colour_functions_input()[[2]],
                                     font_size=8,
                                     cluster_cols=input$cluster_cols,
+                                    comp_list=comp2(),
                                     data_results1=data_results1(),
                                     data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SaintExpress"){
-          ht_title<-paste("SAINTexpress List", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
+          ht_title<-paste("SAINTexpress List", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
@@ -1870,6 +1881,7 @@ server <- shinyServer(function(input, output) {
                                         colour_functions_input()[[2]],
                                         font_size=8,
                                         cluster_cols=input$cluster_cols,
+                                        comp_list=comp(),
                                         data_results1=data_results1(),
                                         saintlist=saintlist()[[2]])
         }
@@ -1879,19 +1891,40 @@ server <- shinyServer(function(input, output) {
     
     comp_heatmap_input_c2_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        ht_title<-paste("Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
+        if (input$comp_type == "2 Rounds of comparisons"){
+          ht_title<-paste("Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
+          
+          ht<-plot_complex_heatmap_2xcomp(data_results2(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c2,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=6,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp2(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
+        }
         
-        plot_complex_heatmap_2xcomp(data_results2(),
-                                    #                     input$pres,
-                                    #                     kmeans = TRUE,
-                                    input$k1_c2,
-                                    ht_title,
-                                    colour_functions_input()[[1]],
-                                    colour_functions_input()[[2]],
-                                    font_size=6,
-                                    cluster_cols=input$cluster_cols,
-                                    data_results1=data_results1(),
-                                    data_results2=data_results2())
+        if (input$comp_type == "Use SaintExpress"){
+          ht_title<-paste("SAINTexpress List", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
+          
+          ht<-plot_complex_heatmap_BFDR(data_results4(),
+                                        #                     input$pres,
+                                        #                     kmeans = TRUE,
+                                        input$k1,
+                                        ht_title,
+                                        colour_functions_input()[[1]],
+                                        colour_functions_input()[[2]],
+                                        font_size=6,
+                                        cluster_cols=input$cluster_cols,
+                                        comp_list=comp(),
+                                        data_results1=data_results1(),
+                                        saintlist=saintlist()[[2]])
+        }
+        return(ht)
       })
     })
     
