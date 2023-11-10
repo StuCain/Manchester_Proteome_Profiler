@@ -1122,8 +1122,8 @@ server <- shinyServer(function(input, output) {
       system(paste(saint_location,interfile, preyfile, baitfile))
       saint_df<-read.csv("list.txt", head=T, sep="\t", stringsAsFactors = FALSE)
       if(SysName=="Linux"){system("rm -r data/*.txt")}
-      cmd<-"del data\ *.txt"
-      if(SysName=="Windows"){system(paste0(cmd))}
+      #cmd<-"del data\ *.txt"
+      #if(SysName=="Windows"){system(paste0(cmd))}
       
       
       #saintexpressfile<-paste("SAINTexpress_new_", i, ".txt",sep="")
