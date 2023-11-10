@@ -29,8 +29,15 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.2.2-beta"
+Version = "0.3.0-beta"
 
+ENABLE_PEPTIDE_ANALYSIS <- T
+if (ENABLE_PEPTIDE_ANALYSIS) {
+  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA",
+                        "LFQ (peptide)"="LFQ-peptide", "TMT (peptide)"="TMT-peptide", "DIA (peptide)"= "DIA-peptide")
+} else {
+  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA")
+}
 
 ####UI####
 ui <- fluidPage(
@@ -44,12 +51,111 @@ ui <- fluidPage(
                        menuItem(
                          radioButtons("data_type",
                                       "Data File type",
-                                      choices = c("MaxQuant", "Proteome Discoverer"),
+                                      choices = c("MaxQuant", "Proteome Discoverer", "FraqPipe"),
                                       #selected = "MaxQuant"
                          )
                        ),
                        menuItem("Files", selected = TRUE,
-                                menuItemOutput("file_input"),
+                                conditionalPanel(
+                                  condition = "input.data_type == 'MaxQuant'",
+                                  fileInput('file1',
+                                            'ProteinGroups.txt',
+                                            accept=c('text/csv',
+                                                     'text/comma-separated-values,text/plain',
+                                                     '.csv'))
+                                ),
+                                conditionalPanel(
+                                  condition = "input.data_type == 'Proteome Discoverer'",
+                                  fileInput('filePD',
+                                            'PD Output .xlsx',
+                                            accept=c(".xlsx"))
+                                ), 
+                                conditionalPanel(
+                                  condition = "input.data_type == 'FraqPipe'",
+                                  selectInput("exp", "Data type:", analysis_options, selected = "LFQ"),
+                                  conditionalPanel(
+                                    condition = "input.exp == 'LFQ'",
+                                    fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    fileInput('lfq_manifest', 'Upload sample annotation',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    radioButtons("lfq_type",
+                                                 "Intensity Type",
+                                                 choices = c("Intensity"="Intensity",
+                                                             "MaxLFQ Intensity"="MaxLFQ",
+                                                             "Spectral Count"="Spectral Count"),
+                                                 selected = "Intensity"),
+                                    tags$hr(),
+                                    downloadLink("lfq_example", label="Example LFQ data"),
+                                    br(),
+                                    downloadLink("lfq_annotation", label="Example annotation")),
+                                  conditionalPanel(
+                                    condition = "input.exp == 'TMT'",
+                                    fileInput('tmt_expr', 'Upload gene-level TMT-I report *.tsv',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    fileInput('tmt_annot', 'Upload sample annotation',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv'))
+                                  ),
+                                  conditionalPanel(
+                                    condition = "input.exp == 'DIA'",
+                                    fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    fileInput('dia_manifest', 'Upload sample annotation',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv'))),
+                                  conditionalPanel(
+                                    condition = "input.exp == 'LFQ-peptide'",
+                                    fileInput('lfq_pept_expr', 'Upload combined_peptide.tsv',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    fileInput('lfq_pept_annot', 'Upload sample annotation',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    radioButtons("lfq_pept_type",
+                                                 "Intensity Type",
+                                                 choices = c("Intensity"="Intensity",
+                                                             "MaxLFQ Intensity"="MaxLFQ",
+                                                             "Spectral Count"="Spectral Count"),
+                                                 selected = "Intensity"),
+                                  ),
+                                  conditionalPanel(
+                                    condition = "input.exp == 'TMT-peptide'",
+                                    fileInput('tmt_pept_expr', 'Upload peptide-level TMT-I report *.tsv',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    fileInput('tmt_pept_annot', 'Upload sample annotation',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv'))
+                                  ),
+                                  conditionalPanel(
+                                    condition = "input.exp == 'DIA-peptide'",
+                                    fileInput('dia_pept_expr', 'Upload DIA precursor report *.pr_matrix.tsv',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv')),
+                                    fileInput('dia_pept_annot', 'Upload sample annotation',
+                                              accept=c('text/tsv',
+                                                       'text/tab-separated-values,text/plain',
+                                                       '.tsv'))
+                                  )
+                                ),
+                                
+                                #                                menuItemOutput("file_input"),
                                 #                                infoBoxOutput("ibox"), #Info box for testing
                                 fileInput('file2',
                                           'ExperimentalDesign.txt',
@@ -651,19 +757,6 @@ server <- shinyServer(function(input, output) {
   }
   output$inc<-renderUI({getPage()})
   
-  #Side bar menu items
-  output$file_input <- renderMenu({
-    if (input$data_type == "Proteome Discoverer"){
-      fileInput('filePD',
-                'PD Output .xlsx',
-                accept=c(".xlsx"))}else{
-                  fileInput('file1',
-                            'ProteinGroups.txt',
-                            accept=c('text/csv',
-                                     'text/comma-separated-values,text/plain',
-                                     '.csv'))
-                }
-  })
   #Side menu for picking comparisons
   output$columns <- renderMenu({
     menuItem("Columns",
@@ -743,7 +836,7 @@ server <- shinyServer(function(input, output) {
     }else{showTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
       showTab(inputId =  "comp_heat_tab", target = "SAINT Input")
       showTab(inputId =  "comp_heat_tab", target = "SAINT Output")
-      }
+    }
   })
   
   #Hide/show Volcano Plts
@@ -791,7 +884,7 @@ server <- shinyServer(function(input, output) {
       data1<-maxdata[, c(grep("Protein.IDs", colnames(maxdata)),grep("Protein.names", colnames(maxdata)),grep("Gene.names", colnames(maxdata)),  grep("LFQ.",colnames(maxdata)), grep ("\\Sequence.length\\b", colnames(maxdata)), grep("Reverse",colnames(maxdata)), grep("Potential.contaminant",colnames(maxdata)))]
     }
     
-    if (input$data_type == "Proteome Discoverer"){
+    else if (input$data_type == "Proteome Discoverer"){
       inFile <- input$filePD
       if (is.null(inFile))
         return(NULL)
@@ -806,64 +899,12 @@ server <- shinyServer(function(input, output) {
         ) 
       #      data1<-data[, c(1,2,3,  grep("Abundance..*Sample..", colnames(data)))]
       data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep("Abundance..*Sample..", colnames(data)), grep("Abundance..*Control..", colnames(data)), grep ("Sequence.length", colnames(data)))]
-      
     }
-    return(data1)
+    
+  #  return(data1)
   })
   
-#  #SAINT File imports
- # saintfile1 <- reactive({
-#    inFile <- input$saintfile1
-#    if (is.null(inFile))
-#      return(NULL)
-#    data<-read.csv(inFile$datapath, header = TRUE,
-#                   sep = "\t", stringsAsFactors = FALSE)
-#    data<-data.frame(data)
-#    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
-#    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
-#    return(saint_BFDR)
-#  })
-  
-#  saintfile2 <- reactive({
-#    inFile <- input$saintfile2
-#    if (is.null(inFile))
-#      return(NULL)
-#    data<-read.csv(inFile$datapath, header = TRUE,
-#                   sep = "\t", stringsAsFactors = FALSE)
-#    data<-data.frame(data)
-#    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
-#    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
-#    return(saint_BFDR)
-#  })
-  
-#  saintfile3 <- reactive({
-#    inFile <- input$saintfile3
-#    if (is.null(inFile))
-#      return(NULL)
-#    data<-read.csv(inFile$datapath, header = TRUE,
-#                   sep = "\t", stringsAsFactors = FALSE)
-#    data<-data.frame(data)
-#    data<-data %>% dplyr::filter(BFDR <= input$bfdr)
-#    saint_BFDR <- data[, c(grep("Bait", colnames(data)),grep("PreyGene", colnames(data)),grep("BFDR", colnames(data)))]
-#    return(saint_BFDR)
-#  })
-  
-#  saintlist <- reactive({
-#    unfilt_saint<- c(saintfile1()) #Make single list
-#    if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
-#    if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
-#    unfilt_saint<-data.frame(unfilt_saint)
-    #    return(unfilt_saint)
-    
-#    saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
-#    saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
-#    saint_count <- saint_count[saint_count$BFDR_Freq>=input$bfdr_freq, ]#filter by BFDR_Freq
-#    saint_count_no <-nrow(saint_count)
-#    saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
-#    return(saintlist_out)
-    
-#  })
-  
+
   #make experimental template
   exp_template<- reactive({
     if (input$data_type == "MaxQuant"){
@@ -918,15 +959,15 @@ server <- shinyServer(function(input, output) {
       comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
     }
     
-      if (is.null(inFile)){
-        condition<-""
-        comp1_A<-""
-        comp1_B<-""
-        comp2_A<-""
-        comp2_B<-""
-        comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
-      }
-      
+    if (is.null(inFile)){
+      condition<-""
+      comp1_A<-""
+      comp1_B<-""
+      comp2_A<-""
+      comp2_B<-""
+      comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
+    }
+    
     return(comp_template_new)
   })
   
@@ -941,7 +982,7 @@ server <- shinyServer(function(input, output) {
                   quote=FALSE,
                   sep ="\t") }
   )
-
+  
   #data annotations for clusters
   data_defn <- reactive({
     data_unique <- make_unique(data(), "Gene.names", "Protein.IDs", delim = ";")
@@ -969,6 +1010,215 @@ server <- shinyServer(function(input, output) {
              sep = "\t", stringsAsFactors = FALSE) %>%
       mutate(id = row_number())
   })
+  
+  #For FragPipe Data
+  fragpipe_data_input<-reactive({
+    if (input$exp == "LFQ") {
+      inFile <- input$lfq_expr
+    } else if (input$exp == "TMT") {
+      inFile <- input$tmt_expr
+    } else if (input$exp == "DIA") {
+      inFile <- input$dia_expr
+    } else if (input$exp == "LFQ-peptide") {
+      inFile <- input$lfq_pept_expr
+    } else if (input$exp == "TMT-peptide") {
+      inFile <- input$tmt_pept_expr
+    } else if (input$exp == "DIA-peptide") {
+      inFile <- input$dia_pept_expr
+    }
+    if(is.null(inFile))
+      return(NULL)
+    temp_data <- read.table(inFile$datapath,
+                            header = TRUE,
+                            fill= TRUE, # to fill any missing data
+                            sep = "\t",
+                            quote = "",
+                            comment.char = "",
+                            blank.lines.skip = F,
+                            check.names = F)
+    colnames(temp_data) <- make.unique.2(colnames(temp_data), "_")
+    # validate(maxquant_input_test(temp_data))
+    if (input$exp == "TMT") {
+      validate(tmt_input_test(temp_data))
+      # convert columns into numeric
+      mut.cols <- colnames(temp_data)[!colnames(temp_data) %in% c("Index", "NumberPSM", "Gene", "ProteinID", "MaxPepProb", "ReferenceIntensity")]
+      temp_data[mut.cols] <- sapply(temp_data[mut.cols], as.numeric)
+    } else if (input$exp == "LFQ") {
+      # handle - (dash) in experiment column
+      colnames(temp_data) <- gsub("-", ".", colnames(temp_data))
+      validate(fragpipe_input_test(temp_data))
+      # remove contam
+      temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+    } else if (input$exp == "DIA"){ # DIA
+      validate(fragpipe_DIA_input_test(temp_data))
+      # temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+    } else if (input$exp == "LFQ-peptide") {
+      colnames(temp_data) <- gsub("-", ".", colnames(temp_data))
+      colnames(temp_data)[colnames(temp_data) == "Protein Description"] <- "Description"
+      validate(fragpipe_input_test(temp_data))
+      # remove contam
+      temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+      temp_data$Index <- paste0(temp_data$`Protein ID`, "_", temp_data$`Peptide Sequence`)
+    } else if (input$exp == "TMT-peptide") {
+      mut.cols <- colnames(temp_data)[!colnames(temp_data) %in% c("Index", "Gene", "ProteinID",	"Peptide", "MaxPepProb", "ReferenceIntensity")]
+      temp_data[mut.cols] <- sapply(temp_data[mut.cols], as.numeric)
+    } else if (input$exp == "DIA-peptide") {
+      temp_data <- temp_data %>% select(.,-c("Proteotypic", "Precursor.Charge")) %>%
+        group_by(Protein.Group, Protein.Names, Protein.Ids, Genes, Stripped.Sequence) %>%
+        summarise_if(is.numeric, max, na.rm=T)
+      temp_data[sapply(temp_data, is.infinite)] <- NA
+      temp_data$Index <- paste0(temp_data$Protein.Ids, "_", temp_data$Stripped.Sequence)
+      temp_data <- temp_data %>% select(Index, everything())
+    }
+    temp_data<-as.data.frame(temp_data)
+    return(temp_data)
+  })
+  
+  
+  #For FragPipe Data
+  processed_data <- reactive({
+    ## check which dataset
+    if(!is.null (fragpipe_data_input() )){
+      fragpipe_data <- reactive({fragpipe_data_input()})
+    }
+    
+    if(!is.null (exp_design_input() )){
+      exp_design<-reactive({exp_design_input()})
+    }
+    
+    filtered_data <- fragpipe_data()
+    if (input$exp == "LFQ"){
+      data_unique <- DEP::make_unique(filtered_data, "Gene", "Protein ID")
+      
+      if (input$lfq_type == "Intensity") {
+        lfq_columns <- setdiff(grep("Intensity", colnames(data_unique)),
+                               grep("MaxLFQ", colnames(data_unique)))
+        lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data_unique)))
+        lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data_unique)))
+      } else if (input$lfq_type == "MaxLFQ") {
+        lfq_columns<-grep("MaxLFQ", colnames(data_unique))
+        if (length(lfq_columns) == 0) {
+          stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
+        }
+      } else if (input$lfq_type == "Spectral Count") {
+        lfq_columns<-grep("Spectral", colnames(data_unique))
+        lfq_columns <- setdiff(lfq_columns, grep("Total Spectral Count", colnames(data_unique)))
+        lfq_columns <- setdiff(lfq_columns, grep("Unique Spectral Count", colnames(data_unique)))
+      }
+      
+      ## Check for matching columns in expression report and experiment manifest file
+      test_match_lfq_column_manifest(data_unique, lfq_columns, exp_design())
+      if (input$lfq_type == "Spectral Count") {
+        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=F, exp="LFQ", lfq_type="Spectral Count", level="protein")
+      } else {
+        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=T, exp="LFQ", lfq_type=input$lfq_type, level="protein")
+      }
+      return(data_se)
+    } else if (input$exp == "TMT") {
+      temp_exp_design <- exp_design()
+      # sample without specified condition will be removed
+      temp_exp_design <- temp_exp_design[!is.na(temp_exp_design$condition), ]
+      temp_exp_design <- temp_exp_design[!temp_exp_design$condition == "",]
+      # temp_exp_design[is.na(temp_exp_design), "replicate"] <- 1
+      # need to handle duplicate columns first
+      # filtered_data <- avearrays(filtered_data)
+      # filtered_data <- as.data.frame(filtered_data)
+      # print(apply(filtered_data, 2, is.numeric))
+      # check the uploaded report is protein or gene report
+      is_protein_report <- F
+      if ("Gene" %in% colnames(filtered_data)){
+        is_protein_report <- T
+        filtered_data$ProteinID <- filtered_data$Index
+      }
+      data_unique <- make_unique(filtered_data, "Index", "ProteinID")
+      # handle unmatched columns
+      overlapped_samples <- intersect(colnames(data_unique), temp_exp_design$label)
+      if (!is_protein_report) {
+        interest_cols <- c("Index", "NumberPSM", "ProteinID", "MaxPepProb", "ReferenceIntensity", "name", "ID")
+        data_unique <- data_unique[, colnames(data_unique) %in% c(interest_cols, overlapped_samples)]
+        temp_exp_design <- temp_exp_design[temp_exp_design$label %in% overlapped_samples, ]
+        cols <- colnames(data_unique)
+        selected_cols <- which(!(cols %in% interest_cols))
+      } else {
+        interest_cols <- c("Index", "NumberPSM", "Gene", "ProteinID", "MaxPepProb", "ReferenceIntensity", "name", "ID")
+        data_unique <- data_unique[, colnames(data_unique) %in% c(interest_cols, overlapped_samples)]
+        temp_exp_design <- temp_exp_design[temp_exp_design$label %in% overlapped_samples, ]
+        cols <- colnames(data_unique)
+        selected_cols <- which(!(cols %in% interest_cols))
+      }
+      test_match_tmt_column_design(data_unique, selected_cols, temp_exp_design)
+      # TMT-I report is already log2 transformed
+      if (is_protein_report) {
+        data_se <- make_se_customized(data_unique, selected_cols, temp_exp_design, exp="TMT", level="protein")
+      } else {
+        data_se <- make_se_customized(data_unique, selected_cols, temp_exp_design, exp="TMT", level="gene")
+      }
+      return(data_se)
+    } else if (input$exp == "DIA") {
+      data_unique <- DEP::make_unique(filtered_data, "Genes", "Protein.Group")
+      cols <- colnames(data_unique)
+      selected_cols <- which(!(cols %in% c("Protein.Group", "Protein.Ids", "Protein.Names", "Genes", "First.Protein.Description", "ID", "name")))
+      test_match_DIA_column_design(data_unique, selected_cols, exp_design())
+      data_se <- make_se_customized(data_unique, selected_cols, exp_design(), log2transform=T, exp="DIA", level="protein")
+      dimnames(data_se) <- list(dimnames(data_se)[[1]], colData(data_se)$sample_name)
+      colData(data_se)$label <- colData(data_se)$sample_name
+      return(data_se)
+    } else if (input$exp == "LFQ-peptide"){
+      data_unique <- DEP::make_unique(filtered_data, "Index", "Protein ID")
+      
+      if (input$lfq_pept_type == "Intensity") {
+        lfq_columns <- setdiff(grep("Intensity", colnames(data_unique)),
+                               grep("MaxLFQ", colnames(data_unique)))
+        lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data_unique)))
+        lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data_unique)))
+      } else if (input$lfq_pept_type == "MaxLFQ") {
+        lfq_columns<-grep("MaxLFQ", colnames(data_unique))
+        if (length(lfq_columns) == 0) {
+          stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
+        }
+      } else if (input$lfq_pept_type == "Spectral Count") {
+        lfq_columns<-grep("Spectral", colnames(data_unique))
+        lfq_columns <- setdiff(lfq_columns, grep("Total Spectral Count", colnames(data_unique)))
+        lfq_columns <- setdiff(lfq_columns, grep("Unique Spectral Count", colnames(data_unique)))
+      }
+      
+      ## Check for matching columns in expression report and experiment manifest file
+      test_match_lfq_column_manifest(data_unique, lfq_columns, exp_design())
+      if (input$lfq_pept_type == "Spectral Count") {
+        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=F, exp="LFQ", lfq_type="Spectral Count", level="peptide")
+      } else {
+        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=T, exp="LFQ", lfq_type=input$lfq_pept_type, level="peptide")
+      }
+      return(data_se)
+    } else if (input$exp == "TMT-peptide") {
+      temp_exp_design <- exp_design()
+      # sample without specified condition will be removed
+      temp_exp_design <- temp_exp_design[!is.na(temp_exp_design$condition), ]
+      temp_exp_design <- temp_exp_design[!temp_exp_design$condition == "",]
+      data_unique <- make_unique(filtered_data, "Index", "ProteinID")
+      # handle unmatched columns
+      overlapped_samples <- intersect(colnames(data_unique), temp_exp_design$label)
+      interest_cols <- c("Index", "Gene", "ProteinID", "Peptide", "MaxPepProb", "ReferenceIntensity", "name", "ID")
+      data_unique <- data_unique[, colnames(data_unique) %in% c(interest_cols, overlapped_samples)]
+      temp_exp_design <- temp_exp_design[temp_exp_design$label %in% overlapped_samples, ]
+      cols <- colnames(data_unique)
+      selected_cols <- which(!(cols %in% interest_cols))
+      test_match_tmt_column_design(data_unique, selected_cols, temp_exp_design)
+      # TMT-I report is already log2 transformed
+      data_se <- make_se_customized(data_unique, selected_cols, temp_exp_design, exp="TMT", level="peptide")
+      return(data_se)
+    } else if (input$exp == "DIA-peptide") {
+      data_unique <- DEP::make_unique(filtered_data, "Index", "Protein.Group")
+      cols <- colnames(data_unique)
+      selected_cols <- which(!(cols %in% c("Index", "Protein.Group", "Protein.Ids", "Stripped.Sequence", "Protein.Names", "Genes", "First.Protein.Description", "ID", "name")))
+      test_match_DIA_column_design(data_unique, selected_cols, exp_design())
+      data_se <- make_se_customized(data_unique, selected_cols, exp_design(), log2transform=T, exp="DIA", level="peptide")
+      dimnames(data_se) <- list(dimnames(data_se)[[1]], colData(data_se)$sample_name)
+      colData(data_se)$label <- colData(data_se)$sample_name
+      return(data_se)
+    }
+  })
+  
   
   
   filt <- reactive({
@@ -1015,12 +1265,12 @@ server <- shinyServer(function(input, output) {
   comp <- reactive({
     inFile <- input$comp_file
     if (is.null(inFile)){
-    comp<-c(input$comp1f,input$comp1r)
+      comp<-c(input$comp1f,input$comp1r)
     }else{
       comp_input<-data.frame(compfile())
       comp<-paste0(comp_input$comp1_A, "_vs_", comp_input$comp1_B)
-    comp<-comp[comp != "_vs_"]
-    comp<-comp[comp != ""]
+      comp<-comp[comp != "_vs_"]
+      comp<-comp[comp != ""]
     }
   })
   
@@ -1759,17 +2009,17 @@ server <- shinyServer(function(input, output) {
           ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ",input$pres, sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
-                                          #                     input$pres,
-                                          #                     kmeans = TRUE,
-                                          input$k1,
-                                          ht_title,
-                                          colour_functions_input()[[1]],
-                                          colour_functions_input()[[2]],
-                                          font_size=6,
-                                          cluster_cols=input$cluster_cols,
-                                          comp_list=comp2(),
-                                          data_results1=data_results1(),
-                                          data_results2=data_results2())
+                                           #                     input$pres,
+                                           #                     kmeans = TRUE,
+                                           input$k1,
+                                           ht_title,
+                                           colour_functions_input()[[1]],
+                                           colour_functions_input()[[2]],
+                                           font_size=6,
+                                           cluster_cols=input$cluster_cols,
+                                           comp_list=comp2(),
+                                           data_results1=data_results1(),
+                                           data_results2=data_results2())
         }
         return(ht)
       })
@@ -1853,20 +2103,20 @@ server <- shinyServer(function(input, output) {
     comp_heatmap_input_c2 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
-        ht_title<-paste("Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
-        
-        ht<-plot_complex_heatmap_2xcomp(data_results2(),
-                                    #                     input$pres,
-                                    #                     kmeans = TRUE,
-                                    input$k1_c2,
-                                    ht_title,
-                                    colour_functions_input()[[1]],
-                                    colour_functions_input()[[2]],
-                                    font_size=8,
-                                    cluster_cols=input$cluster_cols,
-                                    comp_list=comp2(),
-                                    data_results1=data_results1(),
-                                    data_results2=data_results2())
+          ht_title<-paste("Comp 2 FC=", input$lfc2, " pVal=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
+          
+          ht<-plot_complex_heatmap_2xcomp(data_results2(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c2,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=8,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp2(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SaintExpress"){
@@ -2066,8 +2316,9 @@ server <- shinyServer(function(input, output) {
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
       #data_results4()
-      data_results()
-      #     data() #to test data input
+      #data_results()
+      fragpipe_data_input
+    #       data() #to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
     
@@ -2108,7 +2359,7 @@ server <- shinyServer(function(input, output) {
       saint_output()[[4]]
     }) 
     
-
+    
     #Saint table
     output$tablesaint <- DT::renderDataTable({
       saintlist()[[2]]
@@ -2248,7 +2499,7 @@ server <- shinyServer(function(input, output) {
     observe({
       output$plot_comp_c2 <- renderUI({
         if (input$comp_type == "2 Rounds of comparisons"){
-        plotOutput("comp_heatmap_c2", height = ((dep_num_c2()*12)+270))
+          plotOutput("comp_heatmap_c2", height = ((dep_num_c2()*12)+270))
         }
         if (input$comp_type == "Use SaintExpress"){
           plotOutput("comp_heatmap_c2", height = ((dep_num_bfdr()*12)+270))
