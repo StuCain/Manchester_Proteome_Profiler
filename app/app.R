@@ -29,14 +29,16 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.0-beta"
+Version = "0.3.1-beta"
 
-ENABLE_PEPTIDE_ANALYSIS <- T
+ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
   analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA",
                         "LFQ (peptide)"="LFQ-peptide", "TMT (peptide)"="TMT-peptide", "DIA (peptide)"= "DIA-peptide")
 } else {
-  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA")
+#  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA")
+  analysis_options <- c("LFQ"="LFQ")
+  
 }
 
 ####UI####
@@ -51,7 +53,7 @@ ui <- fluidPage(
                        menuItem(
                          radioButtons("data_type",
                                       "Data File type",
-                                      choices = c("MaxQuant", "Proteome Discoverer", "FraqPipe"),
+                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
                                       #selected = "MaxQuant"
                          )
                        ),
@@ -71,7 +73,7 @@ ui <- fluidPage(
                                             accept=c(".xlsx"))
                                 ), 
                                 conditionalPanel(
-                                  condition = "input.data_type == 'FraqPipe'",
+                                  condition = "input.data_type == 'FragPipe'",
                                   selectInput("exp", "Data type:", analysis_options, selected = "LFQ"),
                                   conditionalPanel(
                                     condition = "input.exp == 'LFQ'",
@@ -79,7 +81,7 @@ ui <- fluidPage(
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
-                                    fileInput('lfq_manifest', 'Upload sample annotation',
+                                   fileInput('lfq_manifest', 'Upload sample annotation',
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
@@ -901,10 +903,57 @@ server <- shinyServer(function(input, output) {
       data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep("Abundance..*Sample..", colnames(data)), grep("Abundance..*Control..", colnames(data)), grep ("Sequence.length", colnames(data)))]
     }
     
-  #  return(data1)
+    else if (input$data_type == "FragPipe"){
+      if (input$exp == "LFQ") {
+        inFile <- input$lfq_expr
+      } else if (input$exp == "TMT") {
+        inFile <- input$tmt_expr
+      } else if (input$exp == "DIA") {
+        inFile <- input$dia_expr
+      }
+      if(is.null(inFile))
+        return(NULL)
+      temp_data <- read.csv(inFile$datapath,
+                            header = TRUE,
+                            fill= TRUE, # to fill any missing data
+                            sep = "\t",
+                            quote = "",
+                            comment.char = "",
+                            blank.lines.skip = F,
+                            check.names = T)
+      colnames(temp_data) <- make.unique(colnames(temp_data), "_")
+      temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+      data<-temp_data %>% 
+        dplyr::rename(
+          Gene.names=Gene,
+          Protein.IDs=Protein.ID,
+          Protein.names=Description,
+          Sequence.length=Protein.Length
+        )
+      
+      if (input$lfq_type == "Intensity") {
+        lfq_columns <- setdiff(grep("Intensity", colnames(data)),
+                               grep("MaxLFQ", colnames(data)))
+        lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
+        lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
+        data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+       #        data1<-data1 %>% 
+       #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+        
+     } else if (input$lfq_type == "MaxLFQ") {
+        lfq_columns<-grep("MaxLFQ", colnames(data))
+        if (length(lfq_columns) == 0) {
+          stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
+       }
+        data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+       #        data1<-data1 %>% 
+       #          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
+     }
+    }  
+    #    return(data1)
   })
   
-
+  
   #make experimental template
   exp_template<- reactive({
     if (input$data_type == "MaxQuant"){
@@ -2317,8 +2366,8 @@ server <- shinyServer(function(input, output) {
     output$table <- DT::renderDataTable({
       #data_results4()
       #data_results()
-      fragpipe_data_input
-    #       data() #to test data input
+      #  fragpipe_data_input
+      data() #to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
     
