@@ -1,0 +1,6 @@
+BirA_KRas_Suit_2_Exp1_1	KRas_Suit_2	T
+BirA_KRas_Suit_2_Exp2_2	KRas_Suit_2	T
+BirA_KRas_Suit_2_Exp3_3	KRas_Suit_2	T
+Con_BirA_Suit_2_Exp1_1	Con_Suit_2	C
+Con_BirA_Suit_2_Exp2_2	Con_Suit_2	C
+Con_BirA_Suit_2_Exp3_3	Con_Suit_2	C

@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.1-beta"
+Version = "0.3.2-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -81,20 +81,21 @@ ui <- fluidPage(
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
-                                   fileInput('lfq_manifest', 'Upload sample annotation',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
+#                                   fileInput('lfq_manifest', 'Upload sample annotation',
+#                                             accept=c('text/tsv',
+#                                                       'text/tab-separated-values,text/plain',
+#                                                       '.tsv')),
                                     radioButtons("lfq_type",
                                                  "Intensity Type",
                                                  choices = c("Intensity"="Intensity",
-                                                             "MaxLFQ Intensity"="MaxLFQ",
-                                                             "Spectral Count"="Spectral Count"),
+                                                             "MaxLFQ Intensity"="MaxLFQ"),
+#                                                            "Spectral Count"="Spectral Count"),
                                                  selected = "Intensity"),
-                                    tags$hr(),
-                                    downloadLink("lfq_example", label="Example LFQ data"),
-                                    br(),
-                                    downloadLink("lfq_annotation", label="Example annotation")),
+#                                    tags$hr(),
+ #                                   downloadLink("lfq_example", label="Example LFQ data"),
+ #                                   br(),
+#                                    downloadLink("lfq_annotation", label="Example annotation")
+),
                                   conditionalPanel(
                                     condition = "input.exp == 'TMT'",
                                     fileInput('tmt_expr', 'Upload gene-level TMT-I report *.tsv',
@@ -104,8 +105,7 @@ ui <- fluidPage(
                                     fileInput('tmt_annot', 'Upload sample annotation',
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
-                                                       '.tsv'))
-                                  ),
+                                                       '.tsv'))),
                                   conditionalPanel(
                                     condition = "input.exp == 'DIA'",
                                     fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
@@ -247,7 +247,8 @@ ui <- fluidPage(
                  fluidRow(
                    column(width = 6,
                           box(title = "Top Table",
-                              DT::dataTableOutput("table"), width = 12)
+                              DT::dataTableOutput("table"), width = 12),
+                              DT::dataTableOutput("table5"), #test info
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
@@ -445,8 +446,7 @@ ui <- fluidPage(
                           fluidRow(
                             plotOutput("swatch", height = 600),
                             downloadButton('downloadswatch', 'Save Swatch')
-                          ),
-                          DT::dataTableOutput("table5"), #test info
+                          )
                    ),
                    
                    #Second Column
@@ -937,18 +937,18 @@ server <- shinyServer(function(input, output) {
         lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
         lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
         data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
-       #        data1<-data1 %>% 
-       #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+        #        data1<-data1 %>% 
+        #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
         
-     } else if (input$lfq_type == "MaxLFQ") {
+      } else if (input$lfq_type == "MaxLFQ") {
         lfq_columns<-grep("MaxLFQ", colnames(data))
         if (length(lfq_columns) == 0) {
           stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
-       }
+        }
         data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
-       #        data1<-data1 %>% 
-       #          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
-     }
+        #        data1<-data1 %>% 
+        #          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
+      }
     }  
     #    return(data1)
   })
@@ -970,14 +970,31 @@ server <- shinyServer(function(input, output) {
       exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
     
-    if (input$data_type == "Proteome Discoverer"){
+    else if (input$data_type == "Proteome Discoverer"){
       Sample_columns<- grep("Abundance..*Sample..", colnames(data()))
       Control_columns<- grep("Abundance..*Control..", colnames(data()))
       LFQ_columns<-c(Sample_columns, Control_columns)
       label<-colnames(data()[LFQ_columns])
       condition<-""
       replicate<-""
-      exp_template_new<- data.frame(label, condition, replicate)
+      condition_type<-""
+      bait_id<-""
+      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+    }
+    
+    else if (input$data_type == "FragPipe"){
+      LFQ_columns<- grep(".Intensity", colnames(data()))
+      label<-colnames(data()[LFQ_columns])
+      label <- gsub('.MaxLFQ.Intensity', '', label)
+      label <- gsub('.Intensity', '', label)
+      condition<-""
+      substrRight <- function(x, n){
+        substr(x, nchar(x)-n+1, nchar(x))
+      }
+      replicate<-substrRight(label, 1)
+      condition_type<-""
+      bait_id<-""
+      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
     
     return(exp_template_new)
@@ -1279,10 +1296,19 @@ server <- shinyServer(function(input, output) {
       unique_names <- make_unique(filtered, input$name, input$id)
     }
     
-    if (input$data_type == "Proteome Discoverer"){
+    else if (input$data_type == "Proteome Discoverer"){
       Sample_columns<- grep("Abundance..*Sample..", colnames(data()))
       Control_columns<- grep("Abundance..*Control..", colnames(data()))
       cols<-c(Sample_columns, Control_columns)
+      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    else if (input$data_type == "FragPipe"){
+      cols<- grep(".Intensity", colnames(data))
+      data<-data %>% 
+        rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
+      data<-data %>% 
+        rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
       unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
     }
     
@@ -2365,9 +2391,8 @@ server <- shinyServer(function(input, output) {
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
       #data_results4()
-      #data_results()
-      #  fragpipe_data_input
-      data() #to test data input
+      data_results()
+      #data() #to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
     
@@ -2390,7 +2415,7 @@ server <- shinyServer(function(input, output) {
     
     #comp table
     output$table5 <- DT::renderDataTable({
-      comp_template()
+      exp_template()
     }) 
     
     
