@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.2-beta"
+Version = "0.3.3-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -81,21 +81,21 @@ ui <- fluidPage(
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
-#                                   fileInput('lfq_manifest', 'Upload sample annotation',
-#                                             accept=c('text/tsv',
-#                                                       'text/tab-separated-values,text/plain',
-#                                                       '.tsv')),
+                                    #                                   fileInput('lfq_manifest', 'Upload sample annotation',
+                                    #                                             accept=c('text/tsv',
+                                    #                                                       'text/tab-separated-values,text/plain',
+                                    #                                                       '.tsv')),
                                     radioButtons("lfq_type",
                                                  "Intensity Type",
                                                  choices = c("Intensity"="Intensity",
                                                              "MaxLFQ Intensity"="MaxLFQ"),
-#                                                            "Spectral Count"="Spectral Count"),
+                                                 #                                                            "Spectral Count"="Spectral Count"),
                                                  selected = "Intensity"),
-#                                    tags$hr(),
- #                                   downloadLink("lfq_example", label="Example LFQ data"),
- #                                   br(),
-#                                    downloadLink("lfq_annotation", label="Example annotation")
-),
+                                    #                                    tags$hr(),
+                                    #                                   downloadLink("lfq_example", label="Example LFQ data"),
+                                    #                                   br(),
+                                    #                                    downloadLink("lfq_annotation", label="Example annotation")
+                                  ),
                                   conditionalPanel(
                                     condition = "input.exp == 'TMT'",
                                     fileInput('tmt_expr', 'Upload gene-level TMT-I report *.tsv',
@@ -205,14 +205,17 @@ ui <- fluidPage(
                          "Missing value threshold",
                          min = 0, max = 3, value = 1),
             width = 1),
-        box(numericInput("bfdr",
-                         "BFDR Cut-Off",
-                         min = 0, max = 1, value = 0.1),
-            width = 1),
-        box(numericInput("bfdr_freq",
-                         "BFDR Freq. Min",
-                         min = 0, max = 10, value = 1),
-            width = 1),
+        conditionalPanel(
+          condition = "input.comp_type == 'Use SaintExpress'",
+          box(numericInput("bfdr",
+                           "BFDR Cut-Off",
+                           min = 0, max = 1, value = 0.1),
+              width = 1),
+          box(numericInput("bfdr_freq",
+                           "BFDR Freq. Min",
+                           min = 0, max = 10, value = 1),
+              width = 1),
+        ),
         box(numericInput("p",
                          "adj. P value",
                          min = 0.0001, max = 0.1, value = 0.05),
@@ -222,23 +225,32 @@ ui <- fluidPage(
                          min = 0, max = 32, value = 2),
             width = 1),
         infoBoxOutput("significantBox"), #shows number of Sig. Proteins
-        box(numericInput("p2",
-                         "adj. P value (Comp2)",
-                         min = 0.0001, max = 0.1, value = 0.05),
-            width = 1),
-        box(numericInput("lfc2",
-                         "Fold change (Comp2)",
-                         min = 0, max = 32, value = 2),
-            width = 1),
+        conditionalPanel(
+          condition = "input.comp_type == '2 Rounds of comparisons'",
+          box(numericInput("p2",
+                           "adj. P value (Comp2)",
+                           min = 0.0001, max = 0.1, value = 0.05),
+              width = 1),
+          box(numericInput("lfc2",
+                           "Fold change (Comp2)",
+                           min = 0, max = 32, value = 2),
+              width = 1),
+        ),
         box(radioButtons("pres",
                          "Data presentation",
                          c("contrast", "centered"),
                          selected = "contrast"),
             width = 1),
-        infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
-        infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
-        infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
-        infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
+        conditionalPanel(
+          condition = "input.comp_type == '2 Rounds of comparisons'",
+          infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
+          infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
+        ),
+        conditionalPanel(
+          condition = "input.comp_type == 'Use SaintExpress'",
+          infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
+          infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
+        ),
       ),
       
       #Main body of
@@ -248,7 +260,7 @@ ui <- fluidPage(
                    column(width = 6,
                           box(title = "Top Table",
                               DT::dataTableOutput("table"), width = 12),
-                              DT::dataTableOutput("table5"), #test info
+                          DT::dataTableOutput("table5"), #test info
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
@@ -1956,7 +1968,8 @@ server <- shinyServer(function(input, output) {
     
     #PCA Input
     pca_input <- reactive({
-      plot_pca(dep(), x = 1, y = 2, n=dep_num(), point_size = 4)
+      plot_pca(dep(), x = 1, y = 2, point_size = 4)
+      #plot_pca(dep(), x = 1, y = 2, n=dep_num(), point_size = 4)
     })
     
     #    #PCA Input (Comp2)
@@ -2194,7 +2207,7 @@ server <- shinyServer(function(input, output) {
                                           data_results2=data_results2())
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        else if (input$comp_type == "Use SaintExpress"){
           ht_title<-paste("SAINTexpress List", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ",input$pres, sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
