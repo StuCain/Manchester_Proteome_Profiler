@@ -1,6 +1,0 @@
-BirA_KRas_h6c7_Exp1_1	KRas_h6c7	T
-BirA_KRas_h6c7_Exp2_2	KRas_h6c7	T
-BirA_KRas_h6c7_Exp3_3	KRas_h6c7	T
-Con_BirA_h6c7_Exp1_1	Con_h6c7	C
-Con_BirA_h6c7_Exp2_2	Con_h6c7	C
-Con_BirA_h6c7_Exp3_3	Con_h6c7	C

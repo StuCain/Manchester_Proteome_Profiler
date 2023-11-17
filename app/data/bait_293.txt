@@ -1,6 +1,0 @@
-Bait2_Exp1	Con_293	C
-Bait2_Exp2	Con_293	C
-Bait2_Exp3	BAIT_293	T
-Control2_Exp1	BAIT_293	T
-Control2_Exp2	BAIT_293	T
-Control2_Exp3	Con_293	C

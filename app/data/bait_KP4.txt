@@ -1,6 +1,0 @@
-BirA_KRas_KP_4_Exp1_1	KRas_KP_4	T
-BirA_KRas_KP_4_Exp2_2	KRas_KP_4	T
-BirA_KRas_KP_4_Exp3_3	KRas_KP_4	T
-Con_BirA_KP_4_Exp1_1	Con_KP_4	C
-Con_BirA_KP_4_Exp2_2	Con_KP_4	C
-Con_BirA_KP_4_Exp3_3	Con_KP_4	C

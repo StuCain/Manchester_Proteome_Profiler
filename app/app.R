@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.4-beta"
+Version = "0.3.5-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -205,6 +205,15 @@ ui <- fluidPage(
                          "Missing value threshold",
                          min = 0, max = 3, value = 1),
             width = 1),
+        box(numericInput("p",
+                         "adj. P value",
+                         min = 0.0001, max = 0.1, value = 0.05),
+            width = 1),
+        box(numericInput("lfc",
+                         "Fold change",
+                         min = 0, max = 32, value = 2),
+            width = 1),
+        infoBoxOutput("significantBox"), #shows number of Sig. Proteins
         conditionalPanel(
           condition = "input.comp_type == 'Use SaintExpress'",
           box(numericInput("bfdr",
@@ -216,15 +225,6 @@ ui <- fluidPage(
                            min = 0, max = 10, value = 1),
               width = 1),
         ),
-        box(numericInput("p",
-                         "adj. P value",
-                         min = 0.0001, max = 0.1, value = 0.05),
-            width = 1),
-        box(numericInput("lfc",
-                         "Fold change",
-                         min = 0, max = 32, value = 2),
-            width = 1),
-        infoBoxOutput("significantBox"), #shows number of Sig. Proteins
         conditionalPanel(
           condition = "input.comp_type == '2 Rounds of comparisons'",
           box(numericInput("p2",
@@ -253,9 +253,12 @@ ui <- fluidPage(
         tabPanel("DEP", 
                  fluidRow(
                    column(width = 6,
+                          box(title = "Chosen Comparisons",
+                              DT::dataTableOutput("table_comp"), width = 12),
                           box(title = "Top Table",
                               DT::dataTableOutput("table"), width = 12),
-                          DT::dataTableOutput("table5"), #test info
+                          box(title = "Comparison Temple",
+                              DT::dataTableOutput("table_test"), width = 12), #test info
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
@@ -1088,216 +1091,6 @@ server <- shinyServer(function(input, output) {
       mutate(id = row_number())
   })
   
-  #For FragPipe Data
-  fragpipe_data_input<-reactive({
-    if (input$exp == "LFQ") {
-      inFile <- input$lfq_expr
-    } else if (input$exp == "TMT") {
-      inFile <- input$tmt_expr
-    } else if (input$exp == "DIA") {
-      inFile <- input$dia_expr
-    } else if (input$exp == "LFQ-peptide") {
-      inFile <- input$lfq_pept_expr
-    } else if (input$exp == "TMT-peptide") {
-      inFile <- input$tmt_pept_expr
-    } else if (input$exp == "DIA-peptide") {
-      inFile <- input$dia_pept_expr
-    }
-    if(is.null(inFile))
-      return(NULL)
-    temp_data <- read.table(inFile$datapath,
-                            header = TRUE,
-                            fill= TRUE, # to fill any missing data
-                            sep = "\t",
-                            quote = "",
-                            comment.char = "",
-                            blank.lines.skip = F,
-                            check.names = F)
-    colnames(temp_data) <- make.unique.2(colnames(temp_data), "_")
-    # validate(maxquant_input_test(temp_data))
-    if (input$exp == "TMT") {
-      validate(tmt_input_test(temp_data))
-      # convert columns into numeric
-      mut.cols <- colnames(temp_data)[!colnames(temp_data) %in% c("Index", "NumberPSM", "Gene", "ProteinID", "MaxPepProb", "ReferenceIntensity")]
-      temp_data[mut.cols] <- sapply(temp_data[mut.cols], as.numeric)
-    } else if (input$exp == "LFQ") {
-      # handle - (dash) in experiment column
-      colnames(temp_data) <- gsub("-", ".", colnames(temp_data))
-      validate(fragpipe_input_test(temp_data))
-      # remove contam
-      temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
-    } else if (input$exp == "DIA"){ # DIA
-      validate(fragpipe_DIA_input_test(temp_data))
-      # temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
-    } else if (input$exp == "LFQ-peptide") {
-      colnames(temp_data) <- gsub("-", ".", colnames(temp_data))
-      colnames(temp_data)[colnames(temp_data) == "Protein Description"] <- "Description"
-      validate(fragpipe_input_test(temp_data))
-      # remove contam
-      temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
-      temp_data$Index <- paste0(temp_data$`Protein ID`, "_", temp_data$`Peptide Sequence`)
-    } else if (input$exp == "TMT-peptide") {
-      mut.cols <- colnames(temp_data)[!colnames(temp_data) %in% c("Index", "Gene", "ProteinID",	"Peptide", "MaxPepProb", "ReferenceIntensity")]
-      temp_data[mut.cols] <- sapply(temp_data[mut.cols], as.numeric)
-    } else if (input$exp == "DIA-peptide") {
-      temp_data <- temp_data %>% select(.,-c("Proteotypic", "Precursor.Charge")) %>%
-        group_by(Protein.Group, Protein.Names, Protein.Ids, Genes, Stripped.Sequence) %>%
-        summarise_if(is.numeric, max, na.rm=T)
-      temp_data[sapply(temp_data, is.infinite)] <- NA
-      temp_data$Index <- paste0(temp_data$Protein.Ids, "_", temp_data$Stripped.Sequence)
-      temp_data <- temp_data %>% select(Index, everything())
-    }
-    temp_data<-as.data.frame(temp_data)
-    return(temp_data)
-  })
-  
-  
-  #For FragPipe Data
-  processed_data <- reactive({
-    ## check which dataset
-    if(!is.null (fragpipe_data_input() )){
-      fragpipe_data <- reactive({fragpipe_data_input()})
-    }
-    
-    if(!is.null (exp_design_input() )){
-      exp_design<-reactive({exp_design_input()})
-    }
-    
-    filtered_data <- fragpipe_data()
-    if (input$exp == "LFQ"){
-      data_unique <- DEP::make_unique(filtered_data, "Gene", "Protein ID")
-      
-      if (input$lfq_type == "Intensity") {
-        lfq_columns <- setdiff(grep("Intensity", colnames(data_unique)),
-                               grep("MaxLFQ", colnames(data_unique)))
-        lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data_unique)))
-        lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data_unique)))
-      } else if (input$lfq_type == "MaxLFQ") {
-        lfq_columns<-grep("MaxLFQ", colnames(data_unique))
-        if (length(lfq_columns) == 0) {
-          stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
-        }
-      } else if (input$lfq_type == "Spectral Count") {
-        lfq_columns<-grep("Spectral", colnames(data_unique))
-        lfq_columns <- setdiff(lfq_columns, grep("Total Spectral Count", colnames(data_unique)))
-        lfq_columns <- setdiff(lfq_columns, grep("Unique Spectral Count", colnames(data_unique)))
-      }
-      
-      ## Check for matching columns in expression report and experiment manifest file
-      test_match_lfq_column_manifest(data_unique, lfq_columns, exp_design())
-      if (input$lfq_type == "Spectral Count") {
-        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=F, exp="LFQ", lfq_type="Spectral Count", level="protein")
-      } else {
-        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=T, exp="LFQ", lfq_type=input$lfq_type, level="protein")
-      }
-      return(data_se)
-    } else if (input$exp == "TMT") {
-      temp_exp_design <- exp_design()
-      # sample without specified condition will be removed
-      temp_exp_design <- temp_exp_design[!is.na(temp_exp_design$condition), ]
-      temp_exp_design <- temp_exp_design[!temp_exp_design$condition == "",]
-      # temp_exp_design[is.na(temp_exp_design), "replicate"] <- 1
-      # need to handle duplicate columns first
-      # filtered_data <- avearrays(filtered_data)
-      # filtered_data <- as.data.frame(filtered_data)
-      # print(apply(filtered_data, 2, is.numeric))
-      # check the uploaded report is protein or gene report
-      is_protein_report <- F
-      if ("Gene" %in% colnames(filtered_data)){
-        is_protein_report <- T
-        filtered_data$ProteinID <- filtered_data$Index
-      }
-      data_unique <- make_unique(filtered_data, "Index", "ProteinID")
-      # handle unmatched columns
-      overlapped_samples <- intersect(colnames(data_unique), temp_exp_design$label)
-      if (!is_protein_report) {
-        interest_cols <- c("Index", "NumberPSM", "ProteinID", "MaxPepProb", "ReferenceIntensity", "name", "ID")
-        data_unique <- data_unique[, colnames(data_unique) %in% c(interest_cols, overlapped_samples)]
-        temp_exp_design <- temp_exp_design[temp_exp_design$label %in% overlapped_samples, ]
-        cols <- colnames(data_unique)
-        selected_cols <- which(!(cols %in% interest_cols))
-      } else {
-        interest_cols <- c("Index", "NumberPSM", "Gene", "ProteinID", "MaxPepProb", "ReferenceIntensity", "name", "ID")
-        data_unique <- data_unique[, colnames(data_unique) %in% c(interest_cols, overlapped_samples)]
-        temp_exp_design <- temp_exp_design[temp_exp_design$label %in% overlapped_samples, ]
-        cols <- colnames(data_unique)
-        selected_cols <- which(!(cols %in% interest_cols))
-      }
-      test_match_tmt_column_design(data_unique, selected_cols, temp_exp_design)
-      # TMT-I report is already log2 transformed
-      if (is_protein_report) {
-        data_se <- make_se_customized(data_unique, selected_cols, temp_exp_design, exp="TMT", level="protein")
-      } else {
-        data_se <- make_se_customized(data_unique, selected_cols, temp_exp_design, exp="TMT", level="gene")
-      }
-      return(data_se)
-    } else if (input$exp == "DIA") {
-      data_unique <- DEP::make_unique(filtered_data, "Genes", "Protein.Group")
-      cols <- colnames(data_unique)
-      selected_cols <- which(!(cols %in% c("Protein.Group", "Protein.Ids", "Protein.Names", "Genes", "First.Protein.Description", "ID", "name")))
-      test_match_DIA_column_design(data_unique, selected_cols, exp_design())
-      data_se <- make_se_customized(data_unique, selected_cols, exp_design(), log2transform=T, exp="DIA", level="protein")
-      dimnames(data_se) <- list(dimnames(data_se)[[1]], colData(data_se)$sample_name)
-      colData(data_se)$label <- colData(data_se)$sample_name
-      return(data_se)
-    } else if (input$exp == "LFQ-peptide"){
-      data_unique <- DEP::make_unique(filtered_data, "Index", "Protein ID")
-      
-      if (input$lfq_pept_type == "Intensity") {
-        lfq_columns <- setdiff(grep("Intensity", colnames(data_unique)),
-                               grep("MaxLFQ", colnames(data_unique)))
-        lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data_unique)))
-        lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data_unique)))
-      } else if (input$lfq_pept_type == "MaxLFQ") {
-        lfq_columns<-grep("MaxLFQ", colnames(data_unique))
-        if (length(lfq_columns) == 0) {
-          stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
-        }
-      } else if (input$lfq_pept_type == "Spectral Count") {
-        lfq_columns<-grep("Spectral", colnames(data_unique))
-        lfq_columns <- setdiff(lfq_columns, grep("Total Spectral Count", colnames(data_unique)))
-        lfq_columns <- setdiff(lfq_columns, grep("Unique Spectral Count", colnames(data_unique)))
-      }
-      
-      ## Check for matching columns in expression report and experiment manifest file
-      test_match_lfq_column_manifest(data_unique, lfq_columns, exp_design())
-      if (input$lfq_pept_type == "Spectral Count") {
-        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=F, exp="LFQ", lfq_type="Spectral Count", level="peptide")
-      } else {
-        data_se <- make_se_customized(data_unique, lfq_columns, exp_design(), log2transform=T, exp="LFQ", lfq_type=input$lfq_pept_type, level="peptide")
-      }
-      return(data_se)
-    } else if (input$exp == "TMT-peptide") {
-      temp_exp_design <- exp_design()
-      # sample without specified condition will be removed
-      temp_exp_design <- temp_exp_design[!is.na(temp_exp_design$condition), ]
-      temp_exp_design <- temp_exp_design[!temp_exp_design$condition == "",]
-      data_unique <- make_unique(filtered_data, "Index", "ProteinID")
-      # handle unmatched columns
-      overlapped_samples <- intersect(colnames(data_unique), temp_exp_design$label)
-      interest_cols <- c("Index", "Gene", "ProteinID", "Peptide", "MaxPepProb", "ReferenceIntensity", "name", "ID")
-      data_unique <- data_unique[, colnames(data_unique) %in% c(interest_cols, overlapped_samples)]
-      temp_exp_design <- temp_exp_design[temp_exp_design$label %in% overlapped_samples, ]
-      cols <- colnames(data_unique)
-      selected_cols <- which(!(cols %in% interest_cols))
-      test_match_tmt_column_design(data_unique, selected_cols, temp_exp_design)
-      # TMT-I report is already log2 transformed
-      data_se <- make_se_customized(data_unique, selected_cols, temp_exp_design, exp="TMT", level="peptide")
-      return(data_se)
-    } else if (input$exp == "DIA-peptide") {
-      data_unique <- DEP::make_unique(filtered_data, "Index", "Protein.Group")
-      cols <- colnames(data_unique)
-      selected_cols <- which(!(cols %in% c("Index", "Protein.Group", "Protein.Ids", "Stripped.Sequence", "Protein.Names", "Genes", "First.Protein.Description", "ID", "name")))
-      test_match_DIA_column_design(data_unique, selected_cols, exp_design())
-      data_se <- make_se_customized(data_unique, selected_cols, exp_design(), log2transform=T, exp="DIA", level="peptide")
-      dimnames(data_se) <- list(dimnames(data_se)[[1]], colData(data_se)$sample_name)
-      colData(data_se)$label <- colData(data_se)$sample_name
-      return(data_se)
-    }
-  })
-  
-  
-  
   filt <- reactive({
     data <- data()
     
@@ -1373,6 +1166,18 @@ server <- shinyServer(function(input, output) {
       comp2<-comp2[comp2 != ""]
     }
     
+  })
+  
+  #Comparisons Table
+  comp_table<- reactive({
+    R1 <- data.frame(comp())
+    R2 <- data.frame(comp2())
+    comp_table_new<- R1 %>%
+      rownames_to_column() %>% 
+      left_join(R2 %>% rownames_to_column()) %>%
+      select(-rowname)
+      
+ #     return(comp_template_new)
   })
   
   
@@ -2425,9 +2230,14 @@ server <- shinyServer(function(input, output) {
       settings_input()
     })
     
-    #comp table
-    output$table5 <- DT::renderDataTable({
+    #Test table 
+    output$table_test <- DT::renderDataTable({
       exp_template()
+    }) 
+    
+    #Comparisons Table
+    output$table_comp <- DT::renderDataTable({
+      comp_table()
     }) 
     
     
