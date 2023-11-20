@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.3
+Version = 2.4
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -103,7 +103,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     #    as.matrix(dfdata2) #converts table into matrix called my_mat
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
-    my_mat<-my_mat[,comp_list]
+    if (ncol(my_mat)>1){my_mat<-my_mat[,comp_list]}
     CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
@@ -311,7 +311,7 @@ plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun,
     #    as.matrix(dfdata2) #converts table into matrix called my_mat
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
-    my_mat<-my_mat[,comp_list]
+    if (ncol(my_mat)>1){my_mat<-my_mat[,comp_list]}
     CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
@@ -542,7 +542,7 @@ plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, m
     #    as.matrix(dfdata2) #converts table into matrix called my_mat
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
-    my_mat<-my_mat[,comp_list]
+    if (ncol(my_mat)>1){my_mat<-my_mat[,comp_list]}
     CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
