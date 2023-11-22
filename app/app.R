@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.5-beta"
+Version = "0.3.6-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -2096,7 +2096,9 @@ server <- shinyServer(function(input, output) {
                                        font_size=8,
                                        data_unique_defn = data_defn()
           )
-        }else{
+        }
+        
+        if (input$comp_type == "1 Round of comparisons"){
           plot_heatmap_clusters(comp_heatmap_input()[[1]],
                                 comp_heatmap_input()[[2]],
                                 comp_heatmap_input()[[3]],
@@ -2111,6 +2113,23 @@ server <- shinyServer(function(input, output) {
                                 data_unique_defn = data_defn()
           )
         }
+        
+        if (input$comp_type == "Use SaintExpress"){
+          plot_heatmap_clusters_2xBFDR(comp_heatmap_input()[[1]],
+                                       comp_heatmap_input()[[2]],
+                                       comp_heatmap_input()[[3]],
+                                       #                     input$pres,
+                                       #                     kmeans = TRUE,
+                                       input$k1,
+                                       input$lfc,
+                                       input$p,
+                                       colour_functions_input()[[1]],
+                                       colour_functions_input()[[2]],
+                                       font_size=8,
+                                       data_unique_defn = data_defn()
+          )
+        }
+        
       })
     }) 
     
