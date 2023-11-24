@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.6-beta"
+Version = "0.3.7-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -172,7 +172,7 @@ ui <- fluidPage(
                        menuItem(
                          radioButtons("comp_type",
                                       "Comparisons",
-                                      choices = c("1 Round of comparisons", "2 Rounds of comparisons", "Use SaintExpress"),
+                                      choices = c("1 Round of comparisons", "2 Rounds of comparisons", "Use SAINTexpress"),
                                       #selected = "1 Round of comparisons"
                          )
                        ),
@@ -215,10 +215,10 @@ ui <- fluidPage(
             width = 1),
         infoBoxOutput("significantBox"), #shows number of Sig. Proteins
         conditionalPanel(
-          condition = "input.comp_type == 'Use SaintExpress'",
+          condition = "input.comp_type == 'Use SAINTexpress'",
           box(numericInput("bfdr",
                            "BFDR Cut-Off",
-                           min = 0, max = 1, value = 0.1),
+                           min = 0, max = 1, value = 0.05, step = 0.05),
               width = 1),
           box(numericInput("bfdr_freq",
                            "BFDR Freq. Min",
@@ -242,7 +242,7 @@ ui <- fluidPage(
           infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
         ),
         conditionalPanel(
-          condition = "input.comp_type == 'Use SaintExpress'",
+          condition = "input.comp_type == 'Use SAINTexpress'",
           infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
           infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
         ),
@@ -468,17 +468,23 @@ ui <- fluidPage(
                    column(width = 8,
                           tabBox(id = "comp_heat_tab",
                                  title = "Cluster Analysis Plots", width = 12,
-                                 tabPanel(title = "SAINT Input",
-                                          #DT::dataTableOutput("tablesaint"), width = 12
-                                 ),
+#                                 tabPanel(title = "SAINT Input",
+#                                          #DT::dataTableOutput("tablesaint"), width = 12
+#                                 ),
                                  tabPanel(title = "SAINT Output",
                                           DT::dataTableOutput("tablesaint_output1"), width = 12,
+                                          downloadButton('download_saint1', 'Save SAINTexpress Table 1'),
                                           DT::dataTableOutput("tablesaint_output2"), width = 12,
+                                          downloadButton('download_saint2', 'Save SAINTexpress Table 2'),
                                           DT::dataTableOutput("tablesaint_output3"), width = 12,
-                                          DT::dataTableOutput("tablesaint_output4"), width = 12
+                                          downloadButton('download_saint3', 'Save SAINTexpress Table 3'),
+                                          DT::dataTableOutput("tablesaint_output4"), width = 12,
+                                          downloadButton('download_saint4', 'Save SAINTexpress Table 4')
                                  ),
                                  tabPanel(title = "BFDR Filtering",
-                                          DT::dataTableOutput("tablesaint"), width = 12
+                                          DT::dataTableOutput("tablesaint"), width = 12,
+                                          downloadButton('download_tablesaint', 'Save BFDR Filtered table')
+                                          
                                  ),
                                  tabPanel(title = "Results",
                                           DT::dataTableOutput("table2"), width = 12
@@ -857,7 +863,7 @@ server <- shinyServer(function(input, output) {
   
   #Hide/show Volcano Plts
   observeEvent(input$comp_type, {
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SaintExpress") {
+    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
       hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
     }else{showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
   })
@@ -868,10 +874,10 @@ server <- shinyServer(function(input, output) {
     #    if (input$comp_type == "1 Round of comparisons") {
     #      hideTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
     #    }else{showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")}
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SaintExpress") {
+    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
       hideTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")
     }else{showTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")}
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SaintExpress") {
+    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
       hideTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")
     }else{showTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")}
   })
@@ -1176,8 +1182,8 @@ server <- shinyServer(function(input, output) {
       rownames_to_column() %>% 
       left_join(R2 %>% rownames_to_column()) %>%
       select(-rowname)
-      
- #     return(comp_template_new)
+    
+    #     return(comp_template_new)
   })
   
   
@@ -1464,7 +1470,7 @@ server <- shinyServer(function(input, output) {
     output$significantBox_bfdr <- renderInfoBox({
       info_box<-box(width = 1, height = 0)
       
-      if (input$comp_type == "Use SaintExpress")
+      if (input$comp_type == "Use SAINTexpress")
       {
         num_total <- dep() %>%
           nrow()
@@ -1512,7 +1518,7 @@ server <- shinyServer(function(input, output) {
     output$significantBox_bfdr_filtered <- renderInfoBox({
       info_box<-box(width = 1, height = 0)
       
-      if (input$comp_type == "Use SaintExpress")
+      if (input$comp_type == "Use SAINTexpress")
       {
         num_total <- dep() %>%
           nrow()
@@ -1638,7 +1644,7 @@ server <- shinyServer(function(input, output) {
     data_dep2 <- reactive({
       if (input$comp_type == "1 Round of comparisons")
         return(NULL)
-      if (input$comp_type == "Use SaintExpress")
+      if (input$comp_type == "Use SAINTexpress")
         return(NULL)
       get_results(dep2()) %>% filter(significant) %>% select(-significant) 
     })
@@ -1650,7 +1656,7 @@ server <- shinyServer(function(input, output) {
     data_results2<- reactive({
       if (input$comp_type == "1 Round of comparisons")
         return(NULL)
-      if (input$comp_type == "Use SaintExpress")
+      if (input$comp_type == "Use SAINTexpress")
         return(NULL)
       data.frame(data_dep2())
     })
@@ -1658,7 +1664,7 @@ server <- shinyServer(function(input, output) {
     data_results3<- reactive({
       if (input$comp_type == "1 Round of comparisons")
         return(NULL)
-      if (input$comp_type == "Use SaintExpress")
+      if (input$comp_type == "Use SAINTexpress")
         return(NULL)
       data_results2() [data_results2()$name %in% data_results1()$name, ]
     })
@@ -1684,7 +1690,7 @@ server <- shinyServer(function(input, output) {
       {data<-data_results1()}
       if (input$comp_type == "2 Rounds of comparisons"){
         data<-data_results3()}
-      if (input$comp_type == "Use SaintExpress"){
+      if (input$comp_type == "Use SAINTexpress"){
         data<-data_results5()}
       return(data)
     })
@@ -1825,7 +1831,7 @@ server <- shinyServer(function(input, output) {
           )
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results(),
@@ -1880,7 +1886,7 @@ server <- shinyServer(function(input, output) {
           )
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_BFDR(data_results(),
@@ -1935,7 +1941,7 @@ server <- shinyServer(function(input, output) {
                                       data_results2=data_results2())
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           plot_complex_heatmap_BFDR(data_results1(),
@@ -1973,7 +1979,7 @@ server <- shinyServer(function(input, output) {
                                       data_results2=data_results2())
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("Comp 1 FC=", input$lfc, " pVal=", input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           plot_complex_heatmap_BFDR(data_results1(),
@@ -2011,7 +2017,7 @@ server <- shinyServer(function(input, output) {
                                           data_results2=data_results2())
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
@@ -2050,7 +2056,7 @@ server <- shinyServer(function(input, output) {
                                           data_results2=data_results2())
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
@@ -2114,7 +2120,7 @@ server <- shinyServer(function(input, output) {
           )
         }
         
-        if (input$comp_type == "Use SaintExpress"){
+        if (input$comp_type == "Use SAINTexpress"){
           plot_heatmap_clusters_2xBFDR(comp_heatmap_input()[[1]],
                                        comp_heatmap_input()[[2]],
                                        comp_heatmap_input()[[3]],
@@ -2416,7 +2422,7 @@ server <- shinyServer(function(input, output) {
         if (input$comp_type == "2 Rounds of comparisons"){
           plotOutput("comp_heatmap_c2", height = ((dep_num_c2()*12)+270))
         }
-        else if (input$comp_type == "Use SaintExpress"){
+        else if (input$comp_type == "Use SAINTexpress"){
           plotOutput("comp_heatmap_c2", height = ((dep_num_bfdr()*12)+270))
         }
       })
@@ -2553,7 +2559,8 @@ server <- shinyServer(function(input, output) {
              #filter(significant) %>%
              #select(-significant),
              "full_dataset" = get_df_wide(dep()))
-    })
+    }
+    )
     
     output$downloadData <- downloadHandler(
       filename = function() { paste(input$dataset, ".txt", sep = "") },
@@ -2562,7 +2569,8 @@ server <- shinyServer(function(input, output) {
                     file,
                     col.names = TRUE,
                     row.names = FALSE,
-                    sep ="\t") }
+                    sep ="\t") 
+      }
     )
     
     #Cluster table
@@ -2573,7 +2581,65 @@ server <- shinyServer(function(input, output) {
                     file,
                     col.names = TRUE,
                     row.names = TRUE,
-                    sep ="\t") }
+                    sep ="\t") 
+      }
+    )
+    
+    #SAINTtables table
+    output$download_saint1 <- downloadHandler(
+      filename = "SAINTexpress_1.txt",
+      content = function(file) {
+        write.table(saint_output()[[1]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    output$download_saint2 <- downloadHandler(
+      filename = "SAINTexpress_2.txt",
+      content = function(file) {
+        write.table(saint_output()[[2]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    output$download_saint3 <- downloadHandler(
+      filename = "SAINTexpress_3.txt",
+      content = function(file) {
+        write.table(saint_output()[[3]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    output$download_saint4 <- downloadHandler(
+      filename = "SAINTexpress_4.txt",
+      content = function(file) {
+        write.table(saint_output()[[4]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    #BFDR Table
+    output$download_tablesaint <- downloadHandler(
+      filename = "BFDR_filtered_list.txt",
+      content = function(file) {
+        write.table(saintlist()[[2]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
     )
     
     #Variable table
@@ -2584,7 +2650,8 @@ server <- shinyServer(function(input, output) {
                     file,
                     col.names = TRUE,
                     row.names = TRUE,
-                    sep ="\t") }
+                    sep ="\t") 
+      }
     )
     
     #   #Variable table V2
@@ -2597,7 +2664,6 @@ server <- shinyServer(function(input, output) {
     #                 row.names = TRUE,
     #                  sep ="\t") }
     #  )
-    
     
     
     output$downloadPlot <- downloadHandler(

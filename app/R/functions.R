@@ -2581,19 +2581,7 @@ Freq" = anno_barplot(
   return(comphtclust)
 }
 
-#hash out-----
-#Function Command
-ht_clustx2BFDR<-plot_heatmap_clusters_2xBFDR(ht, my_mat, dfdata_sig2=dfdata_BFDR, kmeans, FC, pVal, col_fun, mypal, switch, font_size=6, data_unique_defn )
-
-comp_pick<-"Con_KP4_vs_KRas_KP4"
-
-
-
-#padj_check = FALSE
-#hash out-----------
-
-
-####Enhanced Volcano Function####
+#####Enhanced Volcano Function####
 #choices ("p-adj sig.","p-Val sig.", "p-adj values")
 plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10){
   
