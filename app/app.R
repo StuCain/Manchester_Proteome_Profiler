@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.8-beta"
+Version = "0.3.9-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -257,7 +257,7 @@ ui <- fluidPage(
                               DT::dataTableOutput("table_comp"), width = 12),
                           box(title = "Top Table",
                               DT::dataTableOutput("table"), width = 12),
-                          box(title = "Comparison Temple",
+                          box(title = "Exp Table",
                               DT::dataTableOutput("table_test"), width = 12), #test info
                    ),
                    column(width = 6,
@@ -1676,6 +1676,8 @@ server <- shinyServer(function(input, output) {
       data<-get_results(dep())
       saint_data<-data.frame(saintlist()[[2]])
       data<-data[data$name %in% saint_data$PreyGene, ]
+      data1 <- data %>% arrange(name)
+      return(data1)
     })
     
     data_results5<- reactive({
@@ -2265,7 +2267,7 @@ server <- shinyServer(function(input, output) {
     
     #Test table 
     output$table_test <- DT::renderDataTable({
-      exp_template()
+      expdesign()
     }) 
     
     #Comparisons Table
