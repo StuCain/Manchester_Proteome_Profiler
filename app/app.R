@@ -29,7 +29,7 @@ library(readxl)
 
 source("R/functions.R")
 
-Version = "0.3.9-beta"
+Version = "0.3.10-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -74,7 +74,7 @@ ui <- fluidPage(
                                 ), 
                                 conditionalPanel(
                                   condition = "input.data_type == 'FragPipe'",
-                                  selectInput("exp", "Data type:", analysis_options, selected = "LFQ"),
+                                  selectInput("exp", "Data type:", choices = analysis_options, selected = "LFQ"),
                                   conditionalPanel(
                                     condition = "input.exp == 'LFQ'",
                                     fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
@@ -582,6 +582,10 @@ ui <- fluidPage(
                                                    ),
                                                    fluidRow(
                                                      plotOutput("enh_volcano_1", height = 600),
+                                                     box(numericInput("pdfwidth_enh",
+                                                                      "PDF Width",
+                                                                      min = 3, max = 30, value = 6),
+                                                         width = 6),
                                                      downloadButton('downloadVolcano_enh1', 'Save volcano')
                                                    )
                                             ),
@@ -599,6 +603,10 @@ ui <- fluidPage(
                                                    ),
                                                    fluidRow(
                                                      plotOutput("enh_volcano_2", height = 600),
+                                                     box(numericInput("pdfheight_enh",
+                                                                      "PDF Height",
+                                                                      min = 3, max = 30, value = 8),
+                                                         width = 6),
                                                      downloadButton('downloadVolcano_enh2', 'Save volcano')
                                                    )
                                             ),
@@ -2590,7 +2598,7 @@ server <- shinyServer(function(input, output) {
         write.table(cluster_heatmap_input()[[input$cluster_no+12]],
                     file,
                     col.names = TRUE,
-                    row.names = TRUE,
+                    row.names = FALSE,
                     sep ="\t") 
       }
     )
@@ -2875,7 +2883,7 @@ server <- shinyServer(function(input, output) {
         paste0("Enh_Volcano_", input$volcano_cntrst_enh1, "_", input$p_adj_enh1, ".pdf")
       },
       content = function(file) {
-        cairo_pdf(file, height = 8, width = 6)
+        cairo_pdf(file, height = input$pdfheight_enh, width = input$pdfwidth_enh)
         print(enhanced_volcano_1_input())
         dev.off()
       }
@@ -2886,7 +2894,7 @@ server <- shinyServer(function(input, output) {
         paste0("Enh_Volcano_", input$volcano_cntrst_enh2, "_", input$p_adj_enh2,".pdf")
       },
       content = function(file) {
-        cairo_pdf(file, height = 8, width = 6)
+        cairo_pdf(file, height = input$pdfheight_enh, width = input$pdfwidth_enh)
         print(enhanced_volcano_2_input())
         dev.off()
       }
