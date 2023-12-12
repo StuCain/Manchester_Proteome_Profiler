@@ -1,0 +1,206 @@
+---
+title: "SAINT_DEP + Cluster report"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+  data: NA
+  alpha: NA
+  lfc: NA
+  k1: NA
+  num_signif: NA
+  comp: NA
+  comp2: NA
+  tested_contrasts: NA
+  numbers_input: NA
+  coverage_input: NA
+  pca_input: NA
+  cor_input: NA
+  norm_input: = NA
+  missval_input: NA
+  detect_input: NA
+  density_input: NA
+  p_hist_input: NA
+  comp_heatmap_input: NA
+  cluster_heatmap_input: NA
+#  heatmap_input: NA
+  dep: NA
+  pg_width: NA
+  clust_height: NA
+  colour_functions_input: NA
+  data_results: NA
+  p_adj_enh1: NA
+#  cvs_input: NA
+#  volcano_input: NA
+
+output: 
+  pdf_document:
+    extra_dependencies: ["float"]
+    fig_caption: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
+#clust_height = as.numeric(params$num_signif)
+clust_height = ((as.numeric(params$num_signif))/10)+3.6
+# Remove line number and Comment "##" from printing
+```
+Version:0.1.1
+
+## Method details
+
+The raw data files were analyzed using FragPipe to obtain protein identifications and their respective label-free quantification values using in-house standard parameters. Statistical analysis was performed based on the combined_protein.tsv file. First, contaminant proteins were filtered out. In addition, proteins that were not identified/quantified consistantly in same condition have been removed as well. The MaxLFQ intensity values were converted to log2 scale, samples were grouped by conditions and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of 1.8 StDev (standard deviation) apart with a width of 0.3. Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. The _limma_ package from R Bioconductor was used to generate a list of differentially expressed proteins for each pair-wise comparison. A cutoff of the _adjusted p-value_ of `r params$alpha` (Benjamini-Hochberg method) along with a |log2 fold change| of `r params$lfc` has been applied to determine significantly regulated proteins in each pairwise comparison.
+
+
+### Quick summary of parameters used:
+
+* Tested pairwise comparisons = <span style="color:blue">`r params$comp`</span>  
+* Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$alpha`</span>  
+* Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>  
+
+## Results
+
+### FragPipe result output contains `r nrow(params$data)` proteins groups of which _`r nrow(params$dep())`_ proteins were reproducibly quantified.
+
+### `r params$num_signif` proteins differ significantly between samples.
+
+\pagebreak
+
+
+
+## Exploratory Analysis (QC Plots)
+
+### Principle Component Analysis (PCA) plot
+
+
+```{r pca_plot, echo=FALSE, message=FALSE, warning=FALSE}
+print(params$pca_input())
+```
+\pagebreak
+
+### Sample Correlation matrix
+
+```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.keep='last', fig.width=8, warning=FALSE, out.height='100%', tidy=T}
+print(params$cor_input())
+```
+\pagebreak
+
+
+### Proteomics Experiment Summary
+
+Protein quantified per sample (after pre-processing).
+
+```{r numbers, echo=FALSE, warning=FALSE, results='hide', message=FALSE }
+print(params$numbers_input())
+```
+\pagebreak
+
+Protein overlap in all samples.
+
+
+```{r coverage, echo=FALSE, warning=FALSE}
+print(params$coverage_input())
+```
+\pagebreak
+
+\pagebreak
+
+Normalisation in all samples.
+
+
+```{r norm, echo=FALSE, warning=FALSE}
+print(params$norm_input())
+```
+\pagebreak
+
+
+## Missing Value handling
+
+### Missing value heatmap
+A heatmap for proteins with missing value in each dataset. Each row represent a protein with missing value in one or more replicate. Each replicate is clustered based on presence of missing values in the sample. 
+
+
+```{r missing_value_heatmap, echo=FALSE, message=FALSE, results='hide',warning=FALSE, fig.keep='first', tidy=TRUE}
+print(params$missval_input())
+```
+\pagebreak
+
+
+## Differential Expression Analysis (Results Plots) 
+
+### Heatmap
+A plot representing an overview of expression of all significant (deferentially expressed) proteins (rows) in all samples (columns).
+_clust_height_
+
+
+```{r heatmap_2, echo=FALSE, fig.height= params$clust_height, warning=FALSE, results='hide'}
+
+print(params$comp_heatmap_input()[[1]])
+```
+\pagebreak
+
+### Cluster Heatmap
+A plot representing an overview of expression of all significant (deferentially expressed) proteins (rows) in all samples (columns).
+```{r heatmap_cluster1, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+if(params$k1>0){
+  print(params$cluster_heatmap_input()[[1]])
+}
+```
+\pagebreak
+```{r heatmap_cluster2, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+if(params$k1>1){
+  print(params$cluster_heatmap_input()[[2]])
+}
+```
+\pagebreak
+```{r heatmap_cluster3, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+if(params$k1>2){
+  print(params$cluster_heatmap_input()[[3]])
+}
+```
+\pagebreak
+```{r heatmap_cluster4, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+if(params$k1>3){
+  print(params$cluster_heatmap_input()[[4]])
+}
+```
+\pagebreak
+```{r heatmap_cluster5, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+if(params$k1>4){
+  print(params$cluster_heatmap_input()[[5]])
+}
+```
+\pagebreak
+```{r heatmap_cluster6, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+if(params$k1>5){
+  print(params$cluster_heatmap_input()[[6]])
+}
+```
+\pagebreak
+### Enhanced Volcano Plots
+
+```{r enh_volcano, echo=FALSE, fig.height=10, fig.width=8, warning=FALSE, comment=NA}
+for(i in params$comp()){
+  enh_vol<-plot_enhanced_volcano (params$data_results(),
+                               params$cluster_heatmap_input()[[19]],
+                               comp_pick = i,
+                               FC=as.numeric(params$lfc),
+                               pVal=as.numeric(params$alpha),
+                               padj_check="p-adj sig.",
+                               params$colour_functions_input()[[2]],
+                               as.numeric(params$colour_functions_input()[[3]])
+  )
+# print(enh_vol)
+  print(i)
+  }
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -26,10 +26,11 @@ library(waiter)
 library(shinythemes)
 library("RColorBrewer")
 library(readxl)
+library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.3.10-beta"
+Version = "0.3.11-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -246,6 +247,12 @@ ui <- fluidPage(
           infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
           infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
         ),
+        box(
+          column(5,uiOutput("downloadreport")), # offset for dist between buttons
+          #tags$br(),
+          #column(5,uiOutput('downloadPlots')),
+          width = 2),
+        
       ),
       
       #Main body of
@@ -1802,7 +1809,7 @@ server <- shinyServer(function(input, output) {
       expfile<-expdesign()
       condition_no<-length(unique(expfile$condition))
       if(condition_no<=12){  
-      plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"))
+        plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"))
       }else{plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds")}
     })
     
@@ -2108,52 +2115,52 @@ server <- shinyServer(function(input, output) {
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
           ht<-plot_heatmap_clusters_2xcomp(comp_heatmap_input()[[1]],
-                                       comp_heatmap_input()[[2]],
-                                       comp_heatmap_input()[[3]],
-                                       #                     input$pres,
-                                       #                     kmeans = TRUE,
-                                       input$k1,
-                                       input$lfc,
-                                       input$p,
-                                       colour_functions_input()[[1]],
-                                       colour_functions_input()[[2]],
-                                       font_size=8,
-                                       data_unique_defn = data_defn()
+                                           comp_heatmap_input()[[2]],
+                                           comp_heatmap_input()[[3]],
+                                           #                     input$pres,
+                                           #                     kmeans = TRUE,
+                                           input$k1,
+                                           input$lfc,
+                                           input$p,
+                                           colour_functions_input()[[1]],
+                                           colour_functions_input()[[2]],
+                                           font_size=8,
+                                           data_unique_defn = data_defn()
           )
         }
         
         if (input$comp_type == "1 Round of comparisons"){
           ht<-plot_heatmap_clusters(comp_heatmap_input()[[1]],
-                                comp_heatmap_input()[[2]],
-                                comp_heatmap_input()[[3]],
-                                #                     input$pres,
-                                #                     kmeans = TRUE,
-                                input$k1,
-                                input$lfc,
-                                input$p,
-                                colour_functions_input()[[1]],
-                                colour_functions_input()[[2]],
-                                font_size=8,
-                                data_unique_defn = data_defn()
+                                    comp_heatmap_input()[[2]],
+                                    comp_heatmap_input()[[3]],
+                                    #                     input$pres,
+                                    #                     kmeans = TRUE,
+                                    input$k1,
+                                    input$lfc,
+                                    input$p,
+                                    colour_functions_input()[[1]],
+                                    colour_functions_input()[[2]],
+                                    font_size=8,
+                                    data_unique_defn = data_defn()
           )
         }
         
         if (input$comp_type == "Use SAINTexpress"){
           ht<-plot_heatmap_clusters_2xBFDR(comp_heatmap_input()[[1]],
-                                       comp_heatmap_input()[[2]],
-                                       comp_heatmap_input()[[3]],
-                                       #                     input$pres,
-                                       #                     kmeans = TRUE,
-                                       input$k1,
-                                       input$lfc,
-                                       input$p,
-                                       colour_functions_input()[[1]],
-                                       colour_functions_input()[[2]],
-                                       font_size=8,
-                                       data_unique_defn = data_defn()
+                                           comp_heatmap_input()[[2]],
+                                           comp_heatmap_input()[[3]],
+                                           #                     input$pres,
+                                           #                     kmeans = TRUE,
+                                           input$k1,
+                                           input$lfc,
+                                           input$p,
+                                           colour_functions_input()[[1]],
+                                           colour_functions_input()[[2]],
+                                           font_size=8,
+                                           data_unique_defn = data_defn()
           )
         }
-       return(ht) 
+        return(ht) 
       })
     }) 
     
@@ -2414,6 +2421,13 @@ server <- shinyServer(function(input, output) {
     output$enh_volcano_2 <- renderPlot({
       enhanced_volcano_2_input()
     })
+    
+    output$downloadreport <- renderUI({
+      if(!is.null(dep())){
+        downloadButton('downloadReport', 'Download Report')
+      }
+    })
+    
     
     
     ####Observe####
@@ -2911,6 +2925,66 @@ server <- shinyServer(function(input, output) {
         dev.off()
       }
     )
+    
+    #####===== Download Report =====#####
+    output$downloadReport <- downloadHandler(
+      # For PDF output, change this to "report.pdf"
+      filename = "SAINT_DEP+Cluster_report.pdf",
+      content = function(file) {
+        # Copy the report file to a temporary directory before processing it, in
+        # case we don't have write permissions to the current working dir (which
+        # can happen when deployed).
+        tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
+        #file.copy("../LFQ_report.Rmd", tempReport, overwrite = TRUE)
+        #        file.copy(paste0("./reports/", input$exp, "_report.Rmd"), tempReport, overwrite = TRUE)
+        file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
+        
+        
+        sig_proteins<-dep() %>%
+          .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
+          nrow()
+        
+        tested_contrasts<- gsub("_p.adj", "", 
+                                colnames(SummarizedExperiment::rowData(dep()))[grep("p.adj", 
+                                                                                    colnames(SummarizedExperiment::rowData(dep())))])
+        pg_width<- ncol(imp_data()) / 2.5
+        clust_height<-(dep_num()/10)+3.6
+        # Set up parameters to pass to Rmd document
+        params <- list(data = data,
+                       alpha = input$p,
+                       lfc = input$lfc,
+                       k1 = input$k1,
+                       #num_signif= sig_proteins,
+                       pg_width = pg_width,
+                       comp= comp,
+                       comp2= comp2,
+                       missval_input = missval_input,
+                       # p_hist_input = p_hist_input,
+                       pca_input = pca_input,
+                       norm_input = norm_input,
+                       numbers_input = numbers_input, 
+                       coverage_input = coverage_input,
+                       cor_input =cor_input,
+                       comp_heatmap_input = comp_heatmap_input,
+                       clust_height = clust_height,
+                       cluster_heatmap_input = cluster_heatmap_input,
+                       colour_functions_input = colour_functions_input,
+                       data_results = data_results,
+                       p_adj_enh1 = input$p_adj_enh1,
+                       #                       heatmap_input = heatmap_input,
+                       #                       cvs_input = cvs_input,
+                       #                       volcano_input = volcano_input,
+                       dep = dep
+        )
+        
+        # Knit the document, passing in the `params` list
+        rmarkdown::render(tempReport, output_file = file,
+                          params = params,
+                          envir = new.env(parent = globalenv())
+        )
+      }
+    )
+    
     
     
     
