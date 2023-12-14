@@ -3,10 +3,20 @@ title: "SAINT_DEP + Cluster report"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   data: NA
-  alpha: NA
+  expdesign: NA
+  data_type: NA
+  exp: NA
+  lfq_type: NA
+  thr: NA
+  p: NA
   lfc: NA
+  p2: NA
+  lfc2: NA
+  bfdr: NA
+  bfdr_freq: NA
   k1: NA
   num_signif: NA
+  comp_type: NA
   comp: NA
   comp2: NA
   tested_contrasts: NA
@@ -18,18 +28,28 @@ params:
   missval_input: NA
   detect_input: NA
   density_input: NA
-  p_hist_input: NA
+#  p_hist_input: NA
   comp_heatmap_input: NA
   cluster_heatmap_input: NA
 #  heatmap_input: NA
   dep: NA
-  pg_width: NA
+  dep_num: NA
+  norm_data: NA
+  imp_data: NA
+#  pg_width: NA
   clust_height: NA
   colour_functions_input: NA
   data_results: NA
   p_adj_enh1: NA
+  palette_choice: NA
 #  cvs_input: NA
 #  volcano_input: NA
+
+header-includes:
+   - \usepackage{booktabs}
+   - \usepackage[default]{sourcesanspro}
+   - \usepackage[T1]{fontenc}
+mainfont: SourceSansPro
 
 output: 
   pdf_document:
@@ -38,22 +58,25 @@ output:
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
-#clust_height = as.numeric(params$num_signif)
-clust_height = ((as.numeric(params$num_signif))/10)+3.6
-# Remove line number and Comment "##" from printing
+#clust_height<-(dep_num()/10)+3.6
+sample_no = nrow(params$expdesign())
 ```
-Version:0.1.1
+Version:0.1.3
 
 ## Method details
 
-The raw data files were analyzed using FragPipe to obtain protein identifications and their respective label-free quantification values using in-house standard parameters. Statistical analysis was performed based on the combined_protein.tsv file. First, contaminant proteins were filtered out. In addition, proteins that were not identified/quantified consistantly in same condition have been removed as well. The MaxLFQ intensity values were converted to log2 scale, samples were grouped by conditions and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of 1.8 StDev (standard deviation) apart with a width of 0.3. Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. The _limma_ package from R Bioconductor was used to generate a list of differentially expressed proteins for each pair-wise comparison. A cutoff of the _adjusted p-value_ of `r params$alpha` (Benjamini-Hochberg method) along with a |log2 fold change| of `r params$lfc` has been applied to determine significantly regulated proteins in each pairwise comparison.
+The raw data files were analyzed using `r params$data_type` to obtain protein identifications and their respective label-free quantification values using in-house standard parameters. Statistical analysis was performed based on the combined_protein.tsv file. First, contaminant proteins were filtered out. In addition, proteins that were not identified/quantified consistantly in same condition have been removed as well. The MaxLFQ intensity values were converted to log2 scale, samples were grouped by conditions and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of 1.8 StDev (standard deviation) apart with a width of 0.3. Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. The _limma_ package from R Bioconductor was used to generate a list of differentially expressed proteins for each pair-wise comparison. A cutoff of the _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a |log2 fold change| of `r params$lfc` has been applied to determine significantly regulated proteins in each pairwise comparison.
 
 
 ### Quick summary of parameters used:
-
-* Tested pairwise comparisons = <span style="color:blue">`r params$comp`</span>  
-* Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$alpha`</span>  
-* Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>  
+* Input Data Type= <span style="color:blue">`r params$data_type`</span>
+* Tested pairwise comparisons = <span style="color:blue">`r params$comp()`</span>  
+* Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$p`</span>  
+* Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>
+* Adjusted _p-value_ cutoff 2 <= <span style="color:blue">`r params$p2`</span>  
+* Log fold change cutoff 2 >= <span style="color:blue">`r params$lfc2`</span>
+* Comparison Type= <span style="color:blue">`r params$comp_type`</span>
+* No. of Samples= <span style="color:blue">`r sample_no`</span>
 
 ## Results
 
@@ -63,7 +86,14 @@ The raw data files were analyzed using FragPipe to obtain protein identification
 
 \pagebreak
 
+## Experimental Template
 
+```{r exp_design, echo=FALSE, message=FALSE, warning=FALSE}
+print(params$expdesign())
+```
+
+
+\pagebreak
 
 ## Exploratory Analysis (QC Plots)
 
@@ -105,7 +135,7 @@ print(params$coverage_input())
 Normalisation in all samples.
 
 
-```{r norm, echo=FALSE, warning=FALSE}
+```{r norm, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
 print(params$norm_input())
 ```
 \pagebreak
@@ -177,13 +207,23 @@ if(params$k1>5){
 ### Enhanced Volcano Plots
 
 ```{r enh_volcano, echo=FALSE, fig.height=10, fig.width=8, warning=FALSE, comment=NA}
-for(i in params$comp()){
+      if (params$comp_type == "2 Rounds of comparisons"){
+        lfc<-as.numeric(params$lfc2)
+        p<-as.numeric(params$p2)
+        comp<-params$comp2()              
+      }else{lfc<-as.numeric(params$lfc)
+      p<-as.numeric(params$p)
+      comp<-params$comp()
+      }
+
+for(i in comp){
   enh_vol<-plot_enhanced_volcano (params$data_results(),
                                params$cluster_heatmap_input()[[19]],
                                comp_pick = i,
-                               FC=as.numeric(params$lfc),
-                               pVal=as.numeric(params$alpha),
-                               padj_check="p-adj sig.",
+                               FC=lfc,
+                               pVal=p,
+                               #padj_check="p-adj sig.",
+                               padj_check=params$p_adj_enh1,
                                params$colour_functions_input()[[2]],
                                as.numeric(params$colour_functions_input()[[3]])
   )
@@ -191,6 +231,26 @@ for(i in params$comp()){
   print(i)
   }
 ```
+
+\pagebreak
+### Box Plots
+
+```{r box_plots, echo=FALSE, fig.height=12, fig.width=12, warning=FALSE, comment=NA}
+clust_no<-as.numeric(params$k1)
+for(i in 1:clust_no){
+        box<-plot_box_plot (params$norm_data(),
+                       params$imp_data(),
+                       clu_df=params$cluster_heatmap_input()[[19]],
+                       cluster_no=i,
+                       params$palette_choice
+        )
+  print(box[1])
+  print(box[2])
+
+}
+
+```
+
 
 
 

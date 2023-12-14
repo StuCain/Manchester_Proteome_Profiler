@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.3.11-beta"
+Version = "0.3.14-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -2928,6 +2928,7 @@ server <- shinyServer(function(input, output) {
     
     #####===== Download Report =====#####
     output$downloadReport <- downloadHandler(
+      # Create a Progress object
       # For PDF output, change this to "report.pdf"
       filename = "SAINT_DEP+Cluster_report.pdf",
       content = function(file) {
@@ -2947,15 +2948,25 @@ server <- shinyServer(function(input, output) {
         tested_contrasts<- gsub("_p.adj", "", 
                                 colnames(SummarizedExperiment::rowData(dep()))[grep("p.adj", 
                                                                                     colnames(SummarizedExperiment::rowData(dep())))])
-        pg_width<- ncol(imp_data()) / 2.5
-        clust_height<-(dep_num()/10)+3.6
+        #pg_width<- ncol(imp_data()) / 2.5
+        clust_height<-(dep_num()/8)+4
         # Set up parameters to pass to Rmd document
         params <- list(data = data,
-                       alpha = input$p,
+                       expdesign = expdesign,
+                       data_type = input$data_type,
+                       exp = input$exp,
+                       lfq_type = input$lfq_type,
+                       thr = input$thr,
+                       p = input$p,
                        lfc = input$lfc,
+                       p2 = input$p2,
+                       lfc2 = input$lfc2,
+                       bfdr = input$bfdr,
+                       bfdr_freq = input$bfdr_freq,
                        k1 = input$k1,
+                       comp_type = input$comp_type,
                        #num_signif= sig_proteins,
-                       pg_width = pg_width,
+                       #pg_width = pg_width,
                        comp= comp,
                        comp2= comp2,
                        missval_input = missval_input,
@@ -2974,7 +2985,12 @@ server <- shinyServer(function(input, output) {
                        #                       heatmap_input = heatmap_input,
                        #                       cvs_input = cvs_input,
                        #                       volcano_input = volcano_input,
-                       dep = dep
+                       dep = dep,
+                       dep_num = dep_num,
+                       norm_data = norm_data,
+                       imp_data = imp_data,
+                       #cluster_no_box = cluster_no_box,
+                       palette_choice = input$palette_choice
         )
         
         # Knit the document, passing in the `params` list
