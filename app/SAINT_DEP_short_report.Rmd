@@ -1,5 +1,5 @@
 ---
-title: "SAINT_DEP + Cluster report"
+title: "SAINT_DEP + Cluster report (Short)"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   data: NA
@@ -42,6 +42,9 @@ params:
   data_results: NA
   p_adj_enh1: NA
   palette_choice: NA
+  entrezlist_input: NA
+  rendered_by_shiny: NA
+  
 #  cvs_input: NA
 #  volcano_input: NA
 
@@ -50,6 +53,7 @@ header-includes:
    - \usepackage[default]{sourcesanspro}
    - \usepackage[T1]{fontenc}
 mainfont: SourceSansPro
+geometry: margin=0.5in
 
 output: 
   pdf_document:
@@ -61,7 +65,7 @@ knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
 #clust_height<-(dep_num()/10)+3.6
 sample_no = nrow(params$expdesign())
 ```
-Version:0.1.3
+Version:0.1.4
 
 ## Method details
 
@@ -80,7 +84,7 @@ The raw data files were analyzed using `r params$data_type` to obtain protein id
 
 ## Results
 
-### FragPipe result output contains `r nrow(params$data)` proteins groups of which _`r nrow(params$dep())`_ proteins were reproducibly quantified.
+### `r params$data_type` result output contains `r nrow(params$data)` proteins groups of which _`r nrow(params$dep())`_ proteins were reproducibly quantified.
 
 ### `r params$num_signif` proteins differ significantly between samples.
 
@@ -89,7 +93,7 @@ The raw data files were analyzed using `r params$data_type` to obtain protein id
 ## Experimental Template
 
 ```{r exp_design, echo=FALSE, message=FALSE, warning=FALSE}
-print(params$expdesign())
+knitr::kable(params$expdesign())
 ```
 
 
@@ -127,6 +131,9 @@ Protein overlap in all samples.
 
 ```{r coverage, echo=FALSE, warning=FALSE}
 print(params$coverage_input())
+if (params$rendered_by_shiny)
+shiny::setProgress(0.20)  # set progress to 20%
+
 ```
 \pagebreak
 
@@ -149,6 +156,8 @@ A heatmap for proteins with missing value in each dataset. Each row represent a 
 
 ```{r missing_value_heatmap, echo=FALSE, message=FALSE, results='hide',warning=FALSE, fig.keep='first', tidy=TRUE}
 print(params$missval_input())
+if (params$rendered_by_shiny)
+shiny::setProgress(0.40)  # set progress to 40%
 ```
 \pagebreak
 
@@ -163,46 +172,64 @@ _clust_height_
 ```{r heatmap_2, echo=FALSE, fig.height= params$clust_height, warning=FALSE, results='hide'}
 
 print(params$comp_heatmap_input()[[1]])
+if (params$rendered_by_shiny)
+shiny::setProgress(0.60)  # set progress to 60%
 ```
+
 \pagebreak
 
 ### Cluster Heatmap
 A plot representing an overview of expression of all significant (deferentially expressed) proteins (rows) in all samples (columns).
+
 ```{r heatmap_cluster1, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
 if(params$k1>0){
   print(params$cluster_heatmap_input()[[1]])
+  print(params$cluster_heatmap_input()[13])
 }
+if (params$rendered_by_shiny)
+shiny::setProgress(0.80)  # set progress to 80%
 ```
 \pagebreak
+
 ```{r heatmap_cluster2, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[2]])
 }
 ```
+
 \pagebreak
+
 ```{r heatmap_cluster3, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
 if(params$k1>2){
   print(params$cluster_heatmap_input()[[3]])
 }
 ```
+
 \pagebreak
+
 ```{r heatmap_cluster4, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[4]])
 }
 ```
+
 \pagebreak
+
 ```{r heatmap_cluster5, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[5]])
 }
 ```
+
 \pagebreak
+
 ```{r heatmap_cluster6, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
 if(params$k1>5){
   print(params$cluster_heatmap_input()[[6]])
 }
+
 ```
+
 \pagebreak
 ### Enhanced Volcano Plots
 
@@ -229,27 +256,12 @@ for(i in comp){
   )
 # print(enh_vol)
   print(i)
-  }
-```
-
-\pagebreak
-### Box Plots
-
-```{r box_plots, echo=FALSE, fig.height=12, fig.width=12, warning=FALSE, comment=NA}
-clust_no<-as.numeric(params$k1)
-for(i in 1:clust_no){
-        box<-plot_box_plot (params$norm_data(),
-                       params$imp_data(),
-                       clu_df=params$cluster_heatmap_input()[[19]],
-                       cluster_no=i,
-                       params$palette_choice
-        )
-  print(box[1])
-  print(box[2])
-
 }
+if (params$rendered_by_shiny)
+shiny::setProgress(1)  # set progress to 100%
 
 ```
+
 
 
 

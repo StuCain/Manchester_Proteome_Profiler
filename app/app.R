@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.3.14-beta"
+Version = "0.3.15-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -247,11 +247,17 @@ ui <- fluidPage(
           infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
           infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
         ),
-        box(
-          column(5,uiOutput("downloadreport")), # offset for dist between buttons
-          #tags$br(),
-          #column(5,uiOutput('downloadPlots')),
-          width = 2),
+        conditionalPanel(
+          condition = "input.analyze == 1",
+          box(
+            radioButtons("report_type",
+                         "Report type",
+                         choices = c("Short", "Long"),
+                         selected = "Short"
+            ),
+            downloadButton('downloadReport', 'Download Report'),
+            width = 2)
+        ),
         
       ),
       
@@ -475,9 +481,9 @@ ui <- fluidPage(
                    column(width = 8,
                           tabBox(id = "comp_heat_tab",
                                  title = "Cluster Analysis Plots", width = 12,
-#                                 tabPanel(title = "SAINT Input",
-#                                          #DT::dataTableOutput("tablesaint"), width = 12
-#                                 ),
+                                 #                                 tabPanel(title = "SAINT Input",
+                                 #                                          #DT::dataTableOutput("tablesaint"), width = 12
+                                 #                                 ),
                                  tabPanel(title = "SAINT Output",
                                           DT::dataTableOutput("tablesaint_output1"), width = 12,
                                           downloadButton('download_saint1', 'Save SAINTexpress Table 1'),
@@ -2422,11 +2428,12 @@ server <- shinyServer(function(input, output) {
       enhanced_volcano_2_input()
     })
     
-    output$downloadreport <- renderUI({
-      if(!is.null(dep())){
-        downloadButton('downloadReport', 'Download Report')
-      }
-    })
+#    #Report
+#    output$downloadreport <- eventReactive(input$go, {
+#      if(!is.null(dep())){
+#       
+#      }
+#    })
     
     
     
@@ -2932,14 +2939,17 @@ server <- shinyServer(function(input, output) {
       # For PDF output, change this to "report.pdf"
       filename = "SAINT_DEP+Cluster_report.pdf",
       content = function(file) {
+        withProgress(message = 'Generating Report, please wait!', {
         # Copy the report file to a temporary directory before processing it, in
         # case we don't have write permissions to the current working dir (which
         # can happen when deployed).
+        if(input$report_type=="Short"){
         tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
-        #file.copy("../LFQ_report.Rmd", tempReport, overwrite = TRUE)
-        #        file.copy(paste0("./reports/", input$exp, "_report.Rmd"), tempReport, overwrite = TRUE)
         file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
-        
+        }else{
+          tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
+          file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
+        }
         
         sig_proteins<-dep() %>%
           .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
@@ -2990,7 +3000,9 @@ server <- shinyServer(function(input, output) {
                        norm_data = norm_data,
                        imp_data = imp_data,
                        #cluster_no_box = cluster_no_box,
-                       palette_choice = input$palette_choice
+                       palette_choice = input$palette_choice,
+                       #entrezlist_input = entrezlist_input,
+                       rendered_by_shiny = TRUE
         )
         
         # Knit the document, passing in the `params` list
@@ -2998,6 +3010,7 @@ server <- shinyServer(function(input, output) {
                           params = params,
                           envir = new.env(parent = globalenv())
         )
+        })
       }
     )
     
