@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.3.15-beta"
+Version = "0.3.16-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -238,6 +238,19 @@ ui <- fluidPage(
               width = 1),
         ),
         conditionalPanel(
+          condition = "input.analyze == 1",
+          box(
+            radioButtons("report_type",
+                         "Report type",
+                         choices = c("Short", "Long"),
+                         selected = "Short"
+            ),
+            uiOutput("downloadreport"),
+            helpText("Long report takes several minutes to generate"),
+            width = 2)
+        ),
+        
+        conditionalPanel(
           condition = "input.comp_type == '2 Rounds of comparisons'",
           infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
           infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
@@ -246,17 +259,6 @@ ui <- fluidPage(
           condition = "input.comp_type == 'Use SAINTexpress'",
           infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
           infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
-        ),
-        conditionalPanel(
-          condition = "input.analyze == 1",
-          box(
-            radioButtons("report_type",
-                         "Report type",
-                         choices = c("Short", "Long"),
-                         selected = "Short"
-            ),
-            downloadButton('downloadReport', 'Download Report'),
-            width = 2)
         ),
         
       ),
@@ -2260,6 +2262,38 @@ server <- shinyServer(function(input, output) {
       
     })
     
+    GO_MF_report_input <- reactive({
+      withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
+        for (i in 1:100) {
+          incProgress(1/100)
+          Sys.sleep(0.5)
+        }
+        plot_GO_MF(entrezlist_input())
+      })
+    })
+    
+    GO_CC_report_input <- reactive({
+      withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
+        for (i in 1:100) {
+          incProgress(1/100)
+          Sys.sleep(0.5)
+        }
+        plot_GO_CC(entrezlist_input())
+      })
+    })
+    
+    GO_BP_report_input <- reactive({
+      withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
+        for (i in 1:100) {
+          incProgress(1/100)
+          Sys.sleep(0.5)
+        }
+        plot_GO_BP(entrezlist_input())
+      })
+    })
+    
+    
+    
     
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
@@ -2428,15 +2462,13 @@ server <- shinyServer(function(input, output) {
       enhanced_volcano_2_input()
     })
     
-#    #Report
-#    output$downloadreport <- eventReactive(input$go, {
-#      if(!is.null(dep())){
-#       
-#      }
-#    })
-    
-    
-    
+    #Report
+    output$downloadreport <- renderUI({
+      if(!is.null(dep())){
+        downloadButton('downloadReport', 'Download Report')
+      }
+    })
+
     ####Observe####
     observe({
       output$plot <- renderUI({
@@ -2938,8 +2970,9 @@ server <- shinyServer(function(input, output) {
       # Create a Progress object
       # For PDF output, change this to "report.pdf"
       filename = "SAINT_DEP+Cluster_report.pdf",
+      if(input$report_type=="Short"){message_text<-"Generating Report, please wait!"}else{message_text<-"Generating Report, please wait! (If fails retry generation)"},
       content = function(file) {
-        withProgress(message = 'Generating Report, please wait!', {
+        withProgress(message = message_text, {
         # Copy the report file to a temporary directory before processing it, in
         # case we don't have write permissions to the current working dir (which
         # can happen when deployed).
@@ -2951,7 +2984,42 @@ server <- shinyServer(function(input, output) {
           file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
         }
         
-        sig_proteins<-dep() %>%
+#          if(input$report_type=="Long"){
+#            GO_MF_report_input <- 
+#              withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
+#                for (i in 1:100) {
+#                  incProgress(1/100)
+#                  Sys.sleep(0.5)
+#                }
+#                plot_GO_MF(entrezlist_input())
+#              })
+            
+#            GO_MF_input_plot<-GO_MF_input_report[1]
+#            GO_MF_input_map<-GO_MF_input_report[2]
+            
+#            GO_CC_input_report <- 
+#                withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
+#                  for (i in 1:100) {
+#                    incProgress(1/100)
+#                    Sys.sleep(0.5)
+#                  }
+#                  plot_GO_CC(entrezlist_input())
+#                })
+             
+#            GO_BP_input_report <- 
+#              withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
+#                for (i in 1:100) {
+#                  incProgress(1/100)
+#                  Sys.sleep(0.5)
+#                }
+#                plot_GO_BP(entrezlist_input())
+#              })
+            
+ #         }
+                
+            
+          
+          sig_proteins<-dep() %>%
           .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
           nrow()
         
@@ -3002,6 +3070,13 @@ server <- shinyServer(function(input, output) {
                        #cluster_no_box = cluster_no_box,
                        palette_choice = input$palette_choice,
                        #entrezlist_input = entrezlist_input,
+                       GO_MF_report_input = GO_MF_report_input,
+                       GO_CC_report_input = GO_CC_report_input,
+                       GO_BP_report_input = GO_BP_report_input,
+#                       GO_MF_input_plot = GO_MF_input_plot,
+#                       GO_MF_input_map = GO_MF_input_map,
+#                       GO_CC_input_report = GO_CC_input_report,
+#                       GO_BP_input_report = GO_BP_input_report,
                        rendered_by_shiny = TRUE
         )
         
@@ -3024,3 +3099,4 @@ server <- shinyServer(function(input, output) {
 #End of Server
 
 shinyApp(ui = ui, server = server)
+

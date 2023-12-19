@@ -44,6 +44,10 @@ params:
   palette_choice: NA
   entrezlist_input: NA
   rendered_by_shiny: NA
+  GO_MF_report_input: NA
+  GO_CC_report_input: NA
+  GO_BP_report_input: NA
+
   
 #  cvs_input: NA
 #  volcano_input: NA
@@ -64,8 +68,11 @@ output:
 knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
 #clust_height<-(dep_num()/10)+3.6
 sample_no = nrow(params$expdesign())
+if (params$comp_type == "2 Rounds of comparisons"){comp_data<-as.character(params$comp2())}else{comp_data<-as.character(params$comp())}
+comp_no<-length(comp_data)
+
 ```
-Version:0.1.4
+Version:0.1.5
 
 ## Method details
 
@@ -74,7 +81,7 @@ The raw data files were analyzed using `r params$data_type` to obtain protein id
 
 ### Quick summary of parameters used:
 * Input Data Type= <span style="color:blue">`r params$data_type`</span>
-* Tested pairwise comparisons = <span style="color:blue">`r params$comp()`</span>  
+* Tested pairwise comparisons = <span style="color:blue">`r comp_data`</span>  
 * Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$p`</span>  
 * Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>
 * Adjusted _p-value_ cutoff 2 <= <span style="color:blue">`r params$p2`</span>  
@@ -85,7 +92,6 @@ The raw data files were analyzed using `r params$data_type` to obtain protein id
 ## Results
 
 ### `r params$data_type` result output contains `r nrow(params$data)` proteins groups of which _`r nrow(params$dep())`_ proteins were reproducibly quantified.
-
 ### `r params$num_signif` proteins differ significantly between samples.
 
 \pagebreak
@@ -94,6 +100,7 @@ The raw data files were analyzed using `r params$data_type` to obtain protein id
 
 ```{r exp_design, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::kable(params$expdesign())
+print(comp_no)
 ```
 
 
@@ -104,7 +111,7 @@ knitr::kable(params$expdesign())
 ### Principle Component Analysis (PCA) plot
 
 
-```{r pca_plot, echo=FALSE, message=FALSE, warning=FALSE}
+```{r pca_plot, echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
 print(params$pca_input())
 ```
 \pagebreak
@@ -156,6 +163,7 @@ A heatmap for proteins with missing value in each dataset. Each row represent a 
 
 ```{r missing_value_heatmap, echo=FALSE, message=FALSE, results='hide',warning=FALSE, fig.keep='first', tidy=TRUE}
 print(params$missval_input())
+
 if (params$rendered_by_shiny)
 shiny::setProgress(0.40)  # set progress to 40%
 ```
@@ -166,10 +174,8 @@ shiny::setProgress(0.40)  # set progress to 40%
 
 ### Heatmap
 A plot representing an overview of expression of all significant (deferentially expressed) proteins (rows) in all samples (columns).
-_clust_height_
 
-
-```{r heatmap_2, echo=FALSE, fig.height= params$clust_height, warning=FALSE, results='hide'}
+```{r heatmap_main, echo=FALSE, fig.height= params$clust_height, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 
 print(params$comp_heatmap_input()[[1]])
 if (params$rendered_by_shiny)
@@ -178,20 +184,22 @@ shiny::setProgress(0.60)  # set progress to 60%
 
 \pagebreak
 
-### Cluster Heatmap
-A plot representing an overview of expression of all significant (deferentially expressed) proteins (rows) in all samples (columns).
+### Cluster Heatmaps
 
-```{r heatmap_cluster1, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+```{r heatmap_cluster1, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[7])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>0){
   print(params$cluster_heatmap_input()[[1]])
-  print(params$cluster_heatmap_input()[13])
+ 
+  
+  cluster1<-as.character (params$cluster_heatmap_input()[[13]]) 
+  print(params$cluster_heatmap_input()[[13]])
 }
 if (params$rendered_by_shiny)
 shiny::setProgress(0.80)  # set progress to 80%
 ```
 \pagebreak
 
-```{r heatmap_cluster2, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[2]])
 }
@@ -199,7 +207,7 @@ if(params$k1>1){
 
 \pagebreak
 
-```{r heatmap_cluster3, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>2){
   print(params$cluster_heatmap_input()[[3]])
 }
@@ -207,7 +215,7 @@ if(params$k1>2){
 
 \pagebreak
 
-```{r heatmap_cluster4, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[4]])
 }
@@ -215,7 +223,7 @@ if(params$k1>3){
 
 \pagebreak
 
-```{r heatmap_cluster5, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[5]])
 }
@@ -223,7 +231,7 @@ if(params$k1>4){
 
 \pagebreak
 
-```{r heatmap_cluster6, echo=FALSE, fig.height=10, warning=FALSE, results='hide'}
+```{r heatmap_cluster6, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[12])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>5){
   print(params$cluster_heatmap_input()[[6]])
 }
