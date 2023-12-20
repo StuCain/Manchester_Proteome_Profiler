@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.3.16-beta"
+Version = "0.4.0-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -38,7 +38,7 @@ if (ENABLE_PEPTIDE_ANALYSIS) {
                         "LFQ (peptide)"="LFQ-peptide", "TMT (peptide)"="TMT-peptide", "DIA (peptide)"= "DIA-peptide")
 } else {
 #  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA")
-  analysis_options <- c("LFQ"="LFQ")
+  analysis_options <- c("LFQ"="LFQ", "DIA"="DIA")
   
 }
 
@@ -113,49 +113,11 @@ ui <- fluidPage(
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
-                                    fileInput('dia_manifest', 'Upload sample annotation',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv'))),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'LFQ-peptide'",
-                                    fileInput('lfq_pept_expr', 'Upload combined_peptide.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    fileInput('lfq_pept_annot', 'Upload sample annotation',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    radioButtons("lfq_pept_type",
-                                                 "Intensity Type",
-                                                 choices = c("Intensity"="Intensity",
-                                                             "MaxLFQ Intensity"="MaxLFQ",
-                                                             "Spectral Count"="Spectral Count"),
-                                                 selected = "Intensity"),
+                                    #fileInput('dia_manifest', 'Upload sample annotation',
+                                    #          accept=c('text/tsv',
+                                    #                   'text/tab-separated-values,text/plain',
+                                    #                   '.tsv'))),
                                   ),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'TMT-peptide'",
-                                    fileInput('tmt_pept_expr', 'Upload peptide-level TMT-I report *.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    fileInput('tmt_pept_annot', 'Upload sample annotation',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv'))
-                                  ),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'DIA-peptide'",
-                                    fileInput('dia_pept_expr', 'Upload DIA precursor report *.pr_matrix.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    fileInput('dia_pept_annot', 'Upload sample annotation',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv'))
-                                  )
                                 ),
                                 
                                 #                                menuItemOutput("file_input"),
@@ -273,7 +235,10 @@ ui <- fluidPage(
                           box(title = "Top Table",
                               DT::dataTableOutput("table"), width = 12),
                           box(title = "Exp Table",
-                              DT::dataTableOutput("table_test"), width = 12), #test info
+                              DT::dataTableOutput("exp_des"), width = 12), #exp_design
+                          box(title = "Test",
+                              DT::dataTableOutput("test"), width = 12), #test
+                          downloadButton('downloadtesttable', 'Save Test Table')
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
@@ -956,43 +921,69 @@ server <- shinyServer(function(input, output) {
       }
       if(is.null(inFile))
         return(NULL)
-      temp_data <- read.csv(inFile$datapath,
-                            header = TRUE,
-                            fill= TRUE, # to fill any missing data
-                            sep = "\t",
-                            quote = "",
-                            comment.char = "",
-                            blank.lines.skip = F,
-                            check.names = T)
-      colnames(temp_data) <- make.unique(colnames(temp_data), "_")
-      temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
-      data<-temp_data %>% 
-        dplyr::rename(
-          Gene.names=Gene,
-          Protein.IDs=Protein.ID,
-          Protein.names=Description,
-          Sequence.length=Protein.Length
-        )
-      
-      if (input$lfq_type == "Intensity") {
-        lfq_columns <- setdiff(grep("Intensity", colnames(data)),
-                               grep("MaxLFQ", colnames(data)))
-        lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
-        lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
-        data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
-        #        data1<-data1 %>% 
-        #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+      if (input$exp == "LFQ") {
+        temp_data <- read.csv(inFile$datapath,
+                              header = TRUE,
+                              fill= TRUE, # to fill any missing data
+                              sep = "\t",
+                              quote = "",
+                              comment.char = "",
+                              blank.lines.skip = F,
+                              check.names = T)
+        colnames(temp_data) <- make.unique(colnames(temp_data), "_")
+        temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+        data<-temp_data %>% 
+          dplyr::rename(
+            Gene.names=Gene,
+            Protein.IDs=Protein.ID,
+            Protein.names=Description,
+            Sequence.length=Protein.Length
+          )
         
-      } else if (input$lfq_type == "MaxLFQ") {
-        lfq_columns<-grep("MaxLFQ", colnames(data))
-        if (length(lfq_columns) == 0) {
-          stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
+        if (input$lfq_type == "Intensity") {
+          lfq_columns <- setdiff(grep("Intensity", colnames(data)),
+                                 grep("MaxLFQ", colnames(data)))
+          lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
+          lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+          #        data1<-data1 %>% 
+          #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+          
+        } else if (input$lfq_type == "MaxLFQ") {
+          lfq_columns<-grep("MaxLFQ", colnames(data))
+          if (length(lfq_columns) == 0) {
+            stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
+          }
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         }
-        data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
-        #        data1<-data1 %>% 
-        #          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
-      }
-    }  
+      }else if(input$exp == "DIA"){
+        temp_data <- read.table(inFile$datapath,
+                                header = T,
+                                sep="\t",
+                                check.names = T,
+                                stringsAsFactors = FALSE)
+        data<-temp_data %>% 
+          dplyr::rename(
+            Gene.names=Genes,
+            Protein.IDs=Protein.Group,
+            Protein.names=First.Protein.Description,
+            #  Sequence.length=Protein.Length
+          )
+        data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
+        lfq_columns<- 6:ncol(data)
+        uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)
+        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "Entry", all.x = TRUE, all.y = FALSE)
+        data<-data_m %>% 
+          dplyr::rename(
+            Sequence.length=Length
+          )
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.x", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data<-data_2 %>% 
+          dplyr::rename(
+            Protein.names=Protein.names.x
+          )
+      } # end of DIA
+    }
     #    return(data1)
   })
   
@@ -1026,18 +1017,38 @@ server <- shinyServer(function(input, output) {
     }
     
     else if (input$data_type == "FragPipe"){
-      LFQ_columns<- grep(".Intensity", colnames(data()))
-      label<-colnames(data()[LFQ_columns])
-      label <- gsub('.MaxLFQ.Intensity', '', label)
-      label <- gsub('.Intensity', '', label)
-      condition<-""
-      substrRight <- function(x, n){
-        substr(x, nchar(x)-n+1, nchar(x))
+      if(input$exp == "LFQ")
+      {
+        LFQ_columns<- grep(".Intensity", colnames(data()))
+        label<-colnames(data()[LFQ_columns])
+        label <- gsub('.MaxLFQ.Intensity', '', label)
+        label <- gsub('.Intensity', '', label)
+        condition<-""
+        substrRight <- function(x, n){
+          substr(x, nchar(x)-n+1, nchar(x))
+        }
+        replicate<-substrRight(label, 1)
+        condition_type<-""
+        bait_id<-""
+        exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+      }else if (input$exp == "DIA")
+      {
+        end<-ncol(data())
+        end_1<-end-1
+        LFQ_columns<- 4:end_1
+        label<-colnames(data()[LFQ_columns])
+        #label <- gsub('.MaxLFQ.Intensity', '', label)
+        #label <- gsub('.Intensity', '', label)
+        condition<-""
+        #substrRight <- function(x, n){
+        #  substr(x, nchar(x)-n+1, nchar(x))
+        #}
+        replicate<-""
+        condition_type<-""
+        bait_id<-""
+        exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+        
       }
-      replicate<-substrRight(label, 1)
-      condition_type<-""
-      bait_id<-""
-      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
     
     return(exp_template_new)
@@ -1137,12 +1148,22 @@ server <- shinyServer(function(input, output) {
     }
     
     else if (input$data_type == "FragPipe"){
+      if(input$exp == "LFQ")
+      {
       cols<- grep(".Intensity", colnames(data))
       data<-data %>% 
         rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
       data<-data %>% 
         rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
       unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+      }else if(input$exp == "DIA")
+      {
+        end<-ncol(data())
+        end_1<-end-1
+        cols<- 4:end_1
+        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+      }
+      
     }
     
     se <- make_se(unique_names, cols, expdesign())
@@ -2320,16 +2341,20 @@ server <- shinyServer(function(input, output) {
       settings_input()
     })
     
-    #Test table 
-    output$table_test <- DT::renderDataTable({
+    #Exp Design Table 
+    output$exp_des <- DT::renderDataTable({
       expdesign()
-    }) 
+    })
     
     #Comparisons Table
     output$table_comp <- DT::renderDataTable({
       comp_table()
     }) 
     
+    #Test_table
+    output$test <- DT::renderDataTable({
+      data()
+    })
     
     #Saint Outputs
     output$tablesaint_output1 <- DT::renderDataTable({
@@ -2468,7 +2493,7 @@ server <- shinyServer(function(input, output) {
         downloadButton('downloadReport', 'Download Report')
       }
     })
-
+    
     ####Observe####
     observe({
       output$plot <- renderUI({
@@ -2655,6 +2680,19 @@ server <- shinyServer(function(input, output) {
                     sep ="\t") 
       }
     )
+    
+    #Test table
+    output$downloadtesttable <- downloadHandler(
+      filename = function() { paste("test.txt", sep = "") },
+      content = function(file) {
+        write.table(data(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
     
     #SAINTtables table
     output$download_saint1 <- downloadHandler(
@@ -2973,118 +3011,118 @@ server <- shinyServer(function(input, output) {
       if(input$report_type=="Short"){message_text<-"Generating Report, please wait!"}else{message_text<-"Generating Report, please wait! (If fails retry generation)"},
       content = function(file) {
         withProgress(message = message_text, {
-        # Copy the report file to a temporary directory before processing it, in
-        # case we don't have write permissions to the current working dir (which
-        # can happen when deployed).
-        if(input$report_type=="Short"){
-        tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
-        file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
-        }else{
-          tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
-          file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
-        }
-        
-#          if(input$report_type=="Long"){
-#            GO_MF_report_input <- 
-#              withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
-#                for (i in 1:100) {
-#                  incProgress(1/100)
-#                  Sys.sleep(0.5)
-#                }
-#                plot_GO_MF(entrezlist_input())
-#              })
-            
-#            GO_MF_input_plot<-GO_MF_input_report[1]
-#            GO_MF_input_map<-GO_MF_input_report[2]
-            
-#            GO_CC_input_report <- 
-#                withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
-#                  for (i in 1:100) {
-#                    incProgress(1/100)
-#                    Sys.sleep(0.5)
-#                  }
-#                  plot_GO_CC(entrezlist_input())
-#                })
-             
-#            GO_BP_input_report <- 
-#              withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
-#                for (i in 1:100) {
-#                  incProgress(1/100)
-#                  Sys.sleep(0.5)
-#                }
-#                plot_GO_BP(entrezlist_input())
-#              })
-            
- #         }
-                
-            
+          # Copy the report file to a temporary directory before processing it, in
+          # case we don't have write permissions to the current working dir (which
+          # can happen when deployed).
+          if(input$report_type=="Short"){
+            tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
+            file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
+          }else{
+            tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
+            file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
+          }
+          
+          #          if(input$report_type=="Long"){
+          #            GO_MF_report_input <- 
+          #              withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
+          #                for (i in 1:100) {
+          #                  incProgress(1/100)
+          #                  Sys.sleep(0.5)
+          #                }
+          #                plot_GO_MF(entrezlist_input())
+          #              })
+          
+          #            GO_MF_input_plot<-GO_MF_input_report[1]
+          #            GO_MF_input_map<-GO_MF_input_report[2]
+          
+          #            GO_CC_input_report <- 
+          #                withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
+          #                  for (i in 1:100) {
+          #                    incProgress(1/100)
+          #                    Sys.sleep(0.5)
+          #                  }
+          #                  plot_GO_CC(entrezlist_input())
+          #                })
+          
+          #            GO_BP_input_report <- 
+          #              withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
+          #                for (i in 1:100) {
+          #                  incProgress(1/100)
+          #                  Sys.sleep(0.5)
+          #                }
+          #                plot_GO_BP(entrezlist_input())
+          #              })
+          
+          #         }
+          
+          
           
           sig_proteins<-dep() %>%
-          .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
-          nrow()
-        
-        tested_contrasts<- gsub("_p.adj", "", 
-                                colnames(SummarizedExperiment::rowData(dep()))[grep("p.adj", 
-                                                                                    colnames(SummarizedExperiment::rowData(dep())))])
-        #pg_width<- ncol(imp_data()) / 2.5
-        clust_height<-(dep_num()/8)+4
-        # Set up parameters to pass to Rmd document
-        params <- list(data = data,
-                       expdesign = expdesign,
-                       data_type = input$data_type,
-                       exp = input$exp,
-                       lfq_type = input$lfq_type,
-                       thr = input$thr,
-                       p = input$p,
-                       lfc = input$lfc,
-                       p2 = input$p2,
-                       lfc2 = input$lfc2,
-                       bfdr = input$bfdr,
-                       bfdr_freq = input$bfdr_freq,
-                       k1 = input$k1,
-                       comp_type = input$comp_type,
-                       #num_signif= sig_proteins,
-                       #pg_width = pg_width,
-                       comp= comp,
-                       comp2= comp2,
-                       missval_input = missval_input,
-                       # p_hist_input = p_hist_input,
-                       pca_input = pca_input,
-                       norm_input = norm_input,
-                       numbers_input = numbers_input, 
-                       coverage_input = coverage_input,
-                       cor_input =cor_input,
-                       comp_heatmap_input = comp_heatmap_input,
-                       clust_height = clust_height,
-                       cluster_heatmap_input = cluster_heatmap_input,
-                       colour_functions_input = colour_functions_input,
-                       data_results = data_results,
-                       p_adj_enh1 = input$p_adj_enh1,
-                       #                       heatmap_input = heatmap_input,
-                       #                       cvs_input = cvs_input,
-                       #                       volcano_input = volcano_input,
-                       dep = dep,
-                       dep_num = dep_num,
-                       norm_data = norm_data,
-                       imp_data = imp_data,
-                       #cluster_no_box = cluster_no_box,
-                       palette_choice = input$palette_choice,
-                       #entrezlist_input = entrezlist_input,
-                       GO_MF_report_input = GO_MF_report_input,
-                       GO_CC_report_input = GO_CC_report_input,
-                       GO_BP_report_input = GO_BP_report_input,
-#                       GO_MF_input_plot = GO_MF_input_plot,
-#                       GO_MF_input_map = GO_MF_input_map,
-#                       GO_CC_input_report = GO_CC_input_report,
-#                       GO_BP_input_report = GO_BP_input_report,
-                       rendered_by_shiny = TRUE
-        )
-        
-        # Knit the document, passing in the `params` list
-        rmarkdown::render(tempReport, output_file = file,
-                          params = params,
-                          envir = new.env(parent = globalenv())
-        )
+            .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
+            nrow()
+          
+          tested_contrasts<- gsub("_p.adj", "", 
+                                  colnames(SummarizedExperiment::rowData(dep()))[grep("p.adj", 
+                                                                                      colnames(SummarizedExperiment::rowData(dep())))])
+          #pg_width<- ncol(imp_data()) / 2.5
+          clust_height<-(dep_num()/8)+4
+          # Set up parameters to pass to Rmd document
+          params <- list(data = data,
+                         expdesign = expdesign,
+                         data_type = input$data_type,
+                         exp = input$exp,
+                         lfq_type = input$lfq_type,
+                         thr = input$thr,
+                         p = input$p,
+                         lfc = input$lfc,
+                         p2 = input$p2,
+                         lfc2 = input$lfc2,
+                         bfdr = input$bfdr,
+                         bfdr_freq = input$bfdr_freq,
+                         k1 = input$k1,
+                         comp_type = input$comp_type,
+                         #num_signif= sig_proteins,
+                         #pg_width = pg_width,
+                         comp= comp,
+                         comp2= comp2,
+                         missval_input = missval_input,
+                         # p_hist_input = p_hist_input,
+                         pca_input = pca_input,
+                         norm_input = norm_input,
+                         numbers_input = numbers_input, 
+                         coverage_input = coverage_input,
+                         cor_input =cor_input,
+                         comp_heatmap_input = comp_heatmap_input,
+                         clust_height = clust_height,
+                         cluster_heatmap_input = cluster_heatmap_input,
+                         colour_functions_input = colour_functions_input,
+                         data_results = data_results,
+                         p_adj_enh1 = input$p_adj_enh1,
+                         #                       heatmap_input = heatmap_input,
+                         #                       cvs_input = cvs_input,
+                         #                       volcano_input = volcano_input,
+                         dep = dep,
+                         dep_num = dep_num,
+                         norm_data = norm_data,
+                         imp_data = imp_data,
+                         #cluster_no_box = cluster_no_box,
+                         palette_choice = input$palette_choice,
+                         #entrezlist_input = entrezlist_input,
+                         GO_MF_report_input = GO_MF_report_input,
+                         GO_CC_report_input = GO_CC_report_input,
+                         GO_BP_report_input = GO_BP_report_input,
+                         #                       GO_MF_input_plot = GO_MF_input_plot,
+                         #                       GO_MF_input_map = GO_MF_input_map,
+                         #                       GO_CC_input_report = GO_CC_input_report,
+                         #                       GO_BP_input_report = GO_BP_input_report,
+                         rendered_by_shiny = TRUE
+          )
+          
+          # Knit the document, passing in the `params` list
+          rmarkdown::render(tempReport, output_file = file,
+                            params = params,
+                            envir = new.env(parent = globalenv())
+          )
         })
       }
     )
