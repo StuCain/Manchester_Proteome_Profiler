@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.0-beta"
+Version = "0.4.1-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -204,7 +204,7 @@ ui <- fluidPage(
           box(
             radioButtons("report_type",
                          "Report type",
-                         choices = c("Short", "Long"),
+                         choices = c("Short", "with Box Plots", "Long"),
                          selected = "Short"
             ),
             uiOutput("downloadreport"),
@@ -748,7 +748,7 @@ ui <- fluidPage(
 
 ####Server####
 
-server <- shinyServer(function(input, output) {
+server <- shinyServer(function(input, output, session) {
   options(shiny.maxRequestSize=200*1024^2)
   
   #### UI functions --------------------------------------------------------
@@ -2490,6 +2490,11 @@ server <- shinyServer(function(input, output) {
     #Report
     output$downloadreport <- renderUI({
       if(!is.null(dep())){
+        if(input$report_type=="Long"){
+          GO_MF<-GO_MF_report_input()
+          GO_CC<-GO_CC_report_input()
+          GO_BP<-GO_BP_report_input()
+        }
         downloadButton('downloadReport', 'Download Report')
       }
     })
@@ -3004,7 +3009,7 @@ server <- shinyServer(function(input, output) {
     )
     
     #####===== Download Report =====#####
-    output$downloadReport <- downloadHandler(
+    output$downloadReport <-downloadHandler(
       # Create a Progress object
       # For PDF output, change this to "report.pdf"
       filename = "SAINT_DEP+Cluster_report.pdf",
@@ -3017,10 +3022,16 @@ server <- shinyServer(function(input, output) {
           if(input$report_type=="Short"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
             file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
-          }else{
+          }
+          if(input$report_type=="with Box Plots"){
+            tempReport <- file.path(tempdir(), "SAINT_DEP_med_report.Rmd")
+            file.copy(paste0("SAINT_DEP_med_report.Rmd"), tempReport, overwrite = TRUE)
+          }
+          if(input$report_type=="Long"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
           }
+          updateRadioButtons(session, "report_type", choices = c("Short", "with Box Plots", "Long"), selected = "Short")
           
           #          if(input$report_type=="Long"){
           #            GO_MF_report_input <- 
