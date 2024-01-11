@@ -47,6 +47,7 @@ params:
   GO_MF_report_input: NA
   GO_CC_report_input: NA
   GO_BP_report_input: NA
+  box_plot_report_input: NA
 
   
 #  cvs_input: NA
@@ -270,18 +271,14 @@ shiny::setProgress(0.30)  # set progress to 30%
 ```{r box_plots, echo=FALSE, fig.height=12, fig.width=12, warning=FALSE, comment=NA}
 clust_no<-as.numeric(params$k1)
 for(i in 1:clust_no){
-        box<-plot_box_plot (params$norm_data(),
-                       params$imp_data(),
-                       clu_df=params$cluster_heatmap_input()[[19]],
-                       cluster_no=i,
-                       params$palette_choice
-        )
-  print(box[1])
-  print(box[2])
+  print(params$box_plot_report_input()[[i]])
+  
+  prog<-0.4+(i/20)
+  if (params$rendered_by_shiny)
+shiny::setProgress(prog) 
+  
 
 }
-if (params$rendered_by_shiny)
-shiny::setProgress(0.5)  # set progress to 50%
 ```
 
 \pagebreak

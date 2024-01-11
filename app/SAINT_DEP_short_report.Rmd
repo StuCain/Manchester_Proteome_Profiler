@@ -47,7 +47,8 @@ params:
   GO_MF_report_input: NA
   GO_CC_report_input: NA
   GO_BP_report_input: NA
-
+  box_plot_report_input: NA
+  
   
 #  cvs_input: NA
 #  volcano_input: NA

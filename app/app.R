@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.1-beta"
+Version = "0.4.3-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -162,42 +162,44 @@ ui <- fluidPage(
     #Body
     dashboardBody(
       helpText(paste("By Stuart Cain, Version:", Version)),
+      #set infobox height
+      tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 0px;}'))),
       #Top row of boxes
       fluidRow(
         box(numericInput("thr",
                          "Missing value threshold",
                          min = 0, max = 3, value = 1),
-            width = 1),
+            width = 1, height = 120 ),
         box(numericInput("p",
                          "adj. P value",
                          min = 0.0001, max = 0.1, value = 0.05),
-            width = 1),
+            width = 1, height = 120),
         box(numericInput("lfc",
                          "Fold change",
                          min = 0, max = 32, value = 2),
-            width = 1),
+            width = 1, height = 120),
         infoBoxOutput("significantBox"), #shows number of Sig. Proteins
         conditionalPanel(
           condition = "input.comp_type == 'Use SAINTexpress'",
           box(numericInput("bfdr",
                            "BFDR Cut-Off",
                            min = 0, max = 1, value = 0.05, step = 0.05),
-              width = 1),
+              width = 1, height = 120),
           box(numericInput("bfdr_freq",
                            "BFDR Freq. Min",
                            min = 0, max = 10, value = 1),
-              width = 1),
+              width = 1, height = 120),
         ),
         conditionalPanel(
           condition = "input.comp_type == '2 Rounds of comparisons'",
           box(numericInput("p2",
                            "adj. P value (Comp2)",
                            min = 0.0001, max = 0.1, value = 0.05),
-              width = 1),
+              width = 1, height = 120),
           box(numericInput("lfc2",
                            "Fold change (Comp2)",
                            min = 0, max = 32, value = 2),
-              width = 1),
+              width = 1, height = 120),
         ),
         conditionalPanel(
           condition = "input.analyze == 1",
@@ -205,13 +207,9 @@ ui <- fluidPage(
             radioButtons("report_type",
                          "Report type",
                          choices = c("Short", "with Box Plots", "Long"),
-                         selected = "Short"
-            ),
-            uiOutput("downloadreport"),
-            helpText("Long report takes several minutes to generate"),
-            width = 2)
+                         selected = "Short"),
+            width = 2, height = 120),
         ),
-        
         conditionalPanel(
           condition = "input.comp_type == '2 Rounds of comparisons'",
           infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
@@ -222,6 +220,15 @@ ui <- fluidPage(
           infoBoxOutput("significantBox_bfdr"), #shows number of Sig. Proteins (BFDR)
           infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
         ),
+        conditionalPanel(
+          condition = "input.analyze == 1",
+          box(
+            uiOutput("downloadreport"),
+            helpText("Long report takes several minutes to generate"),
+            width = 2, height = 120)
+        ),
+        
+        
         
       ),
       
@@ -1150,12 +1157,12 @@ server <- shinyServer(function(input, output, session) {
     else if (input$data_type == "FragPipe"){
       if(input$exp == "LFQ")
       {
-      cols<- grep(".Intensity", colnames(data))
-      data<-data %>% 
-        rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
-      data<-data %>% 
-        rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
-      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+        cols<- grep(".Intensity", colnames(data))
+        data<-data %>% 
+          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
+        data<-data %>% 
+          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
       }else if(input$exp == "DIA")
       {
         end<-ncol(data())
@@ -1415,8 +1422,6 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$significantBox2 <- renderInfoBox({
-      info_box<-box(width = 1, height = 0)
-      
       if (input$comp_type == "2 Rounds of comparisons")
       {
         num_total <- dep2() %>%
@@ -1464,8 +1469,6 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$significantBox3 <- renderInfoBox({
-      info_box<-box(width = 1, height = 0)
-      
       if (input$comp_type == "2 Rounds of comparisons")
       {
         num_total <- dep() %>%
@@ -1512,8 +1515,6 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$significantBox_bfdr <- renderInfoBox({
-      info_box<-box(width = 1, height = 0)
-      
       if (input$comp_type == "Use SAINTexpress")
       {
         num_total <- dep() %>%
@@ -1560,8 +1561,6 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$significantBox_bfdr_filtered <- renderInfoBox({
-      info_box<-box(width = 1, height = 0)
-      
       if (input$comp_type == "Use SAINTexpress")
       {
         num_total <- dep() %>%
@@ -2246,6 +2245,24 @@ server <- shinyServer(function(input, output, session) {
       })
     })
     
+    #Plot_Box_Plots_reports
+    box_plot_report_input <- reactive({
+      withProgress(message = 'Generating Box Plots', value = 0.66, {
+        box_plot_list<-list()
+        for(i in 1:input$k1){
+          box_plot<- plot_box_plot (
+            norm_data(),
+            imp_data(),
+            clu_df=cluster_heatmap_input()[[19]],
+            cluster_no=i,
+            input$palette_choice
+          )
+          box_plot_list[[i]]<-box_plot  
+        }
+        box_plot_list
+      })
+    })
+    
     #Make entrezlist
     entrezlist_input <- reactive({
       get_entrezlist(cluster_heatmap_input()[[19]])
@@ -2490,7 +2507,12 @@ server <- shinyServer(function(input, output, session) {
     #Report
     output$downloadreport <- renderUI({
       if(!is.null(dep())){
+        if(input$report_type=="with Box Plots"){
+          box<-box_plot_report_input()
+        }
+        
         if(input$report_type=="Long"){
+          box<-box_plot_report_input()
           GO_MF<-GO_MF_report_input()
           GO_CC<-GO_CC_report_input()
           GO_BP<-GO_BP_report_input()
@@ -3032,42 +3054,7 @@ server <- shinyServer(function(input, output, session) {
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
           }
           updateRadioButtons(session, "report_type", choices = c("Short", "with Box Plots", "Long"), selected = "Short")
-          
-          #          if(input$report_type=="Long"){
-          #            GO_MF_report_input <- 
-          #              withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
-          #                for (i in 1:100) {
-          #                  incProgress(1/100)
-          #                  Sys.sleep(0.5)
-          #                }
-          #                plot_GO_MF(entrezlist_input())
-          #              })
-          
-          #            GO_MF_input_plot<-GO_MF_input_report[1]
-          #            GO_MF_input_map<-GO_MF_input_report[2]
-          
-          #            GO_CC_input_report <- 
-          #                withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
-          #                  for (i in 1:100) {
-          #                    incProgress(1/100)
-          #                    Sys.sleep(0.5)
-          #                  }
-          #                  plot_GO_CC(entrezlist_input())
-          #                })
-          
-          #            GO_BP_input_report <- 
-          #              withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
-          #                for (i in 1:100) {
-          #                  incProgress(1/100)
-          #                  Sys.sleep(0.5)
-          #                }
-          #                plot_GO_BP(entrezlist_input())
-          #              })
-          
-          #         }
-          
-          
-          
+
           sig_proteins<-dep() %>%
             .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
             nrow()
@@ -3116,16 +3103,11 @@ server <- shinyServer(function(input, output, session) {
                          dep_num = dep_num,
                          norm_data = norm_data,
                          imp_data = imp_data,
-                         #cluster_no_box = cluster_no_box,
                          palette_choice = input$palette_choice,
-                         #entrezlist_input = entrezlist_input,
                          GO_MF_report_input = GO_MF_report_input,
                          GO_CC_report_input = GO_CC_report_input,
                          GO_BP_report_input = GO_BP_report_input,
-                         #                       GO_MF_input_plot = GO_MF_input_plot,
-                         #                       GO_MF_input_map = GO_MF_input_map,
-                         #                       GO_CC_input_report = GO_CC_input_report,
-                         #                       GO_BP_input_report = GO_BP_input_report,
+                         box_plot_report_input = box_plot_report_input,
                          rendered_by_shiny = TRUE
           )
           
