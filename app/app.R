@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.3-beta"
+Version = "0.4.4-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -113,10 +113,10 @@ ui <- fluidPage(
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
-                                    #fileInput('dia_manifest', 'Upload sample annotation',
-                                    #          accept=c('text/tsv',
-                                    #                   'text/tab-separated-values,text/plain',
-                                    #                   '.tsv'))),
+                                    radioButtons("dia_species",
+                                                 "Choose Species",
+                                                 choices = c("Human", "Mouse"),
+                                                 selected = "Human"),
                                   ),
                                 ),
                                 
@@ -149,7 +149,7 @@ ui <- fluidPage(
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
                        ),
-                       actionButton("analyze", "Analyze"),
+                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart")),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -202,7 +202,7 @@ ui <- fluidPage(
               width = 1, height = 120),
         ),
         conditionalPanel(
-          condition = "input.analyze == 1",
+          condition = "input.analyze >= 1",
           box(
             radioButtons("report_type",
                          "Report type",
@@ -221,7 +221,7 @@ ui <- fluidPage(
           infoBoxOutput("significantBox_bfdr_filtered") #shows number of Sig. Proteins (BFDR)
         ),
         conditionalPanel(
-          condition = "input.analyze == 1",
+          condition = "input.analyze >= 1",
           box(
             uiOutput("downloadreport"),
             helpText("Long report takes several minutes to generate"),
@@ -627,7 +627,7 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Molecular Function",
                                           fluidRow(
-                                            actionButton("analyze_MF", "Analyze Molecular Function"),
+                                            actionButton("analyze_MF", "Analyze Molecular Function", icon = icon("magnifying-glass-chart")),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
                                           fluidRow(
@@ -660,7 +660,7 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Cellular Components",
                                           fluidRow(
-                                            actionButton("analyze_CC", "Analyze Cellular Components"),
+                                            actionButton("analyze_CC", "Analyze Cellular Components", icon = icon("magnifying-glass-chart")),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
                                           fluidRow(
@@ -694,7 +694,7 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Biological Process",
                                           fluidRow(
-                                            actionButton("analyze_BP", "Analyze Biological Process"),
+                                            actionButton("analyze_BP", "Analyze Biological Process", icon = icon("magnifying-glass-chart")),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
                                           fluidRow(
@@ -968,7 +968,15 @@ server <- shinyServer(function(input, output, session) {
                                 header = T,
                                 sep="\t",
                                 check.names = T,
-                                stringsAsFactors = FALSE)
+                                stringsAsFactors = FALSE,
+                                fill= TRUE, # to fill any missing data
+                                quote = "",
+                                comment.char = "",
+                                blank.lines.skip = F,
+  )
+        temp_data<-temp_data %>% dplyr::filter(!grepl('contam_sp', Protein.Group))
+        temp_data<-temp_data %>% dplyr::filter(!grepl('rev_sp', Protein.Group)) 
+        
         data<-temp_data %>% 
           dplyr::rename(
             Gene.names=Genes,
@@ -978,7 +986,8 @@ server <- shinyServer(function(input, output, session) {
           )
         data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
         lfq_columns<- 6:ncol(data)
-        uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)
+        if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+        if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
         data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "Entry", all.x = TRUE, all.y = FALSE)
         data<-data_m %>% 
           dplyr::rename(
@@ -987,8 +996,8 @@ server <- shinyServer(function(input, output, session) {
         data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.x", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         data<-data_2 %>% 
           dplyr::rename(
-            Protein.names=Protein.names.x
-          )
+            Protein.names=Protein.names.x)
+        
       } # end of DIA
     }
     #    return(data1)
