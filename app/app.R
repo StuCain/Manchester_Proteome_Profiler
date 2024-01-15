@@ -164,6 +164,8 @@ ui <- fluidPage(
       helpText(paste("By Stuart Cain, Version:", Version)),
       #set infobox height
       tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 0px;}'))),
+      #Google Analytics
+      tags$head(includeHTML("google-analytics.html")),
       #Top row of boxes
       fluidRow(
         box(numericInput("thr",
