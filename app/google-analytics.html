@@ -6,4 +6,17 @@
   gtag('js', new Date());
 
   gtag('config', 'G-VYDJ42WXHF');
+  
+  $(document).on('click', 'button', function() {
+    gtag('event', 'button', { action: 'analyze' });
+  });
+  
+  $(document).on('click', 'button', function() {
+    gtag('event', 'button', { action: 'downloadcomplexheatmap' });
+  });
+
+  $(document).on('click', 'button', function() {
+    gtag('event', 'button', { action: 'downloadreport' });
+  });
+
 </script>

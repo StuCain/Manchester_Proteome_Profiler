@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.4-beta"
+Version = "0.4.5-beta"
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -44,8 +44,9 @@ if (ENABLE_PEPTIDE_ANALYSIS) {
 
 ####UI####
 ui <- fluidPage(
+  tags$head(includeHTML(("google-analytics.html"))),
   theme = shinytheme("spacelab"),
-  #autoWaiter(html = spin_loaders(id = 12, color = "#2fa3e6", style = NULL), color = "white"),
+  tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
     dashboardHeader(title = "SAINT_DEP + Cluster"),
@@ -129,7 +130,7 @@ ui <- fluidPage(
                                                    '.csv')),
                                 helpText("Generate Experimental template"),
                                 #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
-                                downloadButton('downloadexp_template', 'Save Exp. template')
+                                downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary")
                        ),
                        menuItemOutput("columns"),
                        menuItem(
@@ -149,7 +150,7 @@ ui <- fluidPage(
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
                        ),
-                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart")),
+                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -165,7 +166,7 @@ ui <- fluidPage(
       #set infobox height
       tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 0px;}'))),
       #Google Analytics
-      tags$head(includeHTML("google-analytics.html")),
+      tags$head(includeHTML(("google-analytics.html"))),
       #Top row of boxes
       fluidRow(
         box(numericInput("thr",
@@ -245,16 +246,16 @@ ui <- fluidPage(
                               DT::dataTableOutput("table"), width = 12),
                           box(title = "Exp Table",
                               DT::dataTableOutput("exp_des"), width = 12), #exp_design
-                          box(title = "Test",
-                              DT::dataTableOutput("test"), width = 12), #test
-                          downloadButton('downloadtesttable', 'Save Test Table')
+      #                    box(title = "Test",
+      #                        DT::dataTableOutput("test"), width = 12), #test
+      #                    downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
                                  title = "Result Plots", width = 12,
                                  tabPanel(title = "Selected Protein",
                                           plotOutput("selected_plot"),
-                                          downloadButton('downloadPlot', 'Save plot')),
+                                          downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
                                  tabPanel(title = "Heatmap",
                                           fluidRow(
                                             box(numericInput("limit",
@@ -278,7 +279,7 @@ ui <- fluidPage(
                                           ),
                                           fluidRow(
                                             uiOutput("plot"),
-                                            downloadButton('downloadHeatmap', 'Save heatmap'))
+                                            downloadButton('downloadHeatmap', 'Save heatmap', class = "btn-primary"))
                                  ),
                                  tabPanel(title = "Volcano plot",
                                           fluidRow(
@@ -297,7 +298,7 @@ ui <- fluidPage(
                                           ),
                                           fluidRow(
                                             plotOutput("volcano", height = 600),
-                                            downloadButton('downloadVolcano', 'Save volcano')
+                                            downloadButton('downloadVolcano', 'Save volcano', class = "btn-primary")
                                           )
                                  ),
                                  tabPanel(title = "Volcano plot (Comp2)",
@@ -317,7 +318,7 @@ ui <- fluidPage(
                                           ),
                                           fluidRow(
                                             plotOutput("volcano_c2", height = 600),
-                                            downloadButton('downloadVolcano_c2', 'Save volcano')
+                                            downloadButton('downloadVolcano_c2', 'Save volcano', class = "btn-primary")
                                           )
                                  )
                           ),
@@ -336,54 +337,54 @@ ui <- fluidPage(
                                  title = "Correlation Plots", width = 12,
                                  tabPanel(title = "PCA",
                                           plotOutput("pca", height = 600),
-                                          downloadButton('downloadpca', 'Save')
+                                          downloadButton('downloadpca', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Correlation",
                                           plotOutput("cor", height = 600),
-                                          downloadButton('downloadcor', 'Save')
+                                          downloadButton('downloadcor', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Freq. Plot",
                                           plotOutput("cond", height = 600),
-                                          downloadButton('downloadcond', 'Save')
+                                          downloadButton('downloadcond', 'Save', class = "btn-primary")
                                  ),
                                  #                                 tabPanel(title = "PCA (Comp2)",
                                  #                                          plotOutput("pca_c2", height = 600),
-                                 #                                          downloadButton('downloadpca_c2', 'Save')
+                                 #                                          downloadButton('downloadpca_c2', 'Save', class = "btn-primary")
                                  #                                 ),
                                  tabPanel(title = "Correlation (Comp2)",
                                           plotOutput("cor_c2", height = 600),
-                                          downloadButton('downloadcor_c2', 'Save')
+                                          downloadButton('downloadcor_c2', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Freq. Plot (Comp2)",
                                           plotOutput("cond_c2", height = 600),
-                                          downloadButton('downloadcond_c2', 'Save')
+                                          downloadButton('downloadcond_c2', 'Save', class = "btn-primary")
                                  )
                                  
                           ),
                           tabBox(title = "QC Plots", width = 12,
                                  tabPanel(title = "Protein Numbers",
                                           plotOutput("numbers", height = 600),
-                                          downloadButton('downloadNumbers', 'Save')
+                                          downloadButton('downloadNumbers', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Sample coverage",
                                           plotOutput("coverage", height = 600),
-                                          downloadButton('downloadCoverage', 'Save')
+                                          downloadButton('downloadCoverage', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Normalization",
                                           plotOutput("norm", height = 600),
-                                          downloadButton('downloadNorm', 'Save')
+                                          downloadButton('downloadNorm', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Missing values - Quant",
                                           plotOutput("detect", height = 600),
-                                          downloadButton('downloadDetect', 'Save')
+                                          downloadButton('downloadDetect', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Missing values - Heatmap",
                                           plotOutput("missval", height = 600),
-                                          downloadButton('downloadMissval', 'Save')
+                                          downloadButton('downloadMissval', 'Save', class = "btn-primary")
                                  ),
                                  tabPanel(title = "Imputation",
                                           plotOutput("imputation", height = 600),
-                                          downloadButton('downloadImputation', 'Save')
+                                          downloadButton('downloadImputation', 'Save', class = "btn-primary")
                                  ),
                           )
                    )
@@ -444,11 +445,11 @@ ui <- fluidPage(
                                              "PDF Height",
                                              min = 3, max = 30, value = 14),
                                 width = 6),
-                            downloadButton('downloadcomplexheatmap', 'Save ComplexHeatmap')
+                            downloadButton('downloadcomplexheatmap', 'Save ComplexHeatmap', class = "btn-primary")
                           ),
                           fluidRow(
                             plotOutput("swatch", height = 600),
-                            downloadButton('downloadswatch', 'Save Swatch')
+                            downloadButton('downloadswatch', 'Save Swatch', class = "btn-primary")
                           )
                    ),
                    
@@ -462,17 +463,17 @@ ui <- fluidPage(
                                  #                                 ),
                                  tabPanel(title = "SAINT Output",
                                           DT::dataTableOutput("tablesaint_output1"), width = 12,
-                                          downloadButton('download_saint1', 'Save SAINTexpress Table 1'),
+                                          downloadButton('download_saint1', 'Save SAINTexpress Table 1', class = "btn-primary"),
                                           DT::dataTableOutput("tablesaint_output2"), width = 12,
-                                          downloadButton('download_saint2', 'Save SAINTexpress Table 2'),
+                                          downloadButton('download_saint2', 'Save SAINTexpress Table 2', class="btn btn-success"),
                                           DT::dataTableOutput("tablesaint_output3"), width = 12,
-                                          downloadButton('download_saint3', 'Save SAINTexpress Table 3'),
+                                          downloadButton('download_saint3', 'Save SAINTexpress Table 3', class="btn btn-info"),
                                           DT::dataTableOutput("tablesaint_output4"), width = 12,
-                                          downloadButton('download_saint4', 'Save SAINTexpress Table 4')
+                                          downloadButton('download_saint4', 'Save SAINTexpress Table 4', class ="btn btn-danger")
                                  ),
                                  tabPanel(title = "BFDR Filtering",
                                           DT::dataTableOutput("tablesaint"), width = 12,
-                                          downloadButton('download_tablesaint', 'Save BFDR Filtered table')
+                                          downloadButton('download_tablesaint', 'Save BFDR Filtered table', class = "btn-primary")
                                           
                                  ),
                                  tabPanel(title = "Results",
@@ -499,7 +500,7 @@ ui <- fluidPage(
                                                                       "PDF Height",
                                                                       min = 3, max = 30, value = 14),
                                                          width = 6),
-                                                     downloadButton('downloadcomplexheatmap_c1', 'Save ComplexHeatmap')
+                                                     downloadButton('downloadcomplexheatmap_c1', 'Save ComplexHeatmap', class = "btn-primary")
                                                    ),
                                             ),
                                             #Second Column
@@ -522,7 +523,7 @@ ui <- fluidPage(
                                                                       "PDF Height",
                                                                       min = 3, max = 30, value = 14),
                                                          width = 6),
-                                                     downloadButton('downloadcomplexheatmap_c2', 'Save ComplexHeatmap')
+                                                     downloadButton('downloadcomplexheatmap_c2', 'Save ComplexHeatmap', class = "btn-primary")
                                                    ),
                                             ),
                                           ),
@@ -548,13 +549,13 @@ ui <- fluidPage(
                                                                       "PDF Height",
                                                                       min = 3, max = 30, value = 6),
                                                          width = 6),
-                                                     downloadButton('downloadcomplexheatmapcluster', 'Save ComplexHeatmap')
+                                                     downloadButton('downloadcomplexheatmapcluster', 'Save ComplexHeatmap', class = "btn-primary")
                                                    )
                                             ),
                                             column(width = 4,
                                                    title = "Results",
                                                    DT::dataTableOutput("table3"), #add table for cluster
-                                                   downloadButton('downloadclustertable', 'Save Cluster Table')
+                                                   downloadButton('downloadclustertable', 'Save Cluster Table', class = "btn-primary")
                                             )
                                           ),
                                  ),
@@ -575,7 +576,7 @@ ui <- fluidPage(
                                                                       "PDF Width",
                                                                       min = 3, max = 30, value = 6),
                                                          width = 6),
-                                                     downloadButton('downloadVolcano_enh1', 'Save volcano')
+                                                     downloadButton('downloadVolcano_enh1', 'Save volcano', class = "btn-primary")
                                                    )
                                             ),
                                             
@@ -596,7 +597,7 @@ ui <- fluidPage(
                                                                       "PDF Height",
                                                                       min = 3, max = 30, value = 8),
                                                          width = 6),
-                                                     downloadButton('downloadVolcano_enh2', 'Save volcano')
+                                                     downloadButton('downloadVolcano_enh2', 'Save volcano', class = "btn-primary")
                                                    )
                                             ),
                                           )
@@ -624,19 +625,19 @@ ui <- fluidPage(
                                           ),
                                           fluidRow(
                                             plotOutput("box_plot", height = 800),
-                                            downloadButton('download_box_plot', 'Save Plot')
+                                            downloadButton('download_box_plot', 'Save Plot', class = "btn-primary")
                                           ),
                                  ),
                                  tabPanel(title = "Molecular Function",
                                           fluidRow(
-                                            actionButton("analyze_MF", "Analyze Molecular Function", icon = icon("magnifying-glass-chart")),
+                                            actionButton("analyze_MF", "Analyze Molecular Function", icon = icon("magnifying-glass-chart"), class = "btn-success"),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
                                           fluidRow(
                                             column(width = 5,
                                                    fluidRow(
                                                      plotOutput("GOMF_plot", height = 800),
-                                                     downloadButton('download_MF_plot', 'Save Plot')
+                                                     downloadButton('download_MF_plot', 'Save Plot', class = "btn-success")
                                                    )
                                             ),
                                             
@@ -645,7 +646,7 @@ ui <- fluidPage(
                                             column(width = 7,
                                                    fluidRow(
                                                      plotOutput("GOMF_cnet", height = 800),
-                                                     downloadButton('download_MF_cnet', 'Save Plot')
+                                                     downloadButton('download_MF_cnet', 'Save Plot', class = "btn-success")
                                                    )
                                             ),
                                           ),
@@ -662,14 +663,14 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Cellular Components",
                                           fluidRow(
-                                            actionButton("analyze_CC", "Analyze Cellular Components", icon = icon("magnifying-glass-chart")),
+                                            actionButton("analyze_CC", "Analyze Cellular Components", icon = icon("magnifying-glass-chart"), class = "btn-info"),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
                                           fluidRow(
                                             column(width = 5,
                                                    fluidRow(
                                                      plotOutput("GOCC_plot", height = 800),
-                                                     downloadButton('download_CC_plot', 'Save Plot')
+                                                     downloadButton('download_CC_plot', 'Save Plot', class = "btn-info")
                                                    )
                                             ),
                                             
@@ -678,7 +679,7 @@ ui <- fluidPage(
                                             column(width = 7,
                                                    fluidRow(
                                                      plotOutput("GOCC_cnet", height = 800),
-                                                     downloadButton('download_CC_cnet', 'Save Plot')
+                                                     downloadButton('download_CC_cnet', 'Save Plot', class = "btn-info")
                                                    )
                                             ),
                                           ),
@@ -696,14 +697,14 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Biological Process",
                                           fluidRow(
-                                            actionButton("analyze_BP", "Analyze Biological Process", icon = icon("magnifying-glass-chart")),
+                                            actionButton("analyze_BP", "Analyze Biological Process", icon = icon("magnifying-glass-chart"), class = "btn-warning"),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
                                           fluidRow(
                                             column(width = 5,
                                                    fluidRow(
                                                      plotOutput("GOBP_plot", height = 800),
-                                                     downloadButton('download_BP_plot', 'Save Plot')
+                                                     downloadButton('download_BP_plot', 'Save Plot', class = "btn-warning")
                                                    )
                                             ),
                                             
@@ -712,7 +713,7 @@ ui <- fluidPage(
                                             column(width = 7,
                                                    fluidRow(
                                                      plotOutput("GOBP_cnet", height = 800),
-                                                     downloadButton('download_BP_cnet', 'Save Plot')
+                                                     downloadButton('download_BP_cnet', 'Save Plot', class = "btn-warning")
                                                    )
                                             ),
                                           ),
@@ -733,7 +734,7 @@ ui <- fluidPage(
                                           ),
                                           fluidRow(
                                             DT::dataTableOutput("table4"), #Setting Table
-                                            downloadButton('downloadsettings', 'Save Settings')
+                                            downloadButton('downloadsettings', 'Save Settings', class="btn btn-primary")
                                           )
                                  )
                                  
@@ -840,7 +841,7 @@ server <- shinyServer(function(input, output, session) {
                        accept=c('text/csv',
                                 'text/comma-separated-values,text/plain',
                                 '.csv')),
-             downloadButton('downloadcomp_template', 'Save Comp. template')
+             downloadButton('downloadcomp_template', 'Save Comp. template', class="btn btn-primary")
     )
   })
   #Hide/show comparison heatmaps
@@ -1385,7 +1386,7 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$downloadButton <- renderUI({
-      downloadButton('downloadData', 'Save')
+      downloadButton('downloadData', 'Save', class="btn btn-primary")
     })
     
     output$significantBox <- renderInfoBox({
@@ -2528,7 +2529,7 @@ server <- shinyServer(function(input, output, session) {
           GO_CC<-GO_CC_report_input()
           GO_BP<-GO_BP_report_input()
         }
-        downloadButton('downloadReport', 'Download Report')
+        downloadButton('downloadReport', 'Download Report', )
       }
     })
     
@@ -2573,7 +2574,7 @@ server <- shinyServer(function(input, output, session) {
     #Observe MF
     observeEvent(input$analyze_MF,{
       GO_MF_input <- reactive({
-        withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
+        withProgress(message = 'Plotting', detail = 'This may take a while...',  max=10, value = 6.6,{
           for (i in 1:100) {
             incProgress(1/100)
             Sys.sleep(0.5)
