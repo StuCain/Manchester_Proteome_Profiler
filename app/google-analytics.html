@@ -8,15 +8,15 @@
   gtag('config', 'G-VYDJ42WXHF');
   
   $(document).on('click', 'button', function() {
-    gtag('event', 'button', { action: 'analyze' });
+    gtag('event', 'analyze_button', { action: 'analyze' });
   });
   
   $(document).on('click', 'button', function() {
-    gtag('event', 'button', { action: 'downloadcomplexheatmap' });
+    gtag('event', 'comp_Ht_button', { action: 'downloadcomplexheatmap' });
   });
 
   $(document).on('click', 'button', function() {
-    gtag('event', 'button', { action: 'downloadreport' });
+    gtag('event', 'report_button', { action: 'downloadreport' });
   });
 
 </script>

@@ -30,7 +30,11 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.5-beta"
+Version = "0.4.6-beta"
+
+#Check TinyTex
+tt_check<-tinytex:::is_tinytex()
+if(tt_check != "TRUE"){tinytex::install_tinytex()}
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {

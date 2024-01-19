@@ -28,18 +28,21 @@ RUN apt-get update && apt-get install -y \
 RUN Rscript -e 'install.packages(c("devtools", "tidyverse", "ggrepel", "httr", "rjson", "mvtnorm", "tmvtnorm", \
 "DT", "BiocManager", "shiny", "shinyalert", "shinydashboard", \
 "shinyjs", "svglite", "shinyBS", "shinyWidgets", "shinycssloaders", \
-"shiny.info", "circlize", "data.table", "scales", "gridtext", "waiter", "shinythemes", "RColorBrewer", "readxl"), dependencies=TRUE)'
+"shiny.info", "circlize", "data.table", "scales", "gridtext", "waiter", "shinythemes", "RColorBrewer", "readxl", \
+"rmarkdown", "tinytex"), dependencies=TRUE)'
 
-#FROM bioconductor/bioconductor_docker:RELEASE_3_15
+#FROM bioconductor/bioconductor_docker
 RUN Rscript -e 'BiocManager::install(pkgs=c("DEP", "ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
 RUN R -e "BiocManager::install('clusterProfiler')"
+RUN R -e "tinytex::install_tinytex()"
+
 RUN sudo rm /srv/shiny-server/index.html
 
 # Make the ShinyApp available at port 80
 EXPOSE 80
-COPY ./ /srv/shiny-server/shiny-dep
+COPY ./ /srv/shiny-server/shiny-saint-dep
 COPY shiny-server.conf /etc/shiny-server/shiny-server.conf
-#RUN rm -f /srv/shiny-server/lfq-analyst/.Rprofile
-RUN chmod -R +r /srv/shiny-server/shiny-dep
-#To fix "cannot open file 'rplots.pdf'" error
+
+RUN chmod -R +r /srv/shiny-server/shiny-saint-dep
+
 RUN chown -R shiny:shiny /srv/shiny-server
