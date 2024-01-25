@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.5
+Version = 2.6
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -2860,6 +2860,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   
   if(palette_choice=="default"){palette_choice<-"Dark2"}
   
+  Cluster0 =clu_df[clu_df$Cluster == "cluster0", ]
   Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
   Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
   Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
@@ -2868,6 +2869,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
   
   # Converts each cluster into a list of values
+  dfc0 <- Cluster0$GeneID 
   dfc1 <- Cluster1$GeneID 
   dfc2 <- Cluster2$GeneID
   dfc3 <- Cluster3$GeneID
@@ -2886,7 +2888,9 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   orig_melt$Condition = substr(orig_melt$Condition,1,nchar(orig_melt$Condition)-2)
   orig_melt_filt = setDT(orig_melt)[rowname %chin% protein_list]
   
+  if(cluster_no > 0){
   origtitle<-paste("Original values ", " Cluster ", cluster_no,sep="")
+  }else{origtitle<-paste("Original values", sep="")}
   
   orig<-ggplot(orig_melt_filt, aes(Condition, val))+
     geom_boxplot()+
@@ -2911,7 +2915,10 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   int_melt$Condition = substr(int_melt$Condition,1,nchar(int_melt$Condition)-2)
   int_melt_filt = setDT(int_melt)[rowname %chin% protein_list]
   
-  Imptitle<-paste("Imputed values ",  " Cluster ", cluster_no,sep="")
+  if(cluster_no > 0){
+    Imptitle<-paste("Imputed values ",  " Cluster ", cluster_no,sep="")
+  }else{Imptitle<-paste("Imputed values ", sep="")}
+  
   
   Imp<-ggplot(int_melt_filt, aes(Condition, val))+
     geom_boxplot()+

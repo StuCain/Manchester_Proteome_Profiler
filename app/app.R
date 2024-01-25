@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.6-beta"
+Version = "0.4.8-beta"
 
 #Check TinyTex
 tt_check<-tinytex:::is_tinytex()
@@ -250,15 +250,25 @@ ui <- fluidPage(
                               DT::dataTableOutput("table"), width = 12),
                           box(title = "Exp Table",
                               DT::dataTableOutput("exp_des"), width = 12), #exp_design
-      #                    box(title = "Test",
-      #                        DT::dataTableOutput("test"), width = 12), #test
-      #                    downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
+                          box(title = "Test",
+                              DT::dataTableOutput("test"), width = 12), #test
+                          downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
                                  title = "Result Plots", width = 12,
                                  tabPanel(title = "Selected Protein",
+                                          fluidRow(
+                                          box(radioButtons("protein_plot",
+                                                           "Choose plot type",
+                                                           c("contrast", "centered", "normalised", "imputed"),
+                                                           selected = "contrast", inline=T,
+                                                           ),
+                                              width = 12),
+                                          ),
+                                          fluidRow(
                                           plotOutput("selected_plot"),
+                                          ),
                                           downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
                                  tabPanel(title = "Heatmap",
                                           fluidRow(
@@ -1022,8 +1032,8 @@ server <- shinyServer(function(input, output, session) {
         substr(x, nchar(x)-n+1, nchar(x))
       }
       replicate<-substrRight(label, 1)
-      condition_type<-""
-      bait_id<-""
+      condition_type<-"1"
+      bait_id<-"T"
       exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
     
@@ -1034,8 +1044,8 @@ server <- shinyServer(function(input, output, session) {
       label<-colnames(data()[LFQ_columns])
       condition<-""
       replicate<-""
-      condition_type<-""
-      bait_id<-""
+      condition_type<-"1"
+      bait_id<-"T"
       exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
     
@@ -1051,8 +1061,8 @@ server <- shinyServer(function(input, output, session) {
           substr(x, nchar(x)-n+1, nchar(x))
         }
         replicate<-substrRight(label, 1)
-        condition_type<-""
-        bait_id<-""
+        condition_type<-"1"
+        bait_id<-"T"
         exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
       }else if (input$exp == "DIA")
       {
@@ -1067,8 +1077,8 @@ server <- shinyServer(function(input, output, session) {
         #  substr(x, nchar(x)-n+1, nchar(x))
         #}
         replicate<-""
-        condition_type<-""
-        bait_id<-""
+        condition_type<-"1"
+        bait_id<-"T"
         exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
         
       }
@@ -1348,6 +1358,10 @@ server <- shinyServer(function(input, output, session) {
     }
     return(saint_list)
     
+  })
+  
+  norm_output <- reactive({
+    norm_output <-get_df_long(norm())
   })
   
   saintlist <- reactive({
@@ -1775,8 +1789,20 @@ server <- shinyServer(function(input, output, session) {
     
     selected_plot_input <- reactive ({
       if(!is.null(input$table_rows_selected)) {
+        if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
         selected_id <- data_results()[input$table_rows_selected,1]
-        plot_single(dep(), selected_id, input$pres)
+        plot_single(dep(), selected_id, input$protein_plot)
+        }else{
+          GeneID <- data_results()[input$table_rows_selected,1]
+          Cluster <- "cluster0"
+          clu_df_temp<-data.frame(GeneID, Cluster)
+          plot_box_plot (norm_data(),
+                         imp_data(),
+                         clu_df=clu_df_temp,
+                         cluster_no=0,
+                         input$palette_choice
+          )
+        }
       }
     })
     
@@ -2386,7 +2412,8 @@ server <- shinyServer(function(input, output, session) {
     
     #Test_table
     output$test <- DT::renderDataTable({
-      data()
+      cluster_heatmap_input()[[19]]
+      #norm_data()
     })
     
     #Saint Outputs
@@ -2410,7 +2437,12 @@ server <- shinyServer(function(input, output, session) {
     }) 
     
     output$selected_plot <- renderPlot({
+      if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
       selected_plot_input()
+      }else{
+        if (input$protein_plot=="normalised"){choice=1}else{choice=2}
+        selected_plot_input()[[choice]]
+      }
     })
     
     output$heatmap <- renderPlot({
@@ -2727,11 +2759,11 @@ server <- shinyServer(function(input, output, session) {
     #Test table
     output$downloadtesttable <- downloadHandler(
       filename = function() { paste("test.txt", sep = "") },
-      content = function(file) {
-        write.table(data(),
+      content = function(file) {lib
+        write.table(norm_data(),
                     file,
                     col.names = TRUE,
-                    row.names = FALSE,
+                    row.names = TRUE,
                     sep ="\t") 
       }
     )
@@ -2823,8 +2855,13 @@ server <- shinyServer(function(input, output, session) {
         paste0("Barplot_", data_results()[input$table_rows_selected,1], ".pdf")
       },
       content = function(file) {
-        cairo_pdf(file)
-        print(selected_plot_input())
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
+          print(selected_plot_input())
+        }else{
+          if (input$protein_plot=="normalised"){choice=1}else{choice=2}
+          print(selected_plot_input()[[choice]])
+        }
         dev.off()
       }
     )
@@ -3146,4 +3183,5 @@ server <- shinyServer(function(input, output, session) {
 #End of Server
 
 shinyApp(ui = ui, server = server)
+
 

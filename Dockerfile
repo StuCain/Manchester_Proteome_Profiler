@@ -35,6 +35,7 @@ RUN Rscript -e 'install.packages(c("devtools", "tidyverse", "ggrepel", "httr", "
 RUN Rscript -e 'BiocManager::install(pkgs=c("DEP", "ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
 RUN R -e "BiocManager::install('clusterProfiler')"
 RUN R -e "tinytex::install_tinytex()"
+RUN R -e "tlmgr install sourcesanspro"
 
 RUN sudo rm /srv/shiny-server/index.html
 
