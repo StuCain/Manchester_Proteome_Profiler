@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.8-beta"
+Version = "0.4.9-beta"
 
 #Check TinyTex
 tt_check<-tinytex:::is_tinytex()
@@ -250,9 +250,9 @@ ui <- fluidPage(
                               DT::dataTableOutput("table"), width = 12),
                           box(title = "Exp Table",
                               DT::dataTableOutput("exp_des"), width = 12), #exp_design
-                          box(title = "Test",
-                              DT::dataTableOutput("test"), width = 12), #test
-                          downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
+#                          box(title = "Test",
+#                              DT::dataTableOutput("test"), width = 12), #test
+#                          downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
@@ -449,6 +449,9 @@ ui <- fluidPage(
                           ),
                           
                           #Heatmap in variable box
+                          #fluidRow(
+                          #infoBoxOutput("ibox"), #Info box for testing
+                          #),
                           fluidRow(
                             uiOutput("plot_comp"),
                             box(numericInput("pdfwidth_ht",
@@ -898,13 +901,17 @@ server <- shinyServer(function(input, output, session) {
   set.seed(123) #random seed to give consistent kmeans clustering
   
   #Output information for testing
-  #  output$ibox <- renderInfoBox({
-  #    infoBox(
-  #      "Title",
-  #      input$data_type,
-  #      #icon = icon("credit-card")
-  #    )
-  #  })
+  #output$ibox <- renderInfoBox({
+  #infoBox(
+  #"Title",
+  #Check for single protein clusters
+  #validate(need(try(cludf_check<-cluster_heatmap_input()[[19]] != "try-error"), "One of your Cluster contains a single protein, 
+  #  please alter the Kmeans number"),
+  #         print("All checks out")
+  #)
+  #icon = icon("credit-card")
+  #)
+  #})
   
   
   data <- reactive({
@@ -990,7 +997,7 @@ server <- shinyServer(function(input, output, session) {
                                 quote = "",
                                 comment.char = "",
                                 blank.lines.skip = F,
-  )
+        )
         temp_data<-temp_data %>% dplyr::filter(!grepl('contam_sp', Protein.Group))
         temp_data<-temp_data %>% dplyr::filter(!grepl('rev_sp', Protein.Group)) 
         
@@ -1637,13 +1644,13 @@ server <- shinyServer(function(input, output, session) {
     })
     
     
-    output$ibox <- renderInfoBox({
-      infoBox(
-        "Title",
-        input$file_type,
-        #icon = icon("credit-card")
-      )
-    })
+    #  output$ibox <- renderInfoBox({
+    #    infoBox(
+    #      "Title",
+    #      input$file_type,
+    #      #icon = icon("credit-card")
+    #    )
+    #  })
     
     
     output$volcano_cntrst <- renderUI({
@@ -1790,8 +1797,8 @@ server <- shinyServer(function(input, output, session) {
     selected_plot_input <- reactive ({
       if(!is.null(input$table_rows_selected)) {
         if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
-        selected_id <- data_results()[input$table_rows_selected,1]
-        plot_single(dep(), selected_id, input$protein_plot)
+          selected_id <- data_results()[input$table_rows_selected,1]
+          plot_single(dep(), selected_id, input$protein_plot)
         }else{
           GeneID <- data_results()[input$table_rows_selected,1]
           Cluster <- "cluster0"
@@ -2180,9 +2187,24 @@ server <- shinyServer(function(input, output, session) {
     #    my_mat<-comp_heatmap_input()[[2]]
     #    dfdata_sig2<-comp_heatmap_input()[[3]]
     
+    cludf_check_input<- reactive({
+      cludf<- cluster_check(
+        comp_heatmap_input()[[1]],
+        comp_heatmap_input()[[2]],
+        input$k1,
+        colour_functions_input()[[1]]
+      )
+      data.frame(cludf)
+    })
+    
     #Heatmap Clusters Input
     cluster_heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
+        #Check for single protein clusters
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+          please alter the Kmeans number")
+        )
+        
         if (input$comp_type == "2 Rounds of comparisons"){
           ht<-plot_heatmap_clusters_2xcomp(comp_heatmap_input()[[1]],
                                            comp_heatmap_input()[[2]],
@@ -2234,6 +2256,8 @@ server <- shinyServer(function(input, output, session) {
       })
     }) 
     
+    
+    
     #Enhanced Volcano Input 1
     enhanced_volcano_1_input <- reactive({
       if (input$comp_type == "2 Rounds of comparisons"){
@@ -2242,9 +2266,13 @@ server <- shinyServer(function(input, output, session) {
       }else{lfc<-input$lfc
       p<-input$p
       }
+      #Check for single protein clusters
+      validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+          please alter the Kmeans number")
+      )
       input_volcano_cntrst_enh1 <- req(input$volcano_cntrst_enh1)
       plot_enhanced_volcano (data_results(),
-                             cluster_heatmap_input()[[19]],
+                             cludf_check_input(),
                              comp_pick = input_volcano_cntrst_enh1,
                              FC=lfc,
                              pVal=p,
@@ -2262,9 +2290,13 @@ server <- shinyServer(function(input, output, session) {
       }else{lfc<-input$lfc
       p<-input$p
       }
+      #Check for single protein clusters
+      validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+          please alter the Kmeans number")
+      )
       input_volcano_cntrst_enh2 <- req(input$volcano_cntrst_enh2)
       plot_enhanced_volcano (data_results(),
-                             cluster_heatmap_input()[[19]],
+                             cludf_check_input(),
                              comp_pick = input_volcano_cntrst_enh2,
                              FC=lfc,
                              pVal=p,
@@ -2278,9 +2310,14 @@ server <- shinyServer(function(input, output, session) {
     #Plot_Box_Plots
     box_plot_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
+        #Check for single protein clusters
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+          please alter the Kmeans number")
+        )
+        
         plot_box_plot (norm_data(),
                        imp_data(),
-                       clu_df=cluster_heatmap_input()[[19]],
+                       clu_df=cludf_check_input(),
                        cluster_no=input$cluster_no_box,
                        input$palette_choice
         )
@@ -2290,12 +2327,17 @@ server <- shinyServer(function(input, output, session) {
     #Plot_Box_Plots_reports
     box_plot_report_input <- reactive({
       withProgress(message = 'Generating Box Plots', value = 0.66, {
+        #Check for single protein clusters
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+          please alter the Kmeans number")
+        )
+        
         box_plot_list<-list()
         for(i in 1:input$k1){
           box_plot<- plot_box_plot (
             norm_data(),
             imp_data(),
-            clu_df=cluster_heatmap_input()[[19]],
+            clu_df=cludf_check_input(),
             cluster_no=i,
             input$palette_choice
           )
@@ -2307,7 +2349,12 @@ server <- shinyServer(function(input, output, session) {
     
     #Make entrezlist
     entrezlist_input <- reactive({
-      get_entrezlist(cluster_heatmap_input()[[19]])
+      #Check for single protein clusters
+      validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+          please alter the Kmeans number")
+      )
+      
+      get_entrezlist(cludf_check_input())
     })
     
     #Make Variables Table
@@ -2412,7 +2459,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Test_table
     output$test <- DT::renderDataTable({
-      cluster_heatmap_input()[[19]]
+      cludf_check_input()
       #norm_data()
     })
     
@@ -2438,7 +2485,7 @@ server <- shinyServer(function(input, output, session) {
     
     output$selected_plot <- renderPlot({
       if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
-      selected_plot_input()
+        selected_plot_input()
       }else{
         if (input$protein_plot=="normalised"){choice=1}else{choice=2}
         selected_plot_input()[[choice]]
@@ -3107,7 +3154,7 @@ server <- shinyServer(function(input, output, session) {
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
           }
           updateRadioButtons(session, "report_type", choices = c("Short", "with Box Plots", "Long"), selected = "Short")
-
+          
           sig_proteins<-dep() %>%
             .[replace_na(SummarizedExperiment::rowData(.)$significant, FALSE), ] %>%
             nrow()

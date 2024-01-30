@@ -18,5 +18,12 @@
   $(document).on('click', 'button', function() {
     gtag('event', 'report_button', { action: 'downloadreport' });
   });
+  
+  $(document).on('change', 'select', function(e) {
+  gtag('event', 'widget', {
+    action: 'data_type',
+    label: $(e.currentTarget).val()
+   });
+  });
 
 </script>

@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.6
+Version = 2.7
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -742,6 +742,86 @@ Freq" = anno_barplot(
   
 }
 
+####Cluster Check####
+cluster_check <- function(ht, my_mat, kmeans, col_fun){
+  set.seed(123)
+
+  comp_length<-ncol(my_mat)
+  
+  #Reorder columns to match clustering
+  if(comp_length>1){
+    co = column_order(ht)
+    my_mat<-my_mat[,co]
+  }
+  
+  #Split into the Clusters
+  
+  #Obtain Gene names from each kmeans cluster
+  if (kmeans>1){
+    ro = row_order(ht)
+    
+    if (comp_length>1)  {clu_df <- lapply(names(ro), function(i) {
+      out <- data.frame(
+        GeneID = rownames(my_mat[ro[[i]], ]),
+        Cluster = paste0("cluster", i),
+        stringsAsFactors = FALSE
+      )
+      return(out)
+    }) %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
+      do.call(rbind, .)
+    }
+    
+    if (comp_length== 1){
+      my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
+      
+      ht_r = Heatmap(my_mat_r,
+                     #name = htname,
+                     cluster_rows = TRUE, 
+                     cluster_columns = TRUE,
+                     column_dend_side = "bottom",
+                     #top_annotation = ha,
+                     #left_annotation = la,
+                     #right_annotation = ra,
+                     #bottom_annotation = ba,
+                     row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
+                     cluster_row_slices = FALSE,
+                     #column_km = 5, column_km_repeats = 2000, # kmeans clustering
+                     col = col_fun,
+                     #column_split = column_split,
+                     border = TRUE,
+                     row_names_gp = gpar(fontsize = 5),
+                     column_names_gp = gpar(fontsize = 8)
+                     #column_title = gt_render (hti_title)
+      )
+      
+      ht_r = draw(ht_r)  
+      
+      ro = row_order(ht_r)    
+      clu_df <- lapply(names(ro), function(i) {
+        out <- data.frame(
+          GeneID = rownames(my_mat_r[ro[[i]], ]),
+          Cluster = paste0("cluster", i),
+          stringsAsFactors = FALSE
+        )
+        return(out)
+      }) %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
+        do.call(rbind, .)
+    }
+  }
+  
+  if(kmeans==1){
+    clu_df_new <- data.frame(GeneID = row.names(my_mat), my_mat)
+    clu_df_new$Cluster <- "cluster1"
+    clu_df <- clu_df_new[, c("GeneID", "Cluster")]
+  }
+  
+  #check
+  clu_df
+  
+  #checkclust<-list(ht_C1, ht_C2, ht_C3, ht_C4, ht_C5, ht_C6, C1_Count, C2_Count, C3_Count, C4_Count, C5_Count, C6_Count, 
+  #                  Cluster1FC, Cluster2FC, Cluster3FC, Cluster4FC, Cluster5FC, Cluster6FC, clu_df)
+  return(clu_df)
+}
 
 ####Heatmap Clusters Function####
 plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.05, col_fun, mypal, switch=3, font_size=6, data_unique_defn){
