@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.9-beta"
+Version = "0.4.10-beta"
 
 #Check TinyTex
 tt_check<-tinytex:::is_tinytex()
@@ -905,7 +905,7 @@ server <- shinyServer(function(input, output, session) {
   #infoBox(
   #"Title",
   #Check for single protein clusters
-  #validate(need(try(cludf_check<-cluster_heatmap_input()[[19]] != "try-error"), "One of your Cluster contains a single protein, 
+  #validate(need(try(cludf_check<-cluster_heatmap_input()[[19]] != "try-error"), "One of your Clusters contains a single protein, 
   #  please alter the Kmeans number"),
   #         print("All checks out")
   #)
@@ -1205,6 +1205,10 @@ server <- shinyServer(function(input, output, session) {
       }
       
     }
+    #Check for Experimental Design File
+    validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
+          Use the Experimental template to assist you. ")
+    )
     
     se <- make_se(unique_names, cols, expdesign())
     filter_missval(se, input$thr) #filtering set less stringent
@@ -1284,12 +1288,19 @@ server <- shinyServer(function(input, output, session) {
   })
   
   dep <- reactive({
+    #Check for Comparisons
+    validate(need(comp() != "", "You need to select some comparisons, or import a comparisons file.
+          Use the Comp. template to assist you. ")
+    )
     add_rejections(df(), input$p, log2(input$lfc))
   }) 
   
   dep2 <- reactive({
     if (input$comp_type == "1 Round of comparisons")
       return(NULL)
+    #Check for Comparisons
+    validate(need(comp2() != "", "You need to select some 2nd round comparisons, or import a comparisons file. Use the Comp. template to assist you. ")
+    )
     add_rejections(df2(), input$p2, log2(input$lfc2))
   }) 
   
@@ -1302,11 +1313,19 @@ server <- shinyServer(function(input, output, session) {
       nrow()
   })
   
+  df_long_input <- reactive({
+    norm_long <-get_df_long(norm())
+    })
+  
+  
   #SAINTexpress Processing
   saint_output <- reactive({
     norm_long <-get_df_long(norm())
     saint_list<-list()
     experimental_design<-data.frame(expdesign())
+    #Check for C's
+    validate(need('C' %in% experimental_design$bait_id, "For SAINTexpress processing, you must indicate the control samples with a 'C' in the 'bait_id' column of the Experimental Design file. Use the ExperimentalTemplate to assist you. ")
+    )
     SysName <- Sys.info()['sysname']
     
     for(i in sort(unique(experimental_design$condition_type))){
@@ -1318,9 +1337,9 @@ server <- shinyServer(function(input, output, session) {
       write.table(bait, baitfile, sep="\t", quote = F, row.names = F, col.names = F)
       
       #prey
-      prey<-data.frame(PROT_ID=norm_long$Protein.IDs,
+      prey<-data.frame(PROT_ID=norm_long$ID,
                        LENGTH=norm_long$Sequence.length ,
-                       GENE_ID=norm_long$Gene.names)
+                       GENE_ID=norm_long$name)
       prey$PROT_ID  <- sub('\\;.*', '', prey$PROT_ID)
       prey$GENE_ID  <- sub('\\;.*', '', prey$GENE_ID)
       prey<-prey %>% 
@@ -1331,8 +1350,8 @@ server <- shinyServer(function(input, output, session) {
       write.table(prey, preyfile, sep="\t", quote = F, row.names = F, col.names = F)
       
       #inter
-      inter<-norm_long[norm_long$condition_type==i, c(grep("label", colnames(norm_long)),grep("\\condition\\b", colnames(norm_long)),grep("Protein.IDs", colnames(norm_long)), grep ("intensity", colnames(norm_long)) )]
-      inter$Protein.IDs  <- sub('\\;.*', '', inter$Protein.IDs)
+      inter<-norm_long[norm_long$condition_type==i, c(grep("label", colnames(norm_long)),grep("\\condition\\b", colnames(norm_long)),grep("\\ID\\b", colnames(norm_long)), grep ("intensity", colnames(norm_long)) )]
+      inter$ID  <- sub('\\;.*', '', inter$ID)
       
       #remove NA's and reverse log2 transformation
       inter<-inter[!is.na(inter$intensity),]
@@ -1356,11 +1375,6 @@ server <- shinyServer(function(input, output, session) {
       #cmd<-"del data\ *.txt"
       #if(SysName=="Windows"){system(paste0(cmd))}
       
-      
-      #saintexpressfile<-paste("SAINTexpress_new_", i, ".txt",sep="")
-      #write.table(saint_df, saintexpressfile, sep="\t", quote = F, row.names = F, col.names = T)
-      
-      #add BAIT name and save to Excel
       saint_list[[i]]<-saint_df
     }
     return(saint_list)
@@ -1797,6 +1811,7 @@ server <- shinyServer(function(input, output, session) {
     selected_plot_input <- reactive ({
       if(!is.null(input$table_rows_selected)) {
         if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
+          if (input$protein_plot == "contrast"){validate(need(length(comp()) != 1, "   You need to select a second comparison for this plot to generate"))}
           selected_id <- data_results()[input$table_rows_selected,1]
           plot_single(dep(), selected_id, input$protein_plot)
         }else{
@@ -2201,7 +2216,7 @@ server <- shinyServer(function(input, output, session) {
     cluster_heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         #Check for single protein clusters
-        validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
         )
         
@@ -2267,7 +2282,7 @@ server <- shinyServer(function(input, output, session) {
       p<-input$p
       }
       #Check for single protein clusters
-      validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+      validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
       )
       input_volcano_cntrst_enh1 <- req(input$volcano_cntrst_enh1)
@@ -2291,7 +2306,7 @@ server <- shinyServer(function(input, output, session) {
       p<-input$p
       }
       #Check for single protein clusters
-      validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+      validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
       )
       input_volcano_cntrst_enh2 <- req(input$volcano_cntrst_enh2)
@@ -2311,7 +2326,7 @@ server <- shinyServer(function(input, output, session) {
     box_plot_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         #Check for single protein clusters
-        validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
         )
         
@@ -2328,7 +2343,7 @@ server <- shinyServer(function(input, output, session) {
     box_plot_report_input <- reactive({
       withProgress(message = 'Generating Box Plots', value = 0.66, {
         #Check for single protein clusters
-        validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
         )
         
@@ -2350,7 +2365,7 @@ server <- shinyServer(function(input, output, session) {
     #Make entrezlist
     entrezlist_input <- reactive({
       #Check for single protein clusters
-      validate(need(try(cludf_check_input() != "try-error"), "One of your Cluster contains a single protein, 
+      validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
       )
       
@@ -2459,7 +2474,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Test_table
     output$test <- DT::renderDataTable({
-      cludf_check_input()
+      df_long_input()
       #norm_data()
     })
     
@@ -2806,11 +2821,11 @@ server <- shinyServer(function(input, output, session) {
     #Test table
     output$downloadtesttable <- downloadHandler(
       filename = function() { paste("test.txt", sep = "") },
-      content = function(file) {lib
-        write.table(norm_data(),
+      content = function(file) {
+        write.table(df_long_input(),
                     file,
                     col.names = TRUE,
-                    row.names = TRUE,
+                    row.names = FALSE,
                     sep ="\t") 
       }
     )
