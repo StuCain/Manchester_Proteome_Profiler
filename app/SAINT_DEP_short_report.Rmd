@@ -24,6 +24,8 @@ params:
   coverage_input: NA
   pca_input: NA
   cor_input: NA
+  cond_input: NA
+  imputation_input: NA
   norm_input: = NA
   missval_input: NA
   detect_input: NA
@@ -69,31 +71,84 @@ output:
 knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
 #clust_height<-(dep_num()/10)+3.6
 sample_no = nrow(params$expdesign())
+num_signif <- params$dep() %>%
+        .[SummarizedExperiment::rowData(.)$significant, ] %>%
+        nrow()
+comp1<-paste(as.character(params$comp()),collapse=' : ')
+comp2<-paste(as.character(params$comp2()),collapse=' : ')
 if (params$comp_type == "2 Rounds of comparisons"){comp_data<-as.character(params$comp2())}else{comp_data<-as.character(params$comp())}
 comp_no<-length(comp_data)
 
+#For comparisons text
+if (params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
+* Tested second round of pairwise comparisons = ", comp2)}else{comp_data_text<-paste0 ("* Tested pairwise comparisons = ", comp1)}
+
+if (params$data_type == "MaxQuant"){file_input<-"proteinGroups.txt file from MaxQuant"}
+if (params$data_type == "Proteome Discoverer"){file_input<-"protein abundances export from Proteome Discoverer"}
+if (params$data_type == "FragPipe"){if (params$exp == "LFQ"){file_input<-"combined_protein.tsv file from FragPipe"}else {file_input<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
+if (params$data_type == "MaxQuant"){int_type<-"LFQ intensities"}
+if (params$data_type == "Proteome Discoverer"){int_type<-"protein abundances"}
+if (params$data_type == "FragPipe"){if (params$lfq_type == "MaxLFQ intensities") {int_type<-"Intensities"} else {int_type<-"Intensities"}}
+
+if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons with analysed. The second comparison had a _adjusted p-value_ of ", params$p2, " and a fold change of ", params$lfc2, ". The protein list was compliled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
+if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{7} processing was used to allow identifcation of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
+
+if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
+
+
+clust1_table<-as.data.frame(params$cluster_heatmap_input()[[13]])
+clust1_table<-clust1_table[, 1:3]
+clust2_table<-as.data.frame(params$cluster_heatmap_input()[[14]])
+clust2_table<-clust2_table[, 1:3]
+clust3_table<-as.data.frame(params$cluster_heatmap_input()[[15]])
+clust3_table<-clust3_table[, 1:3]
+clust4_table<-as.data.frame(params$cluster_heatmap_input()[[16]])
+clust4_table<-clust4_table[, 1:3]
+clust5_table<-as.data.frame(params$cluster_heatmap_input()[[17]])
+clust5_table<-clust5_table[, 1:3]
+clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
+clust6_table<-clust6_table[, 1:3]
 ```
-Version:0.1.5
+Version:0.1.7
 
 ## Method details
+ 
+Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-The raw data files were analyzed using `r params$data_type` to obtain protein identifications and their respective label-free quantification values using in-house standard parameters. Statistical analysis was performed based on the combined_protein.tsv file. First, contaminant proteins were filtered out. In addition, proteins that were not identified/quantified consistantly in same condition have been removed as well. The MaxLFQ intensity values were converted to log2 scale, samples were grouped by conditions and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of 1.8 StDev (standard deviation) apart with a width of 0.3. Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. The _limma_ package from R Bioconductor was used to generate a list of differentially expressed proteins for each pair-wise comparison. A cutoff of the _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a |log2 fold change| of `r params$lfc` has been applied to determine significantly regulated proteins in each pairwise comparison.
+The `r file_input` was uploaded into a web-based analysis suite "SAINT_DEP + Cluster" \textsuperscript{1}, along with experimental design information. "SAINT_DEP + Cluster"  uses a number of R packages to process the protein intensitiy data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of 1.8 StDev (standard deviation) apart with a width of 0.3. Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cutoff using the chosen _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _adjusted p-value_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
+
+To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
+ 
+\textsuperscript{1} SAINT_DEP + Cluster by Stuart Cain (Manuscript in preparation)
+\textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550.
+\textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022.
+\textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016.
+\textsuperscript{5} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
+\textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. doi:10.1016/j.xinn.2021.100141. `r saint_ref_txt`
 
 
-### Quick summary of parameters used:
-* Input Data Type= <span style="color:blue">`r params$data_type`</span>
-* Tested pairwise comparisons = <span style="color:blue">`r comp_data`</span>  
-* Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$p`</span>  
-* Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>
-* Adjusted _p-value_ cutoff 2 <= <span style="color:blue">`r params$p2`</span>  
-* Log fold change cutoff 2 >= <span style="color:blue">`r params$lfc2`</span>
-* Comparison Type= <span style="color:blue">`r params$comp_type`</span>
-* No. of Samples= <span style="color:blue">`r sample_no`</span>
 
+
+
+\pagebreak
 ## Results
 
-### `r params$data_type` result output contains `r nrow(params$data)` proteins groups of which _`r nrow(params$dep())`_ proteins were reproducibly quantified.
-### `r params$num_signif` proteins differ significantly between samples.
+## Summary of parameters used:
+* Input Data Type= <span style="color:blue">`r params$data_type`</span>
+* Comparison Type= <span style="color:blue">`r params$comp_type`</span>
+`r comp_data_text`
+* Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>
+* Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$p`</span>  
+* Log fold change cutoff 2 >= <span style="color:blue">`r params$lfc2`</span>
+
+* Adjusted _p-value_ cutoff 2 <= <span style="color:blue">`r params$p2`</span>  
+* No. of Samples= <span style="color:blue">`r sample_no`</span>
+
+
+
+
+### The result output from `r params$data_type`  contains `r nrow(params$data())` proteins groups of which `r nrow(params$dep())` proteins were reproducibly quantified.
+### `r num_signif` proteins differ significantly between samples.
 
 \pagebreak
 
@@ -112,18 +167,24 @@ print(comp_no)
 ### Principle Component Analysis (PCA) plot
 
 
-```{r pca_plot, echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
+```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
 print(params$pca_input())
 ```
 \pagebreak
 
 ### Sample Correlation matrix
 
-```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.keep='last', fig.width=8, warning=FALSE, out.height='100%', tidy=T}
+```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
 print(params$cor_input())
 ```
 \pagebreak
 
+### Frequency Plot
+
+```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+print(params$cond_input())
+```
+\pagebreak
 
 ### Proteomics Experiment Summary
 
@@ -145,9 +206,7 @@ shiny::setProgress(0.20)  # set progress to 20%
 ```
 \pagebreak
 
-\pagebreak
-
-Normalisation in all samples.
+## Normalization Plot
 
 
 ```{r norm, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
@@ -155,6 +214,13 @@ print(params$norm_input())
 ```
 \pagebreak
 
+## Imputation Plot
+
+
+```{r imputation_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+print(params$imputation_input())
+```
+\pagebreak
 
 ## Missing Value handling
 
@@ -200,25 +266,66 @@ shiny::setProgress(0.80)  # set progress to 80%
 ```
 \pagebreak
 
+```{r c1_table, echo=FALSE, message=FALSE, warning=FALSE}
+print("Cluster 1")
+
+knitr::kable(clust1_table)
+```
+
+\pagebreak
+
 ```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[2]])
+}
+```
+\pagebreak
+
+```{r c2_table, echo=FALSE, message=FALSE, warning=FALSE}
+
+if(params$k1>1){
+  print("Cluster 2")
+
+knitr::kable(clust2_table)
 }
 ```
 
 \pagebreak
 
 ```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+
 if(params$k1>2){
   print(params$cluster_heatmap_input()[[3]])
+}
+```
+\pagebreak
+
+```{r c3_table, echo=FALSE, message=FALSE, warning=FALSE}
+
+if(params$k1>2){
+print("Cluster 3")
+
+knitr::kable(clust3_table)
 }
 ```
 
 \pagebreak
 
 ```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[4]])
+}
+```
+\pagebreak
+
+```{r c4_table, echo=FALSE, message=FALSE, warning=FALSE}
+
+if(params$k1>3){
+print("Cluster 4")
+
+knitr::kable(clust4_table)
 }
 ```
 
@@ -227,6 +334,15 @@ if(params$k1>3){
 ```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[5]])
+}
+```
+\pagebreak
+
+```{r c5_table, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$k1>4){
+print("Cluster 5")
+
+knitr::kable(clust5_table)
 }
 ```
 
@@ -238,10 +354,20 @@ if(params$k1>5){
 }
 
 ```
+\pagebreak
+
+```{r c6_table, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$k1>5){
+print("Cluster 6")
+
+knitr::kable(clust6_table)
+}
+```
+
+
 
 \pagebreak
 ### Enhanced Volcano Plots
-
 ```{r enh_volcano, echo=FALSE, fig.height=10, fig.width=8, warning=FALSE, comment=NA}
       if (params$comp_type == "2 Rounds of comparisons"){
         lfc<-as.numeric(params$lfc2)
@@ -270,18 +396,10 @@ if (params$rendered_by_shiny)
 shiny::setProgress(1)  # set progress to 100%
 
 ```
+\pagebreak
 
+### Swatch
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r swatch, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+print(scales::show_col(params$colour_functions_input()[[2]]))
+```

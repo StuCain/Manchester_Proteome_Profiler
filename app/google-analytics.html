@@ -19,11 +19,20 @@
     gtag('event', 'report_button', { action: 'downloadreport' });
   });
   
-  $(document).on('change', '#var', function(e) {
-  gtag('event', 'widget', {
-    action: 'data_type',
-    label: $(e.currentTarget).val()
-   });
+  $(document).on('click', 'button', function() {
+    gtag('event', 'load_MaxQ', { action: 'file1' });
+  });
+  
+    $(document).on('click', 'button', function() {
+    gtag('event', 'load_PD', { action: 'filePD' });
+  });
+
+  $(document).on('click', 'button', function() {
+    gtag('event', 'load_Frag_LFQ', { action: 'lfq_expr' });
+  });
+
+  $(document).on('click', 'button', function() {
+    gtag('event', 'load_Frag_DIA', { action: 'dia_expr' });
   });
 
 </script>

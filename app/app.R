@@ -30,9 +30,10 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.10-beta"
+Version = "0.4.11-beta"
 
 #Check TinyTex
+options(shiny.sanitize.errors = FALSE)
 tt_check<-tinytex:::is_tinytex()
 if(tt_check != "TRUE"){tinytex::install_tinytex()}
 
@@ -1207,7 +1208,7 @@ server <- shinyServer(function(input, output, session) {
     }
     #Check for Experimental Design File
     validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
-          Use the Experimental template to assist you. ")
+    Use the Experimental template to assist you. ")
     )
     
     se <- make_se(unique_names, cols, expdesign())
@@ -1277,6 +1278,8 @@ server <- shinyServer(function(input, output, session) {
   
   df <- reactive({
     test_diff(imp(), type = "manual", test = comp())
+    
+    
   })
   
   df2 <- reactive({
@@ -1288,10 +1291,17 @@ server <- shinyServer(function(input, output, session) {
   })
   
   dep <- reactive({
-    #Check for Comparisons
+    #Check for Experimental Design File
+    validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
+    Use the Experimental template to assist you. ")
+    )
+    
+     #Check for Comparisons
     validate(need(comp() != "", "You need to select some comparisons, or import a comparisons file.
           Use the Comp. template to assist you. ")
     )
+    #validate(need(try(df() != "try-error"), base::stop(shiny::safeError(warning(test_diff(imp(), type = "manual", test = comp()))))))
+    
     add_rejections(df(), input$p, log2(input$lfc))
   }) 
   
@@ -3204,7 +3214,9 @@ server <- shinyServer(function(input, output, session) {
                          norm_input = norm_input,
                          numbers_input = numbers_input, 
                          coverage_input = coverage_input,
-                         cor_input =cor_input,
+                         cor_input = cor_input,
+                         cond_input = cond_input,
+                         imputation_input = imputation_input,
                          comp_heatmap_input = comp_heatmap_input,
                          clust_height = clust_height,
                          cluster_heatmap_input = cluster_heatmap_input,
