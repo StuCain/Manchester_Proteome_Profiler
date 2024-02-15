@@ -32,10 +32,14 @@ params:
   density_input: NA
 #  p_hist_input: NA
   comp_heatmap_input: NA
+  comp_heatmap_input_c1: NA
+  comp_heatmap_input_c2: NA
   cluster_heatmap_input: NA
-#  heatmap_input: NA
   dep: NA
   dep_num: NA
+  dep_num_c1: NA
+  dep_num_c2: NA
+  dep_num_bfdr: NA
   norm_data: NA
   imp_data: NA
 #  pg_width: NA
@@ -69,20 +73,8 @@ output:
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
-#clust_height<-(dep_num()/10)+3.6
-sample_no = nrow(params$expdesign())
-num_signif <- params$dep() %>%
-        .[SummarizedExperiment::rowData(.)$significant, ] %>%
-        nrow()
-comp1<-paste(as.character(params$comp()),collapse=' : ')
-comp2<-paste(as.character(params$comp2()),collapse=' : ')
-if (params$comp_type == "2 Rounds of comparisons"){comp_data<-as.character(params$comp2())}else{comp_data<-as.character(params$comp())}
-comp_no<-length(comp_data)
-
-#For comparisons text
-if (params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
-* Tested second round of pairwise comparisons = ", comp2)}else{comp_data_text<-paste0 ("* Tested pairwise comparisons = ", comp1)}
-
+clust_height<-(params$dep_num()/8)+4
+if (clust_height<6){clust_height<-clust_height+1}
 if (params$data_type == "MaxQuant"){file_input<-"proteinGroups.txt file from MaxQuant"}
 if (params$data_type == "Proteome Discoverer"){file_input<-"protein abundances export from Proteome Discoverer"}
 if (params$data_type == "FragPipe"){if (params$exp == "LFQ"){file_input<-"combined_protein.tsv file from FragPipe"}else {file_input<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
@@ -126,30 +118,73 @@ To identify clusters of proteins Heatmaps are generated using the "ComplexHeatma
 \textsuperscript{5} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
 \textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. doi:10.1016/j.xinn.2021.100141. `r saint_ref_txt`
 
-
-
-
-
 \pagebreak
+
+```{r results_text_block, echo=FALSE, message=FALSE, warning=FALSE}
+sample_no = nrow(params$expdesign())
+#num_signif_c1<-1
+#num_signif_c2<-1
+num_signif_bfdr<-1
+num_signif <-as.numeric(params$dep_num())
+
+
+if (params$comp_type == "2 Rounds of comparisons"){
+num_signif_c1 <-as.numeric(params$dep_num_c1())
+num_signif_c2 <-as.numeric(params$dep_num_c2())
+}else{num_signif_c1<-num_signif
+num_signif_c2<-num_signif}
+if (params$comp_type == "Use SAINTexpress"){
+num_signif_c1 <-as.numeric(params$dep_num_c1())
+num_signif_bfdr <-as.numeric(params$dep_num_bfdr())
+}
+
+comp1<-paste(as.character(params$comp()),collapse=' : ')
+comp2<-paste(as.character(params$comp2()),collapse=' : ')
+if (params$comp_type == "2 Rounds of comparisons"){comp_data<-as.character(params$comp2())}else{comp_data<-as.character(params$comp())}
+comp_no<-length(comp_data)
+if (params$comp_type == "2 Rounds of comparisons"){comp_data_c1<-as.character(params$comp())}else{comp_data_c1<-as.character(params$comp())}
+comp_no_c1<-length(comp_data_c1)
+
+if (params$comp_type == "2 Rounds of comparisons"){comp_data_c2<-as.character(params$comp2())}else{comp_data_c2<-as.character(params$comp())}
+comp_no_c2<-length(comp_data_c2)
+
+#For comparisons text
+if (params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
+* Tested second round of pairwise comparisons = ", comp2)}else{comp_data_text<-paste0 ("* Tested pairwise comparisons = ", comp1)}
+
+if (params$comp_type == "2 Rounds of comparisons"){results_text<-paste0 ("After two sets of pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons. There were \\textbf{", num_signif,"} protein that overlapped the two sets of comparisons that were then used in the downstream analysis." )}else{results_text<-paste0 ("After pairwise comparisons were performed \\textbf{",num_signif, "} proteins differ significantly between samples.")}
+
+if (params$comp_type == "Use SAINTexpress"){results_text<-paste0 ("After SAINTexpress processing an initial protein list was generated from proteins that had a Bayesian false-discovery rate (BFDR) of <= \\textbf{", params$bfdr, "}, in at least \\textbf{", params$bfdr_freq, "} of the experimental conditions were performed. This generated a list of  \\textbf{",num_signif_bfdr, "} proteins. After pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly between samples. There were \\textbf{", num_signif,"} proteins that overlapped the SAINTexpress analysis and pairwise comparisons that were then used in the downstream analysis." )}
+
+#For Parameters Summary 
+if (params$data_type == "FragPipe"){lfq_int_text<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text<-""}
+if (params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cutoff >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
+if (params$comp_type == "2 Rounds of comparisons"){p2_text<-paste0 ("* Adjusted _p-value_ cutoff 2 <= \\textbf{", params$p2, "}")}else{p2_text<-""}
+if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress BFDR cutoff <= \\textbf{", params$bfdr, "}")}else{bfdr_text<-""}
+if (params$comp_type == "Use SAINTexpress"){bfdr_freq_text<-paste0 ("* SAINTexpress BFDR Frequency >= \\textbf{", params$bfdr_freq, "}")}else{bfdr_freq_text<-""}
+
+```
+
+
 ## Results
 
+The result output from `r params$data_type`  contains \textbf{`r nrow(params$data())`} proteins groups of which \textbf{`r nrow(params$dep())`} proteins were reproducibly quantified. \linebreak
+`r results_text`
+
 ## Summary of parameters used:
-* Input Data Type= <span style="color:blue">`r params$data_type`</span>
-* Comparison Type= <span style="color:blue">`r params$comp_type`</span>
+* Input Data Type= \textbf{`r params$data_type`}
+`r lfq_int_text`
+* Comparison Type= \textbf{`r params$comp_type`}
 `r comp_data_text`
-* Log fold change cutoff >= <span style="color:blue">`r params$lfc`</span>
-* Adjusted _p-value_ cutoff <= <span style="color:blue">`r params$p`</span>  
-* Log fold change cutoff 2 >= <span style="color:blue">`r params$lfc2`</span>
-
-* Adjusted _p-value_ cutoff 2 <= <span style="color:blue">`r params$p2`</span>  
-
-* No. of Samples= <span style="color:blue">`r sample_no`</span>
-
-
+* Fold change cutoff >= \textbf{`r params$lfc`}
+* Adjusted _p-value_ cutoff <= \textbf{`r params$p`}  
+`r lfc2_text`
+`r p2_text`
+`r bfdr_text`
+`r bfdr_freq_text`
+* No. of Samples= \textbf{`r sample_no`}
 
 
-### The result output from `r params$data_type`  contains `r nrow(params$data())` proteins groups of which `r nrow(params$dep())` proteins were reproducibly quantified.
-### `r num_signif` proteins differ significantly between samples.
 
 \pagebreak
 
@@ -237,14 +272,79 @@ shiny::setProgress(0.30)  # set progress to 30%
 ```
 \pagebreak
 
+```{r heatmap_c2_text, echo=FALSE, warning=FALSE, results='hide'}
+if (params$comp_type == "2 Rounds of comparisons"){ht_c2_text<-"## Differential Expression Analysis (Results Plots) 
+### Comparison Heatmaps
+The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the first set of comparisons (Comp1) and the second set of comparisons (Comp2). Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
+"}else{ht_c2_text<-""}
+if (params$comp_type == "Use SAINTexpress"){ht_c2_text<-"## Differential Expression Analysis (Results Plots)
+### Comparison amd SAINTexpress Heatmaps
+The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list (1st Heatmap) and a Heatmap consisting of the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds, showing the Log2FC values for the same comparisons. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cutoff thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
+"}
 
-## Differential Expression Analysis (Results Plots) 
+```
 
-### Heatmap
-A plot representing an overview of expression of all significant (deferentially expressed) proteins (rows) in all samples (columns).
+`r ht_c2_text`
 
-```{r heatmap_main, echo=FALSE, fig.height= params$clust_height, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+\pagebreak
 
+```{r heatmap_c1, echo=FALSE, fig.height= (num_signif_c1/8)+4, fig.width=(comp_no_c1/1.5)+2.5,  fig.keep='first', warning=FALSE, results='hide'}
+if (params$comp_type == "2 Rounds of comparisons"){
+print(params$comp_heatmap_input_c1()[[1]])
+}
+
+if (params$comp_type == "Use SAINTexpress"){
+print(params$comp_heatmap_input_c1()[[1]])
+}
+
+
+if (params$rendered_by_shiny)
+shiny::setProgress(0.50)  # set progress to 50%
+```
+
+\pagebreak
+```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+4, fig.width=(comp_no_c2/1.5)+2.5, fig.keep='first', warning=FALSE, results='hide'}
+if (params$comp_type == "2 Rounds of comparisons"){
+print(params$comp_heatmap_input_c2()[[1]])
+}
+
+if (params$rendered_by_shiny)
+shiny::setProgress(0.55)  # set progress to 50%
+```
+
+\pagebreak
+```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+if (params$comp_type == "Use SAINTexpress"){
+print(params$comp_heatmap_input_c2()[[1]])
+}
+
+if (params$rendered_by_shiny)
+shiny::setProgress(0.55)  # set progress to 50%
+```
+
+\pagebreak
+
+```{r heatmap_text, echo=FALSE, warning=FALSE, results='hide'}
+if (params$comp_type == "2 Rounds of comparisons"){ht_text<-"## Differential Expression Analysis (Results Plots) 
+### Combined Heatmap
+The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the second set of comparisons (Comp2), using a list which has the overlapping proteins that were significantly expressed for both Comp1 and Comp2. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) for each comparison which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
+"}else{ht_text<-"## Differential Expression Analysis (Results Plots)
+### Complex Heatmap
+The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins, for each of the comparisons shown. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
+"}
+if (params$comp_type == "Use SAINTexpress"){ht_text<-"## Differential Expression Analysis (Results Plots)
+### Combined Heatmap
+The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list that also overlap with the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cutoff thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
+"}
+
+```
+
+`r ht_text`
+
+\pagebreak
+
+```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+print(params$clust_height)
 print(params$comp_heatmap_input()[[1]])
 if (params$rendered_by_shiny)
 shiny::setProgress(0.40)  # set progress to 40%
@@ -397,7 +497,6 @@ if (params$rendered_by_shiny)
 shiny::setProgress(0.6)  # set progress to 60%
 
 ```
-
 \pagebreak
 ### Box Plots
 
@@ -409,8 +508,9 @@ for(i in 1:clust_no){
   prog<-0.6+(i/20)
   if (params$rendered_by_shiny)
 shiny::setProgress(prog) 
-  
-
+}
+```  
+\pagebreak
 ### Swatch
 
 ```{r swatch, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}

@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.11-beta"
+Version = "0.4.12-beta"
 
 #Check TinyTex
 options(shiny.sanitize.errors = FALSE)
@@ -2054,7 +2054,7 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
           ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
-          plot_complex_heatmap_2xcomp(data_results1(),
+          ht<-plot_complex_heatmap_2xcomp(data_results1(),
                                       #                     input$pres,
                                       #                     kmeans = TRUE,
                                       input$k1_c1,
@@ -2071,7 +2071,7 @@ server <- shinyServer(function(input, output, session) {
         if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
-          plot_complex_heatmap_BFDR(data_results1(),
+          ht<-plot_complex_heatmap_BFDR(data_results1(),
                                     #                     input$pres,
                                     #                     kmeans = TRUE,
                                     input$k1_c1,
@@ -2084,7 +2084,7 @@ server <- shinyServer(function(input, output, session) {
                                     data_results1=data_results1(),
                                     saintlist=saintlist()[[2]])
         }
-        
+        return(ht)
       })
     })
     
@@ -2627,6 +2627,10 @@ server <- shinyServer(function(input, output, session) {
     #Report
     output$downloadreport <- renderUI({
       if(!is.null(dep())){
+        #Check for single protein clusters
+        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
+        )
+        
         if(input$report_type=="with Box Plots"){
           box<-box_plot_report_input()
         }
@@ -2650,7 +2654,9 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_comp <- renderUI({
-        plotOutput("comp_heatmap", height = ((dep_num()*12)+270))
+        ht_height<-((dep_num()*12)+270)
+        if (ht_height < 420){ht_height<-ht_height+80}
+        plotOutput("comp_heatmap", height = ht_height)
       })
     })
     
@@ -3218,16 +3224,18 @@ server <- shinyServer(function(input, output, session) {
                          cond_input = cond_input,
                          imputation_input = imputation_input,
                          comp_heatmap_input = comp_heatmap_input,
+                         comp_heatmap_input_c1 = comp_heatmap_input_c1,
+                         comp_heatmap_input_c2 = comp_heatmap_input_c2,
                          clust_height = clust_height,
                          cluster_heatmap_input = cluster_heatmap_input,
                          colour_functions_input = colour_functions_input,
                          data_results = data_results,
                          p_adj_enh1 = input$p_adj_enh1,
-                         #                       heatmap_input = heatmap_input,
-                         #                       cvs_input = cvs_input,
-                         #                       volcano_input = volcano_input,
                          dep = dep,
                          dep_num = dep_num,
+                         dep_num_c1 = dep_num_c1,
+                         dep_num_c2 = dep_num_c2,
+                         dep_num_bfdr = dep_num_bfdr,
                          norm_data = norm_data,
                          imp_data = imp_data,
                          palette_choice = input$palette_choice,
