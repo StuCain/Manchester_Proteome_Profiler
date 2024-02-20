@@ -60,7 +60,7 @@ params:
 #  volcano_input: NA
 
 header-includes:
-   - \usepackage{booktabs}
+#   - \usepackage{booktabs}
    - \usepackage[default]{sourcesanspro}
    - \usepackage[T1]{fontenc}
 mainfont: SourceSansPro
@@ -101,7 +101,7 @@ clust5_table<-clust5_table[, 1:3]
 clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
 clust6_table<-clust6_table[, 1:3]
 ```
-Version:0.1.7
+Version:0.1.8
 
 ## Method details
  
@@ -265,7 +265,7 @@ A heatmap for proteins with missing value in each dataset. Each row represent a 
 print(params$missval_input())
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.05)  # set progress to 5%
+shiny::setProgress(0.10)  # set progress to 5%
 ```
 \pagebreak
 
@@ -296,7 +296,7 @@ print(params$comp_heatmap_input_c1()[[1]])
 
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.10)  # set progress to 10%
+shiny::setProgress(0.15)  # set progress to 15%
 ```
 
 \pagebreak
@@ -306,17 +306,17 @@ print(params$comp_heatmap_input_c2()[[1]])
 }
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.15)  # set progress to 15%
+shiny::setProgress(0.20)  # set progress to 20%
 ```
 
 \pagebreak
-```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+4, fig.width=(comp_no/1.5)+2.5, fig.keep='first', warning=FALSE, results='hide'}
 if (params$comp_type == "Use SAINTexpress"){
 print(params$comp_heatmap_input_c2()[[1]])
 }
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.15)  # set progress to 15%
+shiny::setProgress(0.20)  # set progress to 15%
 ```
 
 \pagebreak
@@ -344,7 +344,7 @@ The Heatmap indicates the log2 fold change (log2FC) values of each of the signif
 print(params$clust_height)
 print(params$comp_heatmap_input()[[1]])
 if (params$rendered_by_shiny)
-shiny::setProgress(0.18)  # set progress to 18%
+shiny::setProgress(0.25)  # set progress to 25%
 ```
 
 \pagebreak
@@ -360,7 +360,7 @@ if(params$k1>0){
   print(params$cluster_heatmap_input()[[13]])
 }
 if (params$rendered_by_shiny)
-shiny::setProgress(0.20)  # set progress to 20%
+shiny::setProgress(0.30)  # set progress to 30%
 ```
 \pagebreak
 
@@ -491,7 +491,7 @@ for(i in comp){
   print(i)
 }
 if (params$rendered_by_shiny)
-shiny::setProgress(0.30)  # set progress to 30%
+shiny::setProgress(0.35)  # set progress to 35%
 
 ```
 
@@ -579,7 +579,16 @@ shiny::setProgress(1)  # set progress to 100%
 \pagebreak
 
 ### Swatch
-
-```{r swatch, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+Use the swatch for color matching for figures that do not use the pallete colors such as the Go Ontology maps
+```{r swatch, echo=FALSE, fig.height=4, fig.width=4, message=FALSE, warning=FALSE}
 print(scales::show_col(params$colour_functions_input()[[2]]))
 ```
+### Tips
+It is useful to check the individual box plots of any potential proteins of interest, to make sure their significant abundance differences are not due to imputation artifacts. 
+
+### Supported by
+
+```{r logo, echo=FALSE,message=FALSE, warning=FALSE}
+knitr::include_graphics("logo.png")
+```
+

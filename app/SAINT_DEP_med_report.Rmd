@@ -60,7 +60,7 @@ params:
 #  volcano_input: NA
 
 header-includes:
-   - \usepackage{booktabs}
+#   - \usepackage{booktabs}
    - \usepackage[default]{sourcesanspro}
    - \usepackage[T1]{fontenc}
 mainfont: SourceSansPro
@@ -101,7 +101,7 @@ clust5_table<-clust5_table[, 1:3]
 clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
 clust6_table<-clust6_table[, 1:3]
 ```
-Version:0.1.7
+Version:0.1.8
 
 ## Method details
  
@@ -511,8 +511,18 @@ shiny::setProgress(prog)
 }
 ```  
 \pagebreak
-### Swatch
 
-```{r swatch, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+### Swatch
+Use the swatch for color matching for figures that do not use the pallete colors such as the Go Ontology maps
+```{r swatch, echo=FALSE, fig.height=4, fig.width=4, message=FALSE, warning=FALSE}
 print(scales::show_col(params$colour_functions_input()[[2]]))
 ```
+### Tips
+It is useful to check the individual box plots of any potential proteins of interest, to make sure their significant abundance differences are not due to imputation artifacts. 
+
+### Supported by
+
+```{r logo, echo=FALSE,message=FALSE, warning=FALSE}
+knitr::include_graphics("logo.png")
+```
+

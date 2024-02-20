@@ -34,9 +34,21 @@ RUN Rscript -e 'install.packages(c("devtools", "tidyverse", "ggrepel", "httr", "
 #FROM bioconductor/bioconductor_docker
 RUN Rscript -e 'BiocManager::install(pkgs=c("DEP", "ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
 RUN R -e "BiocManager::install('clusterProfiler')"
-RUN R -e "tinytex::install_tinytex()"
+
+RUN apt-get install perl wget -y  
+#fetch TinyTeX installer and run it
+RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
+#add TinyTeX to PATH variable
+ENV PATH="$PATH:/root/.TinyTeX/bin/x86_64-linux"
+
+RUN tlmgr install sourcesanspro
+RUN tlmgr install ly1
+RUN tlmgr install bookmark
+RUN cp -r /root/.TinyTeX /home/shiny
+#RUN copy_tinytex( from = tinytex_root(), to = select_dir("/home/shiny"), move = FALSE )
+#RUN R -e "tinytex::install_tinytex()"
 #RUN R -e "tlmgr install sourcesanspro"
-RUN Rscript -e "rmarkdown::render('install.Rmd')"
+#RUN Rscript -e "rmarkdown::render('install.Rmd')"
 RUN sudo rm /srv/shiny-server/index.html
 
 # Make the ShinyApp available at port 80

@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.12-beta"
+Version = "0.4.13-beta"
 
 #Check TinyTex
 options(shiny.sanitize.errors = FALSE)
@@ -149,7 +149,7 @@ ui <- fluidPage(
                        menuItem("Imputation options",
                                 radioButtons("imputation",
                                              "Imputation type",
-                                             choices = c("man", MsCoreUtils::imputeMethods())[1:9],
+                                             choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                                              selected = "man"),
                                 p(a("Detailed information link",
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
@@ -3184,6 +3184,9 @@ server <- shinyServer(function(input, output, session) {
             tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
           }
+          templogo <- file.path(tempdir(), "logo.png")
+          file.copy(paste0("logo.png"), templogo, overwrite = TRUE)
+          
           updateRadioButtons(session, "report_type", choices = c("Short", "with Box Plots", "Long"), selected = "Short")
           
           sig_proteins<-dep() %>%
