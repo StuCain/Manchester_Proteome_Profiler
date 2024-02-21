@@ -40,15 +40,12 @@ RUN apt-get install perl wget -y
 RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
 #add TinyTeX to PATH variable
 ENV PATH="$PATH:/root/.TinyTeX/bin/x86_64-linux"
-
+#Install extra TinyTEX packages
 RUN tlmgr install sourcesanspro
 RUN tlmgr install ly1
 RUN tlmgr install bookmark
+#Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
-#RUN copy_tinytex( from = tinytex_root(), to = select_dir("/home/shiny"), move = FALSE )
-#RUN R -e "tinytex::install_tinytex()"
-#RUN R -e "tlmgr install sourcesanspro"
-#RUN Rscript -e "rmarkdown::render('install.Rmd')"
 RUN sudo rm /srv/shiny-server/index.html
 
 # Make the ShinyApp available at port 80
