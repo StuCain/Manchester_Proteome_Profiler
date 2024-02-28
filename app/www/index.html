@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Pretty flower</title>
+    <title>SAINT_DEP + Cluster</title>
   </head>
   <style>
   .flex-container {
@@ -17,32 +17,33 @@ img {
 }
 
 .text {
-  font-size: 14px;
+  font-size: 15px;
   padding-left: 20px;
+  h3{font-weight: bold;}
 }
 
   </style>
   <body>
-   <h1>Quick Instructions<h1>
-   <h2>Sidebar Menu<h2>
+   <h1>Quick Instructions</h1>
+   <h2>Sidebar Menu</h2>
    <div class="flex-container">
    <div class="image">
-        <img src="file_all.jpg" width=250px>
+        <img src="file_all.jpg" width=350px>
    </div>
    <div class="text">
         <h3>Choose data type</h3>
-		<p>You can load either the proteinGroups.txt out put from MaxQuant or the Abundance data from Proteome Discovery</p>
+		<p>You can load either the proteinGroups.txt out put from MaxQuant, the Abundance data from Proteome Discovery, or the combined_protein.tsv (LFQ) or protein group matrix.tsv (DIA) from FragPipe.</p>
 		<h3>Load Data</h3>
-        <p>Use the browse button to upload data file, the input box will change depending on the Data File selected</p>
+        <p>Use the browse button to upload data file, the input box will change depending on the Data File type selected</p>
 		<h3>Load Experimental Design template</h3>
-        <p>The experiemtal template matches the column titles from your data file to the sample conditions of your data. It consists of three columns (label, condition and replicate). The label must match the coloumn titles, the condition can be any (short) desciption (use only _ or . special characters). Replicate column just contains a replicate number.</p>
+        <p>The Experimental template matches the column titles from your data file to the sample conditions of your data. It consists of three columns (label, condition and replicate). The label must match the coloumn titles, the condition can be any (short) desciption (use only _ or . special characters). Replicate column just contains a replicate number.</p>
 		<h3>Generate Experimental template</h3>
         <p>A template for the experiemntal design file can be generated using thid button. This will have the label column automatically filled in from the data file.</p>
    </div>
    </div>
       <div class="flex-container">
    <div class="image">
-        <img src="pick_comp.jpg" width=250px>
+        <img src="pick_comp.jpg" width=350px>
    </div>
    <div class="text">
         <h3>Choose Comparisons</h3>
@@ -55,7 +56,7 @@ img {
         <p>After the comparisons have been selected press the "Analyse" button to begin the calculations. </p>
    </div>
    </div>
-      <h2>Main Dashboard<h2>
+      <h2>Main Dashboard</h2>
        <div class="flex-container">
    <div class="image">
         <img src="miss_val.jpg" width=150px>
@@ -76,10 +77,10 @@ img {
         <p>Fold-change and p-adj values for the 2 round of comparisons can be spefified in the second set of boxes  </p>
    </div>
    </div>
-   <h2>DEP Tab<h2>
+   <h2>DEP Tab<h2/>
    
    
-   <h2>Cluster Analysis<h2>   
+   <h2>Cluster Analysis<h2/>   
 
   </body>
 </html>

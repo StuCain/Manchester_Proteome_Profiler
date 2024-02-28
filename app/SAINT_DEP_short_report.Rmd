@@ -101,7 +101,7 @@ clust5_table<-clust5_table[, 1:3]
 clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
 clust6_table<-clust6_table[, 1:3]
 ```
-Version:0.1.8
+Version:0.1.9
 
 ## Method details
  
@@ -112,11 +112,11 @@ The `r file_input` was uploaded into a web-based analysis suite "SAINT_DEP + Clu
 To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
  
 \textsuperscript{1} SAINT_DEP + Cluster by Stuart Cain (Manuscript in preparation)
-\textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550.
-\textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022.
-\textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016.
+\textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550. DOI: 10.1038/nprot.2017.147
+\textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022. DOI: 10.1002/imt2.43
+\textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016. DOI: 10.1093/bioinformatics/btw313
 \textsuperscript{5} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
-\textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. doi:10.1016/j.xinn.2021.100141. `r saint_ref_txt`
+\textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. DOI: 10.1016/j.xinn.2021.100141. `r saint_ref_txt`
 
 \pagebreak
 
@@ -217,8 +217,10 @@ print(params$cor_input())
 
 ### Frequency Plot
 
-```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+if(comp_no>1){
 print(params$cond_input())
+}
 ```
 \pagebreak
 
@@ -278,7 +280,7 @@ if (params$comp_type == "2 Rounds of comparisons"){ht_c2_text<-"## Differential 
 The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the first set of comparisons (Comp1) and the second set of comparisons (Comp2). Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
 "}else{ht_c2_text<-""}
 if (params$comp_type == "Use SAINTexpress"){ht_c2_text<-"## Differential Expression Analysis (Results Plots)
-### Comparison amd SAINTexpress Heatmaps
+### Comparison and SAINTexpress Heatmaps
 The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list (1st Heatmap) and a Heatmap consisting of the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds, showing the Log2FC values for the same comparisons. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cutoff thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
 "}
 

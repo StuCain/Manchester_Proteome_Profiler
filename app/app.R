@@ -30,12 +30,16 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.13-beta"
+Version = "0.4.14-beta"
+
+set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
 #Check TinyTex
 options(shiny.sanitize.errors = FALSE)
 tt_check<-tinytex:::is_tinytex()
 if(tt_check != "TRUE"){tinytex::install_tinytex()}
+
+
 
 ENABLE_PEPTIDE_ANALYSIS <- F
 if (ENABLE_PEPTIDE_ANALYSIS) {
@@ -149,8 +153,16 @@ ui <- fluidPage(
                        menuItem("Imputation options",
                                 radioButtons("imputation",
                                              "Imputation type",
-                                             choices = c("man", MsCoreUtils::imputeMethods())[1:12],
+                                             choices = c("man", "knn", "QRILC", "MLE", "MinDet", "MinProb",  "min", "zero", "nbavg", "bpca"),
+                                             #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                                              selected = "man"),
+                                helpText("Manual (man) Imputation settings) "),
+                                numericInput("shift",
+                                             "Left-shifted Gaussian distribution",
+                                             min = 1.1, max = 2.9, value = 1.8, step = 0.1),
+                                numericInput("width",
+                                             "Width",
+                                             min = 0, max = 1, value = 0.3, step = 0.1),
                                 p(a("Detailed information link",
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
@@ -251,24 +263,24 @@ ui <- fluidPage(
                               DT::dataTableOutput("table"), width = 12),
                           box(title = "Exp Table",
                               DT::dataTableOutput("exp_des"), width = 12), #exp_design
-#                          box(title = "Test",
-#                              DT::dataTableOutput("test"), width = 12), #test
-#                          downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
+                          #                          box(title = "Test",
+                          #                              DT::dataTableOutput("test"), width = 12), #test
+                          #                          downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
                    ),
                    column(width = 6,
                           tabBox(id = "result_plots",
                                  title = "Result Plots", width = 12,
                                  tabPanel(title = "Selected Protein",
                                           fluidRow(
-                                          box(radioButtons("protein_plot",
-                                                           "Choose plot type",
-                                                           c("contrast", "centered", "normalised", "imputed"),
-                                                           selected = "contrast", inline=T,
-                                                           ),
-                                              width = 12),
+                                            box(radioButtons("protein_plot",
+                                                             "Choose plot type",
+                                                             c("contrast", "centered", "normalised", "imputed"),
+                                                             selected = "contrast", inline=T,
+                                            ),
+                                            width = 12),
                                           ),
                                           fluidRow(
-                                          plotOutput("selected_plot"),
+                                            plotOutput("selected_plot"),
                                           ),
                                           downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
                                  tabPanel(title = "Heatmap",
@@ -765,7 +777,7 @@ ui <- fluidPage(
                  mainPanel(
                    style = "background-color: #ffffff;",
                    width = 12,
-                   htmlOutput("inc")
+                   htmlOutput("help")
                  )
         )
       )
@@ -790,10 +802,21 @@ server <- shinyServer(function(input, output, session) {
     
   }, deleteFile = F)
   
-  getPage<-function() {
-    return(includeHTML("www/index.html"))
-  }
-  output$inc<-renderUI({getPage()})
+ # getPage<-function() {
+#    return(includeHTML("www/index.html"))
+#  }
+#  output$inc<-renderUI({getPage()})
+  
+  addResourcePath("src", "./www")
+  output$help <- renderUI({
+    tags$iframe(
+      seamless="seamless",
+      src="index.html",
+      width="100%",
+      height="800px",
+      style="border: none")
+  })
+  
   
   #Side menu for picking comparisons
   output$columns <- renderMenu({
@@ -1158,7 +1181,7 @@ server <- shinyServer(function(input, output, session) {
     if (is.null(inFile))
       return(NULL)
     read.csv(inFile$datapath, header = TRUE,
-             sep = "\t", stringsAsFactors = FALSE) %>%
+             sep = "\t", stringsAsFactors = FALSE, colClasses = c("character")) %>%
       mutate(id = row_number())
   })
   
@@ -1227,7 +1250,9 @@ server <- shinyServer(function(input, output, session) {
   })
   
   imp <- reactive({
-    DEP::impute(norm(), input$imputation)
+    if (input$imputation == "man"){
+      DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+        DEP::impute(norm(), input$imputation)}
   })
   
   #Get imputed data table
@@ -1296,7 +1321,7 @@ server <- shinyServer(function(input, output, session) {
     Use the Experimental template to assist you. ")
     )
     
-     #Check for Comparisons
+    #Check for Comparisons
     validate(need(comp() != "", "You need to select some comparisons, or import a comparisons file.
           Use the Comp. template to assist you. ")
     )
@@ -1325,7 +1350,7 @@ server <- shinyServer(function(input, output, session) {
   
   df_long_input <- reactive({
     norm_long <-get_df_long(norm())
-    })
+  })
   
   
   #SAINTexpress Processing
@@ -1897,8 +1922,12 @@ server <- shinyServer(function(input, output, session) {
     
     #PCA Input
     pca_input <- reactive({
+      num_total <- dep() %>% nrow()
+      if(num_total >= 500){
       plot_pca(dep(), x = 1, y = 2, point_size = 4)
-      #plot_pca(dep(), x = 1, y = 2, n=dep_num(), point_size = 4)
+      }else{
+      plot_pca(dep(), x = 1, y = 2, n=num_total, point_size = 4)
+      }
     })
     
     #    #PCA Input (Comp2)
@@ -2055,34 +2084,34 @@ server <- shinyServer(function(input, output, session) {
         if (input$comp_type == "2 Rounds of comparisons"){
           ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           ht<-plot_complex_heatmap_2xcomp(data_results1(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1_c1,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=8,
-                                      cluster_cols=input$cluster_cols,
-                                      comp_list=comp(),
-                                      data_results1=data_results1(),
-                                      data_results2=data_results2())
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c1,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=8,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SAINTexpress"){
           ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results1(),
-                                    #                     input$pres,
-                                    #                     kmeans = TRUE,
-                                    input$k1_c1,
-                                    ht_title,
-                                    colour_functions_input()[[1]],
-                                    colour_functions_input()[[2]],
-                                    font_size=8,
-                                    cluster_cols=input$cluster_cols,
-                                    comp_list=comp(),
-                                    data_results1=data_results1(),
-                                    saintlist=saintlist()[[2]])
+                                        #                     input$pres,
+                                        #                     kmeans = TRUE,
+                                        input$k1_c1,
+                                        ht_title,
+                                        colour_functions_input()[[1]],
+                                        colour_functions_input()[[2]],
+                                        font_size=8,
+                                        cluster_cols=input$cluster_cols,
+                                        comp_list=comp(),
+                                        data_results1=data_results1(),
+                                        saintlist=saintlist()[[2]])
         }
         return(ht)
       })
