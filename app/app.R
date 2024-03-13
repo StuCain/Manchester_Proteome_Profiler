@@ -8,7 +8,7 @@
 #install.packages("BiocManager")
 #BiocManager::install(c("EnhancedVolcano", "enrichplot",  "clusterProfiler",
 #"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db"))
-
+#BiocManager::install("org.Mm.eg.db")
 library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.15-beta"
+Version = "0.5.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -255,9 +255,12 @@ ui <- fluidPage(
             helpText("Long report takes several minutes to generate"),
             width = 2, height = 120)
         ),
-        
-        
-        
+        box(
+          radioButtons("species",
+                       "GO ontology species",
+                       choices = c("Human", "Mouse"),
+                       selected = "Human"),
+          width = 1, height = 120),
       ),
       
       #Main body of
@@ -2416,7 +2419,7 @@ server <- shinyServer(function(input, output, session) {
           please alter the Kmeans number")
       )
       
-      get_entrezlist(cludf_check_input())
+      get_entrezlist(cludf_check_input(), input$species)
     })
     
     #Make Variables Table
@@ -2457,7 +2460,7 @@ server <- shinyServer(function(input, output, session) {
           incProgress(1/100)
           Sys.sleep(0.5)
         }
-        plot_GO_MF(entrezlist_input())
+        plot_GO_MF(entrezlist_input(), input$species)
       })
     })
     
@@ -2467,7 +2470,7 @@ server <- shinyServer(function(input, output, session) {
           incProgress(1/100)
           Sys.sleep(0.5)
         }
-        plot_GO_CC(entrezlist_input())
+        plot_GO_CC(entrezlist_input(), input$species)
       })
     })
     
@@ -2477,7 +2480,7 @@ server <- shinyServer(function(input, output, session) {
           incProgress(1/100)
           Sys.sleep(0.5)
         }
-        plot_GO_BP(entrezlist_input())
+        plot_GO_BP(entrezlist_input(), input$species)
       })
     })
     
@@ -2730,7 +2733,7 @@ server <- shinyServer(function(input, output, session) {
             incProgress(1/100)
             Sys.sleep(0.5)
           }
-          plot_GO_MF(entrezlist_input())
+          plot_GO_MF(entrezlist_input(), input$species)
         })
       })
       #Plot output
@@ -2767,7 +2770,7 @@ server <- shinyServer(function(input, output, session) {
             incProgress(1/100)
             Sys.sleep(0.5)
           }
-          plot_GO_CC(entrezlist_input())
+          plot_GO_CC(entrezlist_input(), input$species)
         })
       })
       #Plot output
@@ -2804,7 +2807,7 @@ server <- shinyServer(function(input, output, session) {
             incProgress(1/100)
             Sys.sleep(0.5)
           }
-          plot_GO_BP(entrezlist_input())
+          plot_GO_BP(entrezlist_input(), input$species)
         })
       })
       #Plot output

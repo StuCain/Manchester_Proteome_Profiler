@@ -114,7 +114,7 @@ if (params$imputation == "bpca"){imputation_text <- "and missing values were imp
 
 ```
 ```{r app_logo, echo=FALSE,message=FALSE, warning=FALSE}
-knitr::include_graphics("app_logo.jpg")
+knitr::include_graphics("app_logo.png")
 ```
 
 # Manchester Proteome Profiler Report (Short)

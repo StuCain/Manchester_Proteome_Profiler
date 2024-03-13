@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.7
+Version = 2.8
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -2774,8 +2774,10 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
 
 ####Gene Ontology Plots####
 
-####Cellualr Compartment####
-get_entrezlist <- function(clu_df){
+####Entrelist####
+get_entrezlist <- function(clu_df, species="Human"){
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  
   Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
   Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
   Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
@@ -2799,37 +2801,37 @@ get_entrezlist <- function(clu_df){
     dfc1,
     fromType = "SYMBOL",
     toType = "ENTREZID",
-    OrgDb = "org.Hs.eg.db"
+    OrgDb = species_db
   ))
   idCluster2 <- c(bitr(
     dfc2,
     fromType = "SYMBOL",
     toType = "ENTREZID",
-    OrgDb = "org.Hs.eg.db"
+    OrgDb = species_db
   ))
   idCluster3 <- c(bitr(
     dfc3,
     fromType = "SYMBOL",
     toType = "ENTREZID",
-    OrgDb = "org.Hs.eg.db"
+    OrgDb = species_db
   ))
   idCluster4 <- c(bitr(
     dfc4,
     fromType = "SYMBOL",
     toType = "ENTREZID",
-    OrgDb = "org.Hs.eg.db"
+    OrgDb = species_db
   ))
   idCluster5 <- c(bitr(
     dfc5,
     fromType = "SYMBOL",
     toType = "ENTREZID",
-    OrgDb = "org.Hs.eg.db"
+    OrgDb = species_db
   ))
   idCluster6 <- c(bitr(
     dfc6,
     fromType = "SYMBOL",
     toType = "ENTREZID",
-    OrgDb = "org.Hs.eg.db"
+    OrgDb = species_db
   ))
   
   # Assemble converted BaitID vectors into a list object
@@ -2853,24 +2855,21 @@ get_entrezlist <- function(clu_df){
 return(entrezlist)
 }
 
-plot_GO_CC <- function(entrezlist){
+####Cellualr Compartment####
+
+plot_GO_CC <- function(entrezlist, species="Human"){
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
   
-  #Perform functional enrichment analysis using compareCluster
-  #ont = "CC" (cellular compartment),"BP" (Biological process) or "MF" Molecular Function
-  #Cellular Compartment
   GOCC <- compareCluster(
     geneClusters = entrezlist,
     fun = "enrichGO",
-    OrgDb = "org.Hs.eg.db",
+    OrgDb = species_db,
     pvalueCutoff = 0.05,
     ont = "CC",
     readable = T
   )
-  #GOCCfile<-paste("Clusters_CC_", label, ".txt",sep="")
   GOCCtitle<-paste("Cellular Component ",sep="")
-  #write.table(GOCC, file = GOCCfile, sep = "\t",
-  #            row.names = TRUE, col.names = NA)
-  
+
   GOCC_dotplot<- dotplot(GOCC, showCategory = 8) + ggtitle(GOCCtitle)
   
   GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
@@ -2883,21 +2882,19 @@ plot_GO_CC <- function(entrezlist){
 
 #####Molecular Function####
 
-plot_GO_MF <- function(entrezlist){
-
+plot_GO_MF <- function(entrezlist, species="Human"){
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  
   GOMF <- compareCluster(
     geneClusters = entrezlist,
     fun = "enrichGO",
-    OrgDb = "org.Hs.eg.db",
+    OrgDb = species_db,
     pvalueCutoff = 0.05,
     ont = "MF",
     readable = T
   )
-  #GOMFfile<-paste("Clusters_MF_", label, ".txt",sep="")
   GOMFtitle<-paste("Molecular Function ", sep="")
-  #write.table(GOMF, file = GOMFfile, sep = "\t",
-  #            row.names = TRUE, col.names = NA)
-  
+
   GOMF_dotplot<- dotplot(GOMF, showCategory = 8) + ggtitle(GOMFtitle)
   
   GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
@@ -2910,13 +2907,13 @@ plot_GO_MF <- function(entrezlist){
 
 ####Biological Process####
 
-plot_GO_BP <- function(entrezlist){
-  
+plot_GO_BP <- function(entrezlist, species="Human"){
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
 
   GOBP <- compareCluster(
     geneClusters = entrezlist,
     fun = "enrichGO",
-    OrgDb = "org.Hs.eg.db",
+    OrgDb = species_db,
     pvalueCutoff = 0.05,
     ont = "BP",
     readable = T
