@@ -1,6 +1,4 @@
 ---
-title: "SAINT_DEP + Cluster report (long)"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   data: NA
   expdesign: NA
@@ -19,6 +17,9 @@ params:
   comp_type: NA
   comp: NA
   comp2: NA
+  imputation: NA
+  shift: NA
+  width: NA
   tested_contrasts: NA
   numbers_input: NA
   coverage_input: NA
@@ -100,18 +101,36 @@ clust5_table<-as.data.frame(params$cluster_heatmap_input()[[17]])
 clust5_table<-clust5_table[, 1:3]
 clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
 clust6_table<-clust6_table[, 1:3]
+
+#Imputation Text
+if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
+if (params$imputation == "knn"){imputation_text <- "and missing values were imputed using the ‘Nearest neighbour averaging’ (knn) method. "}
+if (params$imputation == "QRILC"){imputation_text <- "and missing values were imputed using an imputation method (QRILC) that performs the imputation of left-censored missing data using random draws from a truncated distribution with parameters estimated using quantile regression. "}
+if (params$imputation == "MinDet"){imputation_text <- "and missing values were imputed using the 'MinDet' imputation method.  MinDet: Performs the imputation of left-censored missing data using a deterministic minimal value approach. Considering a expression data with n samples and p features, for each sample, the missing entries are replaced with a minimal value observed in that sample. "} 
+if (params$imputation == "MinProb"){imputation_text <- "and missing values were imputed using the 'MinProb' imputation method.  MinProb: Performs the imputation of left-censored missing data by random draws from a Gaussian distribution centred to a minimal value.  "}
+if (params$imputation == "min"){imputation_text <- "and missing values were replaced with the smallest non-missing value in the dataset (min method).  "}
+if (params$imputation == "zero"){imputation_text <- "and missing values were replaced with zeroes (min method).  "}
+if (params$imputation == "bpca"){imputation_text <- "and missing values were imputed by an  iterative method using a Bayesian model to handle missing values (bpca method).  "}
+
 ```
-Version:0.1.9
+```{r app_logo, echo=FALSE,message=FALSE, warning=FALSE}
+knitr::include_graphics("app_logo.jpg")
+```
+
+# Manchester Proteome Profiler Report (Short)
+## `r format(Sys.time(), '%d %B, %Y')`
+
+Version:0.1.10
 
 ## Method details
  
 Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-The `r file_input` was uploaded into a web-based analysis suite "SAINT_DEP + Cluster" \textsuperscript{1}, along with experimental design information. "SAINT_DEP + Cluster"  uses a number of R packages to process the protein intensitiy data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of 1.8 StDev (standard deviation) apart with a width of 0.3. Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cutoff using the chosen _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _adjusted p-value_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
+The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensitiy data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cutoff using the chosen _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _adjusted p-value_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
 
 To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
  
-\textsuperscript{1} SAINT_DEP + Cluster by Stuart Cain (Manuscript in preparation)
+\textsuperscript{1} Manchester Proteome Profiler by Stuart Cain (Manuscript in preparation)
 \textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550. DOI: 10.1038/nprot.2017.147
 \textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022. DOI: 10.1002/imt2.43
 \textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016. DOI: 10.1093/bioinformatics/btw313

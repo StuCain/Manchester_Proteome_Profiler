@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.4.14-beta"
+Version = "0.4.15-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -58,7 +58,15 @@ ui <- fluidPage(
   tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
-    dashboardHeader(title = "SAINT_DEP + Cluster"),
+    dashboardHeader( # Set height of dashboardHeader
+      tags$li(class = "dropdown",
+              tags$style(".main-header {max-height: 70px}, {background-color: #2297E6;}"),
+             tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}"),
+      tags$style(".spacelab .main-header .navbar {background-color: green;}")),
+      title = tags$img(src='app_logo v7.jpg', width = "100%", height = "100%"),
+      titleWidth = 300
+      ),
+                      #"SAINT_DEP + Cluster"),
     dashboardSidebar(width=300,#changed with of sidebar
                      sidebarMenu(
                        menuItem(
@@ -153,7 +161,7 @@ ui <- fluidPage(
                        menuItem("Imputation options",
                                 radioButtons("imputation",
                                              "Imputation type",
-                                             choices = c("man", "knn", "QRILC", "MLE", "MinDet", "MinProb",  "min", "zero", "nbavg", "bpca"),
+                                             choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
                                              #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                                              selected = "man"),
                                 helpText("Manual (man) Imputation settings) "),
@@ -3216,6 +3224,9 @@ server <- shinyServer(function(input, output, session) {
           templogo <- file.path(tempdir(), "logo.png")
           file.copy(paste0("logo.png"), templogo, overwrite = TRUE)
           
+          templogo_app <- file.path(tempdir(), "app_logo.png")
+          file.copy(paste0("app_logo.png"), templogo_app, overwrite = TRUE)
+
           updateRadioButtons(session, "report_type", choices = c("Short", "with Box Plots", "Long"), selected = "Short")
           
           sig_proteins<-dep() %>%
@@ -3242,10 +3253,11 @@ server <- shinyServer(function(input, output, session) {
                          bfdr_freq = input$bfdr_freq,
                          k1 = input$k1,
                          comp_type = input$comp_type,
-                         #num_signif= sig_proteins,
-                         #pg_width = pg_width,
                          comp= comp,
                          comp2= comp2,
+                         imputation = input$imputation,
+                         shift = input$shift,
+                         width = input$width,
                          missval_input = missval_input,
                          # p_hist_input = p_hist_input,
                          pca_input = pca_input,
