@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.5.0-beta"
+Version = "0.5.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -39,30 +39,21 @@ options(shiny.sanitize.errors = FALSE)
 tt_check<-tinytex:::is_tinytex()
 if(tt_check != "TRUE"){tinytex::install_tinytex()}
 
-
-
-ENABLE_PEPTIDE_ANALYSIS <- F
-if (ENABLE_PEPTIDE_ANALYSIS) {
-  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA",
-                        "LFQ (peptide)"="LFQ-peptide", "TMT (peptide)"="TMT-peptide", "DIA (peptide)"= "DIA-peptide")
-} else {
-#  analysis_options <- c("LFQ"="LFQ", "TMT"="TMT", "DIA"="DIA")
-  analysis_options <- c("LFQ"="LFQ", "DIA"="DIA")
-  
-}
-
 ####UI####
 ui <- fluidPage(
   tags$head(includeHTML(("google-analytics.html"))),
   theme = shinytheme("spacelab"),
   tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
+  #tags$head(tags$style(HTML('.navbar-default {background-color: #2297E6; border-color: #dddddd}'))),
+  tags$head(tags$link(rel = "icon", type = "image/gif/png", href = "app_icon.png")), 
+  tags$head(tags$title("Manchester Proteome Profiler")),
+  tags$head(tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
     dashboardHeader( # Set height of dashboardHeader
       tags$li(class = "dropdown",
               tags$style(".main-header {max-height: 70px}, {background-color: #2297E6;}"),
-             tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}"),
-      tags$style(".spacelab .main-header .navbar {background-color: green;}")),
+             tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
       title = tags$img(src='app_logo v7.jpg', width = "100%", height = "100%"),
       titleWidth = 300
       ),
@@ -93,7 +84,7 @@ ui <- fluidPage(
                                 ), 
                                 conditionalPanel(
                                   condition = "input.data_type == 'FragPipe'",
-                                  selectInput("exp", "Data type:", choices = analysis_options, selected = "LFQ"),
+                                  selectInput("exp", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
                                   conditionalPanel(
                                     condition = "input.exp == 'LFQ'",
                                     fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
@@ -181,12 +172,18 @@ ui <- fluidPage(
                        uiOutput("downloadButton"),
                        tags$hr(), #adds a line
                        helpText("Supported by"),
-                       imageOutput("logo_img", fill = TRUE)
+                       imageOutput("logo_img", height = "100px"),
+                       helpText("Hosted by"),
+                       imageOutput("logo_wccr",  height = "100px")
+                       
                      )
     ),
     
     #Body
     dashboardBody(
+#      tags$head(tags$style(HTML('.box {margin: 5px;}' ))),
+#      tags$head(tags$style(HTML('.box {margin-left: 0px;}' ))),
+#      tags$head(tags$style(HTML('.box {margin-right: 0px;}' ))),
       helpText(paste("By Stuart Cain, Version:", Version)),
       #set infobox height
       tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 0px;}'))),
@@ -264,7 +261,10 @@ ui <- fluidPage(
       ),
       
       #Main body of
-      tabsetPanel(
+      tabsetPanel(id = "main_body_tab",
+        tabPanel(title = "Introduction",
+                 imageOutput("intro_img", fill = FALSE)
+        ),
         tabPanel("DEP", 
                  fluidRow(
                    column(width = 6,
@@ -459,7 +459,7 @@ ui <- fluidPage(
                             box(
                               selectizeInput("palette_choice",
                                              "Choose palette",
-                                             choices=c("default","Set1","Set2","Set3","Pastel1","Pastel2", "Paired", "Dark2", "Accent", "Reds", "Blues", "Greens", "Greys"),
+                                             choices=c("default", "nejm", "Set1","Set2","Set3","Pastel1","Pastel2", "Paired", "Dark2", "Accent", "Reds", "Blues", "Greens", "Greys"),
                                              selected = "default"),
                               width = 6),
                             box(numericInput("alpha_input",
@@ -813,10 +813,28 @@ server <- shinyServer(function(input, output, session) {
     
   }, deleteFile = F)
   
- # getPage<-function() {
-#    return(includeHTML("www/index.html"))
-#  }
-#  output$inc<-renderUI({getPage()})
+  output$logo_wccr <- renderImage({
+    
+    list(src = "www/CELL MATRIX RGB2.jpg",
+         width = "100%",
+         height = 100)
+    
+  }, deleteFile = F)
+  
+  output$intro_img <- renderImage({
+    width_img  <- session$output_plot2_width
+    height_img <- session$output_plot2_height
+    list(src = "www/Introduction.svg",
+         width = width_img,
+         height = height_img)
+    
+  }, deleteFile = F)
+  
+  
+  # getPage<-function() {
+  #    return(includeHTML("www/index.html"))
+  #  }
+  #  output$inc<-renderUI({getPage()})
   
   addResourcePath("src", "./www")
   output$help <- renderUI({
@@ -896,6 +914,14 @@ server <- shinyServer(function(input, output, session) {
              downloadButton('downloadcomp_template', 'Save Comp. template', class="btn btn-primary")
     )
   })
+  
+  #Hide/show Introductio Tab
+  observeEvent(input$analyze, {
+    if (input$analyze > 0) {
+      hideTab(inputId =  "main_body_tab", target = "Introduction")
+    }else{showTab(inputId =  "main_body_tab", target = "Introduction")}
+  })
+  
   #Hide/show comparison heatmaps
   observeEvent(input$comp_type, {
     if (input$comp_type == "1 Round of comparisons") {
@@ -1935,9 +1961,9 @@ server <- shinyServer(function(input, output, session) {
     pca_input <- reactive({
       num_total <- dep() %>% nrow()
       if(num_total >= 500){
-      plot_pca(dep(), x = 1, y = 2, point_size = 4)
+        plot_pca(dep(), x = 1, y = 2, point_size = 4)
       }else{
-      plot_pca(dep(), x = 1, y = 2, n=num_total, point_size = 4)
+        plot_pca(dep(), x = 1, y = 2, n=num_total, point_size = 4)
       }
     })
     
@@ -2190,7 +2216,7 @@ server <- shinyServer(function(input, output, session) {
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
                                         #                     kmeans = TRUE,
-                                        input$k1,
+                                        input$k1_c2,
                                         ht_title,
                                         colour_functions_input()[[1]],
                                         colour_functions_input()[[2]],
@@ -2229,7 +2255,7 @@ server <- shinyServer(function(input, output, session) {
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
                                         #                     kmeans = TRUE,
-                                        input$k1,
+                                        input$k1_c2,
                                         ht_title,
                                         colour_functions_input()[[1]],
                                         colour_functions_input()[[2]],
@@ -2256,8 +2282,8 @@ server <- shinyServer(function(input, output, session) {
       cludf<- cluster_check(
         comp_heatmap_input()[[1]],
         comp_heatmap_input()[[2]],
-        input$k1,
-        colour_functions_input()[[1]]
+        input$k1
+#        colour_functions_input()[[1]]
       )
       data.frame(cludf)
     })
@@ -3229,7 +3255,7 @@ server <- shinyServer(function(input, output, session) {
           
           templogo_app <- file.path(tempdir(), "app_logo.png")
           file.copy(paste0("app_logo.png"), templogo_app, overwrite = TRUE)
-
+          
           updateRadioButtons(session, "report_type", choices = c("Short", "with Box Plots", "Long"), selected = "Short")
           
           sig_proteins<-dep() %>%

@@ -83,8 +83,8 @@ if (params$data_type == "MaxQuant"){int_type<-"LFQ intensities"}
 if (params$data_type == "Proteome Discoverer"){int_type<-"protein abundances"}
 if (params$data_type == "FragPipe"){if (params$lfq_type == "MaxLFQ intensities") {int_type<-"Intensities"} else {int_type<-"Intensities"}}
 
-if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons with analysed. The second comparison had a _adjusted p-value_ of ", params$p2, " and a fold change of ", params$lfc2, ". The protein list was compliled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
-if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{7} processing was used to allow identifcation of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
+if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons with analysed. The second comparison had a _adjusted p-value_ of ", params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
+if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{7} processing was used to allow identification of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
 
 if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
 
@@ -120,13 +120,13 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.1.10
+Version:0.1.11
 
 ## Method details
  
 Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensitiy data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cutoff using the chosen _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _adjusted p-value_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
+The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _adjusted p-value_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
 
 To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
  
@@ -177,9 +177,9 @@ if (params$comp_type == "Use SAINTexpress"){results_text<-paste0 ("After SAINTex
 
 #For Parameters Summary 
 if (params$data_type == "FragPipe"){lfq_int_text<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text<-""}
-if (params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cutoff >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
-if (params$comp_type == "2 Rounds of comparisons"){p2_text<-paste0 ("* Adjusted _p-value_ cutoff 2 <= \\textbf{", params$p2, "}")}else{p2_text<-""}
-if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress BFDR cutoff <= \\textbf{", params$bfdr, "}")}else{bfdr_text<-""}
+if (params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cut-off >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
+if (params$comp_type == "2 Rounds of comparisons"){p2_text<-paste0 ("* Adjusted _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")}else{p2_text<-""}
+if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress BFDR cut-off <= \\textbf{", params$bfdr, "}")}else{bfdr_text<-""}
 if (params$comp_type == "Use SAINTexpress"){bfdr_freq_text<-paste0 ("* SAINTexpress BFDR Frequency >= \\textbf{", params$bfdr_freq, "}")}else{bfdr_freq_text<-""}
 
 ```
@@ -195,8 +195,8 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 `r lfq_int_text`
 * Comparison Type= \textbf{`r params$comp_type`}
 `r comp_data_text`
-* Fold change cutoff >= \textbf{`r params$lfc`}
-* Adjusted _p-value_ cutoff <= \textbf{`r params$p`}  
+* Fold change cut-off >= \textbf{`r params$lfc`}
+* Adjusted _p-value_ cut-off <= \textbf{`r params$p`}  
 `r lfc2_text`
 `r p2_text`
 `r bfdr_text`
@@ -300,7 +300,7 @@ The Heatmaps indicates the log2 fold change (log2FC) values of each of the signi
 "}else{ht_c2_text<-""}
 if (params$comp_type == "Use SAINTexpress"){ht_c2_text<-"## Differential Expression Analysis (Results Plots)
 ### Comparison and SAINTexpress Heatmaps
-The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list (1st Heatmap) and a Heatmap consisting of the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds, showing the Log2FC values for the same comparisons. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cutoff thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
+The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list (1st Heatmap) and a Heatmap consisting of the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds, showing the Log2FC values for the same comparisons. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cut-off thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
 "}
 
 ```
@@ -355,7 +355,7 @@ The Heatmap indicates the log2 fold change (log2FC) values of each of the signif
 "}
 if (params$comp_type == "Use SAINTexpress"){ht_text<-"## Differential Expression Analysis (Results Plots)
 ### Combined Heatmap
-The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list that also overlap with the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cutoff thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
+The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list that also overlap with the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cut-off thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
 "}
 
 ```
@@ -364,7 +364,7 @@ The Heatmap indicates the log2 fold change (log2FC) values of each of the signif
 
 \pagebreak
 
-```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 print(params$clust_height)
 print(params$comp_heatmap_input()[[1]])
 if (params$rendered_by_shiny)
@@ -375,7 +375,7 @@ shiny::setProgress(0.60)  # set progress to 60%
 
 ### Cluster Heatmaps
 
-```{r heatmap_cluster1, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[7])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster1, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[7])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 if(params$k1>0){
   print(params$cluster_heatmap_input()[[1]])
  
@@ -396,7 +396,7 @@ knitr::kable(clust1_table)
 
 \pagebreak
 
-```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[2]])
@@ -415,7 +415,7 @@ knitr::kable(clust2_table)
 
 \pagebreak
 
-```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 
 if(params$k1>2){
   print(params$cluster_heatmap_input()[[3]])
@@ -434,7 +434,7 @@ knitr::kable(clust3_table)
 
 \pagebreak
 
-```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[4]])
@@ -453,7 +453,7 @@ knitr::kable(clust4_table)
 
 \pagebreak
 
-```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[5]])
 }
@@ -470,7 +470,7 @@ knitr::kable(clust5_table)
 
 \pagebreak
 
-```{r heatmap_cluster6, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[12])/8)+4, fig.width=(comp_no/1.5)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster6, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[12])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
 if(params$k1>5){
   print(params$cluster_heatmap_input()[[6]])
 }
@@ -521,12 +521,12 @@ shiny::setProgress(1)  # set progress to 100%
 \pagebreak
 
 ### Swatch
-Use the swatch for color matching for figures that do not use the pallete colors such as the Go Ontology maps
+Use the swatch for colour matching for figures that do not use the palette colours such as the Go Ontology maps
 ```{r swatch, echo=FALSE, fig.height=4, fig.width=4, message=FALSE, warning=FALSE}
 print(scales::show_col(params$colour_functions_input()[[2]]))
 ```
 ### Tips
-It is useful to check the individual box plots of any potential proteins of interest, to make sure their significant abundance differences are not due to imputation artifacts. 
+It is useful to check the individual box plots of any potential proteins of interest, to make sure their significant abundance differences are not due to imputation artefacts. 
 
 ### Supported by
 

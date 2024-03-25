@@ -11,7 +11,7 @@
   justify-content: flex-start;
 }
 
-img {
+image {
   max-width: 100%;
   max-height:100%;
 }
@@ -24,59 +24,77 @@ img {
 
   </style>
   <body>
-   <h1>Quick Instructions</h1>
-   <h2>Sidebar Menu</h2>
+   <h1><FONT COLOR="#DF536B">Quick Instructions</h1>
+   <h3><FONT COLOR="#000000">1. Load data (Pick Data File type first)</h3>
+   <h3><FONT COLOR="#000000">2. Save Exp. Template</h3>
+   <h3><FONT COLOR="#000000">3. Modify Exp. Template (Use a spreadsheet editor)</h3>
+   <h3><FONT COLOR="#000000">4. Load modified Exp. Template</h3>
+   <h3><FONT COLOR="#000000">5. Pick Comparisons or Generate comparison file from Comp. template</h3>
+   <h3><FONT COLOR="#000000">6. Press "Analyse"</h3>
+   <h1><FONT COLOR="#61D04F">Instructions</h1>
+   <h2><FONT COLOR="#2297E6">Sidebar Menu</h2>
    <div class="flex-container">
    <div class="image">
-        <img src="file_all.jpg" width=350px>
+        <img src="file_all.jpg" width=200px>
    </div>
    <div class="text">
-        <h3>Choose data type</h3>
-		<p>You can load either the proteinGroups.txt out put from MaxQuant, the Abundance data from Proteome Discovery, or the combined_protein.tsv (LFQ) or protein group matrix.tsv (DIA) from FragPipe.</p>
+        <h3><FONT COLOR="#000000">Choose data type</h3>
+		<p>You can load either the proteinGroups.txt output from MaxQuant, the Abundance data from Proteome Discovery, or the combined_protein.tsv (LFQ) or protein group matrix.tsv (DIA) from FragPipe.</p>
 		<h3>Load Data</h3>
-        <p>Use the browse button to upload data file, the input box will change depending on the Data File type selected</p>
+        <p>Use the browse button to upload data file, the input box will change depending on the Data File type selected.</p>
 		<h3>Load Experimental Design template</h3>
-        <p>The Experimental template matches the column titles from your data file to the sample conditions of your data. It consists of three columns (label, condition and replicate). The label must match the coloumn titles, the condition can be any (short) desciption (use only _ or . special characters). Replicate column just contains a replicate number.</p>
+        <p>The Experimental template matches the column titles from your data file to the sample conditions of your data. It consists of five columns (label, condition, replicate, condition_type and bait_id). The label column must match the column titles, the condition can be any (short) description (use only _ or . special characters). The replicate column just contains a replicate number. The last two columns are needed for SAINTexpress analysis. SAINTexpress processing allows identification of proteins that were enriched compared with the control samples. The bait_id column must contain either "T" for tested samples or "C" for control samples. If are different experimental conditions which have different matching controls, the matching samples for each of the conditions should be labelled in the condition_type column. The condition_type can be labelled with any label, e.g. "1", "2" and "3" of "24hr", "48hr" or "72hr".</p>
 		<h3>Generate Experimental template</h3>
-        <p>A template for the experiemntal design file can be generated using thid button. This will have the label column automatically filled in from the data file.</p>
+        <p>To simplify the process a template for the experimental design file can be generated using the "Save Exp. Template" button. Load the data file in first, this will then allow the label column to be automatically filled in from the column titles of the intensity columns. The replicate column is also filled in with the last character, (usually the replicate number). The condition_type and bait_id are also filled in, however the "T" will needed to changed to a "C" for the control samples for SAINTexpress analysis to be performed. If SAINTexpress analysis is not needed, these columns may be left as they are. Use a spreadsheet editor to modify the Exp. Template, make sure you you save it in the same format (tab-separated txt. file).</p>
    </div>
    </div>
       <div class="flex-container">
    <div class="image">
-        <img src="pick_comp.jpg" width=350px>
+        <img src="pick_comp.jpg" width=200px>
    </div>
    <div class="text">
         <h3>Choose Comparisons</h3>
-        <p>The app can process either one set of comparisons or two sets of comparisons.</p>
-		<p>The comparisons choices are generated automatically from the condition column, and are in both orientations. Eg. Cond.A_vs_Cond.B will be found i the forward comparisons list and Cond.B_vs_Cond.A will be found in the reverse comparisons list. Multiple comparisons can be selected from either drop down box, and then they are combined to give the total comparison list.</p>
+        <p>The app can process either one set of comparisons, two sets of comparisons or one set of comparisons with SAINTexpress processing. </p>
+		<p>The comparisons choices are generated automatically from the condition column, and are in both orientations. Eg. Cond.A_vs_Cond.B will be found in the forward comparisons list and Cond.B_vs_Cond.A will be found in the reverse comparisons list. Multiple comparisons can be selected from either drop down box, and then they are combined to give the total comparison list.</p>
 		<h3>Second round of comparisons</h3>
-        <p>If the "2 Rounds of comparisons" is selected a further set of two drop boxes will appear. This allows two independant comparisons with different cut-off values, to be analysed, which are then  combined to generate a protein list that common to both. </p>
-		<p>The 2nd round comparisons are chosen in the same manner as the 1st. </p>
+        <p>If the "2 Rounds of comparisons" is selected a further set of two drop boxes will appear. This allows two independent comparisons with different cut-off values, to be analysed, which are then  combined to generate a protein list that common to both. The 2nd round comparisons are chosen in the same manner as the 1st. </p>
+		<h3>Comparisons File input</h3>
+        <p>If there are a large amount of conditions it is advised to generate a comparison file. This can be generated by downloading the Comp. template. This contains a list of the conditions in the 1st column, which can them be copied and pasted into the 2nd and 3rd columns for the 1st round of comparisons, or the 4th and 5th columns for the 2nd round comparisons. If SAINTexpress analysis is performed only the 1st round of comparisons will be used. </p>
 		<h3>Start Analysis</h3>
         <p>After the comparisons have been selected press the "Analyse" button to begin the calculations. </p>
    </div>
    </div>
-      <h2>Main Dashboard</h2>
+      <h2><FONT COLOR="#2297E6">Main Dashboard</h2>
        <div class="flex-container">
    <div class="image">
-        <img src="miss_val.jpg" width=150px>
+        <img src="miss_val.jpg" width=200px>
    </div>
    <div class="text">
-        <h3>Missing Values</h3>
-        <p>Filters out proteins that contain to many missing values. A value of 1 = protein identified in all or all but one replicate for at least one condtion. Value of 0 (most stringent) protein identified in all replicates for atleast one condition.</p>
+        <h3><FONT COLOR="#000000">Missing Values</h3>
+        <p>Filters out proteins that contain to many missing values. A value of 1 = protein identified in all or all but one replicate for at least one condition. Value of 0 (most stringent) protein identified in all replicates for at least one condition.</p>
    </div>
    </div>
-       <div class="flex-container">
+   <div class="flex-container">
    <div class="image">
-        <img src="p_fc_values.jpg" width=150px>
+        <img src="p_fc_values.jpg" width=200px>
    </div>
    <div class="text">
         <h3>Set Fold-change and p-adj. cut off values</h3>
         <p>Fold-change cut off values will be converted to log2Fold-Change. For an identified protein to be included in the significant list the fold change must be >= the the chosen value in one of the chosen comparisons. </p>
-		<p>p-adj vale cut-off. For an identified protein to be included in the significant list the p-adj value must be <= the chosen value in one of the chosen comparisons. </p>
-        <p>Fold-change and p-adj values for the 2 round of comparisons can be spefified in the second set of boxes  </p>
+        <p>p-adj vale cut-off. For an identified protein to be included in the significant list the p-adj value must be <= the chosen value in one of the chosen comparisons. </p>
+        <p>Fold-change and p-adj values for the 2 round of comparisons can be specified in the second set of boxes  </p>
    </div>
    </div>
+      <div class="flex-container">
+   <div class="image">
+        <img src="BFDR_values.jpg" width=200px>
+   </div>
+   <div class="text">
+        <h3>Set BFDR Cut-off and BFDR_Freq (SAINTexpress only)</h3>
+        <p>SAINTexpress analysis assigns a Bayesian False Discovery Rate (BFDR) value for every protein detected for each sample condition based on the replicate values. To generate a list of proteins a BFDR cut-off value is selected, (the default is 0.05 or 5%). If a protein has a BFDR <= to this number it is included on the protein list. If the BFDR Freq. Min is increased then a protein must pass the BFDR cut-off a minimum of the specified number of samples (Default = 1).</p>
+   </div>
+   </div>
+
    <h2>DEP Tab<h2/>
    
    

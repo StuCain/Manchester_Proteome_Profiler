@@ -34,7 +34,7 @@ RUN Rscript -e 'install.packages(c("devtools", "tidyverse", "ggrepel", "httr", "
 #FROM bioconductor/bioconductor_docker
 RUN Rscript -e 'BiocManager::install(pkgs=c("DEP", "ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
 RUN R -e "BiocManager::install('clusterProfiler')"
-
+RUN R -e "BiocManager::install('org.Mm.eg.db')"
 RUN apt-get install perl wget -y  
 #fetch TinyTeX installer and run it
 RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 

@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.8
+Version = 2.9
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -40,9 +40,27 @@ colour_functions <- function( limit_comp=6, high_col="red", low_col="blue", pale
     "8"="#539002"  # dark green 
   )
   
+  nejm <- c(
+    "1"="#BC3C29", 
+    "2"="#0072B5", 
+    "5"="#E18727", 
+    "4"="#20854E", 
+    "6"="#7876B1", 
+    "3"="#6F99AD", 
+    "7"="#FFDC91", 
+    "8"="#EE4C97"
+  )
+  
+  
   if (palette_choice=="default"){
     mypal<-c6h
-  }else{
+  }
+  
+  if (palette_choice=="nejm"){
+    mypal<-nejm
+  } 
+  
+  if (palette_choice!="default"&&palette_choice!="nejm"){
     mypal = brewer.pal(n = 8, name = palette_choice)
   }
   
@@ -743,9 +761,10 @@ Freq" = anno_barplot(
 }
 
 ####Cluster Check####
-cluster_check <- function(ht, my_mat, kmeans, col_fun){
+cluster_check <- function(ht, my_mat, kmeans){
   set.seed(123)
-
+  col_fun = colorRamp2(c(-5, 0, 5), c("red", "white", "blue"))
+  col_fun(seq(-5, 5))
   comp_length<-ncol(my_mat)
   
   #Reorder columns to match clustering
