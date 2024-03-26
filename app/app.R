@@ -30,7 +30,7 @@ library(rmarkdown)
 
 source("R/functions.R")
 
-Version = "0.5.1-beta"
+Version = "0.5.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -100,7 +100,7 @@ ui <- fluidPage(
                                                  choices = c("Intensity"="Intensity",
                                                              "MaxLFQ Intensity"="MaxLFQ"),
                                                  #                                                            "Spectral Count"="Spectral Count"),
-                                                 selected = "Intensity"),
+                                                 selected = "MaxLFQ"),
                                     #                                    tags$hr(),
                                     #                                   downloadLink("lfq_example", label="Example LFQ data"),
                                     #                                   br(),
