@@ -27,10 +27,11 @@ library(shinythemes)
 library("RColorBrewer")
 library(readxl)
 library(rmarkdown)
+library(SummarizedExperiment)
 
 source("R/functions.R")
 
-Version = "0.5.2-beta"
+Version = "0.5.3-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -198,6 +199,7 @@ ui <- fluidPage(
         box(numericInput("p",
                          "adj. P value",
                          min = 0.0001, max = 0.1, value = 0.05),
+            checkboxInput("pval_use", "Use p.Val", FALSE),
             width = 1, height = 120),
         box(numericInput("lfc",
                          "Fold change",
@@ -1363,8 +1365,9 @@ server <- shinyServer(function(input, output, session) {
           Use the Comp. template to assist you. ")
     )
     #validate(need(try(df() != "try-error"), base::stop(shiny::safeError(warning(test_diff(imp(), type = "manual", test = comp()))))))
-    
+    if(input$pval_use == FALSE){
     add_rejections(df(), input$p, log2(input$lfc))
+    }else{add_rejections_pval(df(), input$p, log2(input$lfc))}
   }) 
   
   dep2 <- reactive({
@@ -1373,7 +1376,10 @@ server <- shinyServer(function(input, output, session) {
     #Check for Comparisons
     validate(need(comp2() != "", "You need to select some 2nd round comparisons, or import a comparisons file. Use the Comp. template to assist you. ")
     )
-    add_rejections(df2(), input$p2, log2(input$lfc2))
+    if(input$pval_use == FALSE){
+      add_rejections(df2(), input$p2, log2(input$lfc2))
+    }else{add_rejections_pval(df2(), input$p2, log2(input$lfc2))}
+    
   }) 
   
   
@@ -2008,8 +2014,9 @@ server <- shinyServer(function(input, output, session) {
     #complex heatmap Input
     comp_heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
+        if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
         if (input$comp_type == "1 Round of comparisons"){
-          ht_title<-paste("FC=", input$lfc, " p.adj=", input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste("FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap(data_results(),
                                    #                     input$pres,
@@ -2025,7 +2032,8 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results(),
                                         #                     input$pres,
@@ -2042,7 +2050,8 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "Comp 2 FC=", input$lfc2, " p.adj=", input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
                                            #                     input$pres,
@@ -2064,7 +2073,8 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "1 Round of comparisons"){
-          ht_title<-paste("FC=", input$lfc, " p.adj=", input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap(data_results(),
                                     #                     input$pres,
@@ -2080,7 +2090,8 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_BFDR(data_results(),
                                          #                     input$pres,
@@ -2097,7 +2108,8 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "Comp 2 FC=", input$lfc2, " p.adj=", input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
                                            #                     input$pres,
@@ -2119,7 +2131,8 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input_c1 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           ht<-plot_complex_heatmap_2xcomp(data_results1(),
                                           #                     input$pres,
                                           #                     kmeans = TRUE,
@@ -2135,7 +2148,8 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results1(),
                                         #                     input$pres,
@@ -2157,7 +2171,8 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input_c1_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           plot_complex_heatmap_2xcomp(data_results1(),
                                       #                     input$pres,
                                       #                     kmeans = TRUE,
@@ -2173,7 +2188,8 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste("Comp 1 FC=", input$lfc, " p.adj=", input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           plot_complex_heatmap_BFDR(data_results1(),
                                     #                     input$pres,
@@ -2194,7 +2210,8 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input_c2 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comp 2 FC=", input$lfc2, " p.adj=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
                                           #                     input$pres,
@@ -2233,7 +2250,8 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input_c2_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "2 Rounds of comparisons"){
-          ht_title<-paste("Comp 2 FC=", input$lfc2, " p.adj=", input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste("Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
                                           #                     input$pres,
@@ -3274,6 +3292,7 @@ server <- shinyServer(function(input, output, session) {
                          exp = input$exp,
                          lfq_type = input$lfq_type,
                          thr = input$thr,
+                         pval_use = input$pval_use,
                          p = input$p,
                          lfc = input$lfc,
                          p2 = input$p2,

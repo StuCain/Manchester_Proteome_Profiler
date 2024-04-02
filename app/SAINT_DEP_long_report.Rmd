@@ -6,6 +6,7 @@ params:
   exp: NA
   lfq_type: NA
   thr: NA
+  pval_use: NA
   p: NA
   lfc: NA
   p2: NA
@@ -83,7 +84,11 @@ if (params$data_type == "MaxQuant"){int_type<-"LFQ intensities"}
 if (params$data_type == "Proteome Discoverer"){int_type<-"protein abundances"}
 if (params$data_type == "FragPipe"){if (params$lfq_type == "MaxLFQ intensities") {int_type<-"Intensities"} else {int_type<-"Intensities"}}
 
-if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons with analysed. The second comparison had a _adjusted p-value_ of ", params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
+if (params$pval_use == FALSE){pval_type <- " an _adjusted p-value_ of "} else {pval_type <- " a _p-value_ of "}
+
+if (params$pval_use == FALSE){pval_type_2 <- "adjusted p-value"} else {pval_type_2 <- "p-value"}
+
+if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons with analysed. The second comparison had", pval_type , params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
 if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{7} processing was used to allow identification of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
 
 if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
@@ -120,13 +125,13 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.1.11
+Version:0.1.12
 
 ## Method details
  
 Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _adjusted p-value_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _adjusted p-value_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
+The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
 
 To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
  
@@ -177,8 +182,11 @@ if (params$comp_type == "Use SAINTexpress"){results_text<-paste0 ("After SAINTex
 
 #For Parameters Summary 
 if (params$data_type == "FragPipe"){lfq_int_text<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text<-""}
-if (params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cut-off >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
-if (params$comp_type == "2 Rounds of comparisons"){p2_text<-paste0 ("* Adjusted _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")}else{p2_text<-""}
+if (params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cut-off 2 >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
+if (params$pval_use == FALSE){p_text<-paste0 ("* Adjusted _p-value_ cut-off <= \\textbf{", params$p, "}")} else {p_text<-paste0 ("* _p-value_ cut-off <= \\textbf{", params$p, "}")}
+if (params$comp_type == "2 Rounds of comparisons"){if (params$pval_use == FALSE){p2_text<-paste0 ("* Adjusted _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")
+} else {p2_text<-paste0 ("* _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")
+}}else{p2_text<-""}
 if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress BFDR cut-off <= \\textbf{", params$bfdr, "}")}else{bfdr_text<-""}
 if (params$comp_type == "Use SAINTexpress"){bfdr_freq_text<-paste0 ("* SAINTexpress BFDR Frequency >= \\textbf{", params$bfdr_freq, "}")}else{bfdr_freq_text<-""}
 
@@ -196,7 +204,7 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 * Comparison Type= \textbf{`r params$comp_type`}
 `r comp_data_text`
 * Fold change cut-off >= \textbf{`r params$lfc`}
-* Adjusted _p-value_ cut-off <= \textbf{`r params$p`}  
+`r p_text`
 `r lfc2_text`
 `r p2_text`
 `r bfdr_text`

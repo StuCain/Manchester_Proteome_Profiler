@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.9
+Version = 2.10
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -88,6 +88,54 @@ colour_functions <- function( limit_comp=6, high_col="red", low_col="blue", pale
   
   return(col_fun_out)
 } 
+
+####p.Val function####
+#add rejections function using pVal instead of padj
+add_rejections_pval<-function (diff, alpha = 0.05, lfc = 1) 
+{
+  if (is.integer(alpha)) 
+    alpha <- as.numeric(alpha)
+  if (is.integer(lfc)) 
+    lfc <- as.numeric(lfc)
+  
+  assertthat::assert_that(inherits(diff, "SummarizedExperiment"), 
+                          is.numeric(alpha), length(alpha) == 1, is.numeric(lfc), 
+                          length(lfc) == 1)
+  row_data <- rowData(diff, use.names = FALSE) %>% as.data.frame()
+  if (any(!c("name", "ID") %in% colnames(row_data))) {
+    stop("'name' and/or 'ID' columns are not present in '", 
+         deparse(substitute(diff)), "'\nRun make_unique() and make_se() to obtain the required columns", 
+         call. = FALSE)
+  }
+  if (length(grep("_p.val|_diff", colnames(row_data))) < 1) {
+    stop("'[contrast]_diff' and/or '[contrast]_p.val' columns are not present in '", 
+         deparse(substitute(diff)), "'\nRun test_diff() to obtain the required columns", 
+         call. = FALSE)
+  }
+  cols_p <- grep("_p.val", colnames(row_data))
+  cols_diff <- grep("_diff", colnames(row_data))
+  if (length(cols_p) == 1) {
+    rowData(diff)$significant <- row_data[, cols_p] <= alpha & 
+      abs(row_data[, cols_diff]) >= lfc
+    rowData(diff)$contrast_significant <- rowData(diff, use.names = FALSE)$significant
+    colnames(rowData(diff))[ncol(rowData(diff, use.names = FALSE))] <- gsub("p.val", 
+                                                                            "significant", colnames(row_data)[cols_p])
+  }
+  if (length(cols_p) > 1) {
+    p_reject <- row_data[, cols_p] <= alpha
+    p_reject[is.na(p_reject)] <- FALSE
+    diff_reject <- abs(row_data[, cols_diff]) >= lfc
+    diff_reject[is.na(diff_reject)] <- FALSE
+    sign_df <- p_reject & diff_reject
+    sign_df <- cbind(sign_df, significant = apply(sign_df, 
+                                                  1, function(x) any(x)))
+    colnames(sign_df) <- gsub("_p.val", "_significant", colnames(sign_df))
+    sign_df <- cbind(name = row_data$name, as.data.frame(sign_df))
+    rowData(diff) <- merge(rowData(diff, use.names = FALSE), 
+                           sign_df, by = "name")
+  }
+  return(diff)
+}
 
 
 ####Complex Heatmap function####
