@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 
 source("R/functions.R")
 
-Version = "0.5.3-beta"
+Version = "0.5.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -598,7 +598,8 @@ ui <- fluidPage(
                                             column(width = 4,
                                                    title = "Results",
                                                    DT::dataTableOutput("table3"), #add table for cluster
-                                                   downloadButton('downloadclustertable', 'Save Cluster Table', class = "btn-primary")
+                                                   downloadButton('downloadclustertable', 'Save Cluster Table', class = "btn-primary"),
+                                                   downloadButton('downloadclusterlist', 'Save All Clusters', class = "btn-primary")
                                             )
                                           ),
                                  ),
@@ -1499,7 +1500,7 @@ server <- shinyServer(function(input, output, session) {
       selectizeInput("dataset",
                      "Choose a dataset to save" ,
                      c("results","significant_proteins",
-                       "displayed_subset","full_dataset"))
+                       "displayed_subset","full_dataset","Cluster_list"))
     })
     
     output$downloadButton <- renderUI({
@@ -2891,7 +2892,9 @@ server <- shinyServer(function(input, output, session) {
              "displayed_subset" = data_results(), #%>%
              #filter(significant) %>%
              #select(-significant),
-             "full_dataset" = get_df_wide(dep()))
+             "full_dataset" = get_df_wide(dep()),
+             "Cluster_list" = cludf_check_input()
+             )
     }
     )
     
@@ -2919,10 +2922,10 @@ server <- shinyServer(function(input, output, session) {
     )
     
     #Test table
-    output$downloadtesttable <- downloadHandler(
-      filename = function() { paste("test.txt", sep = "") },
+    output$downloadclusterlist <- downloadHandler(
+      filename = function() { paste("Cluster_list.txt", sep = "") },
       content = function(file) {
-        write.table(df_long_input(),
+        write.table(cludf_check_input(),
                     file,
                     col.names = TRUE,
                     row.names = FALSE,
