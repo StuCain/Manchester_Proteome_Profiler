@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.10
+Version = 2.11
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -2937,7 +2937,7 @@ plot_GO_CC <- function(entrezlist, species="Human"){
   )
   GOCCtitle<-paste("Cellular Component ",sep="")
 
-  GOCC_dotplot<- dotplot(GOCC, showCategory = 8) + ggtitle(GOCCtitle)
+  GOCC_dotplot<- dotplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle)
   
   GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
   
@@ -2962,7 +2962,7 @@ plot_GO_MF <- function(entrezlist, species="Human"){
   )
   GOMFtitle<-paste("Molecular Function ", sep="")
 
-  GOMF_dotplot<- dotplot(GOMF, showCategory = 8) + ggtitle(GOMFtitle)
+  GOMF_dotplot<- dotplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle)
   
   GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
   
@@ -2987,7 +2987,7 @@ plot_GO_BP <- function(entrezlist, species="Human"){
   )
   GOBPtitle<-paste("Biological Process ",sep="")
   
-  GOBP_dotplot<- dotplot(GOBP, showCategory = 8) + ggtitle(GOBPtitle)
+  GOBP_dotplot<- dotplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle)
   
   GOBP_cnetplot<- cnetplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle) 
   

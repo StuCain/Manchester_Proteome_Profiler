@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 
 source("R/functions.R")
 
-Version = "0.5.4-beta"
+Version = "0.5.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
