@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 2.11
+Version = 3.0
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -2935,15 +2935,15 @@ plot_GO_CC <- function(entrezlist, species="Human"){
     ont = "CC",
     readable = T
   )
-  GOCCtitle<-paste("Cellular Component ",sep="")
+  #GOCCtitle<-paste("Cellular Component ",sep="")
 
-  GOCC_dotplot<- dotplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle)
+  #GOCC_dotplot<- dotplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle)
   
-  GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
+  #GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
   
-  GO_CC<-list(GOCC_dotplot, GOCC_cnetplot)
+  #GO_CC<-list(GOCC_dotplot, GOCC_cnetplot)
   
-  return(GO_CC)
+  return(GOCC)
   
 }
 
@@ -2960,15 +2960,16 @@ plot_GO_MF <- function(entrezlist, species="Human"){
     ont = "MF",
     readable = T
   )
-  GOMFtitle<-paste("Molecular Function ", sep="")
+  #GOMFtitle<-paste("Molecular Function ", sep="")
 
-  GOMF_dotplot<- dotplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle)
+  #GOMF_dotplot<- dotplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle)
   
-  GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
+  #GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
   
-  GO_MF<-list(GOMF_dotplot, GOMF_cnetplot)
+  #GO_MF<-list(GOMF_dotplot, GOMF_cnetplot)
   
-  return(GO_MF)
+  #return(GO_MF)
+  return(GOMF)
   
 }
 
@@ -2985,15 +2986,15 @@ plot_GO_BP <- function(entrezlist, species="Human"){
     ont = "BP",
     readable = T
   )
-  GOBPtitle<-paste("Biological Process ",sep="")
+  #GOBPtitle<-paste("Biological Process ",sep="")
   
-  GOBP_dotplot<- dotplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle)
+  #GOBP_dotplot<- dotplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle)
   
-  GOBP_cnetplot<- cnetplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle) 
+  #GOBP_cnetplot<- cnetplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle) 
   
-  GO_BP<-list(GOBP_dotplot, GOBP_cnetplot)
+  #GO_BP<-list(GOBP_dotplot, GOBP_cnetplot)
   
-  return(GO_BP)
+  return(GOBP)
   
 }
 

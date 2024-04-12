@@ -55,6 +55,9 @@ params:
   GO_MF_report_input: NA
   GO_CC_report_input: NA
   GO_BP_report_input: NA
+  gomf_level: NA
+  gocc_level: NA
+  gobp_level: NA
   box_plot_report_input: NA
   
   
@@ -125,7 +128,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.1.12
+Version:0.2.0
 
 ## Method details
  
@@ -544,7 +547,8 @@ shiny::setProgress(prog)
 ### Molecular Function Plots
 
 ```{r MF_plots, echo=FALSE, fig.height=14, fig.width=8, message=FALSE, warning=FALSE, comment=NA}
-print(params$GO_MF_report_input()[[1]])
+GOMFtitle<-paste("Molecular Function up to level ", params$gomf_level, sep="")
+print(GOMF_dotplot<- dotplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
 
 if (params$rendered_by_shiny)
 shiny::setProgress(0.6)  # set progress to 60%
@@ -554,7 +558,8 @@ shiny::setProgress(0.6)  # set progress to 60%
 ### Molecular Function Plots
 
 ```{r MF_cNET, echo=FALSE, fig.height=12, fig.width=12, message=FALSE, warning=FALSE, comment=NA}
-print(params$GO_MF_report_input()[[2]])
+GOMFtitle<-paste("Molecular Function up to level ", params$gomf_level, sep="")
+print(GOMF_cnetplot<- cnetplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
 
 if (params$rendered_by_shiny)
 shiny::setProgress(0.65)  # set progress to 70%
@@ -564,7 +569,8 @@ shiny::setProgress(0.65)  # set progress to 70%
 ### Cellular Components Plots
 
 ```{r CC_plots, echo=FALSE, fig.height=14, fig.width=8, message=FALSE, warning=FALSE, comment=NA}
-print(params$GO_CC_report_input()[[1]])
+GOCCtitle<-paste("Cellular Component up to level ", params$gocc_level, sep="")
+print(GOCC_dotplot<- dotplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
 if (params$rendered_by_shiny)
 shiny::setProgress(0.7)  # set progress to 70%
 ```
@@ -573,7 +579,8 @@ shiny::setProgress(0.7)  # set progress to 70%
 ### Cellular Components Plots
 
 ```{r CC_cNET, echo=FALSE, fig.height=12, fig.width=12, message=FALSE, warning=FALSE, comment=NA}
-print(params$GO_CC_report_input()[[2]])
+GOCCtitle<-paste("Cellular Component up to level ", params$gocc_level, sep="")
+print(GOCC_cnetplot<- cnetplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
 if (params$rendered_by_shiny)
 shiny::setProgress(0.75)  # set progress to 75%
 ```
@@ -582,7 +589,8 @@ shiny::setProgress(0.75)  # set progress to 75%
 ### Biological Process Plots
 
 ```{r BP_plots, echo=FALSE, fig.height=14, fig.width=8, message=FALSE, warning=FALSE, comment=NA}
-print(params$GO_BP_report_input()[[1]])
+GOBPtitle<-paste("Biological Process up to level ", params$gobp_level, sep="")
+print(GOBP_dotplot<- dotplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
 
 if (params$rendered_by_shiny)
 shiny::setProgress(0.8)  # set progress to 80%
@@ -592,7 +600,8 @@ shiny::setProgress(0.8)  # set progress to 80%
 ### Biological Process Plots
 
 ```{r BP_cNET, echo=FALSE, fig.height=12, fig.width=12, message=FALSE, warning=FALSE, comment=NA}
-print(params$GO_BP_report_input()[[2]])
+GOBPtitle<-paste("Biological Process up to level ", params$gobp_level, sep="")
+print(GOBP_cnetplot<- cnetplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
 
 if (params$rendered_by_shiny)
 shiny::setProgress(0.9)  # set progress to 90%

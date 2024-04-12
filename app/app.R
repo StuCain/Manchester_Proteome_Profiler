@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 
 source("R/functions.R")
 
-Version = "0.5.5-beta"
+Version = "0.6.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -674,8 +674,14 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Molecular Function",
                                           fluidRow(
+                                            box(numericInput("gomf_level",
+                                                             "GO Level",
+                                                             min = 1, max = 10, value = 5),
+                                                width = 2),
                                             actionButton("analyze_MF", "Analyze Molecular Function", icon = icon("magnifying-glass-chart"), class = "btn-success"),
                                             helpText("Warning: This can take a couple of minutes"),
+                                            
+                                            
                                           ),
                                           fluidRow(
                                             column(width = 5,
@@ -707,6 +713,10 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Cellular Components",
                                           fluidRow(
+                                            box(numericInput("gocc_level",
+                                                             "GO Level",
+                                                             min = 1, max = 10, value = 5),
+                                                width = 2),
                                             actionButton("analyze_CC", "Analyze Cellular Components", icon = icon("magnifying-glass-chart"), class = "btn-info"),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
@@ -741,6 +751,10 @@ ui <- fluidPage(
                                  ),
                                  tabPanel(title = "Biological Process",
                                           fluidRow(
+                                            box(numericInput("gobp_level",
+                                                             "GO Level",
+                                                             min = 1, max = 10, value = 5),
+                                                width = 2),
                                             actionButton("analyze_BP", "Analyze Biological Process", icon = icon("magnifying-glass-chart"), class = "btn-warning"),
                                             helpText("Warning: This can take a couple of minutes"),
                                           ),
@@ -2772,36 +2786,42 @@ server <- shinyServer(function(input, output, session) {
     #Observe GO Plots
     #Observe MF
     observeEvent(input$analyze_MF,{
-      GO_MF_input <- reactive({
-        withProgress(message = 'Plotting', detail = 'This may take a while...',  max=10, value = 6.6,{
-          for (i in 1:100) {
-            incProgress(1/100)
-            Sys.sleep(0.5)
-          }
-          plot_GO_MF(entrezlist_input(), input$species)
-        })
-      })
+      #GO_MF_input <- reactive({
+      #  withProgress(message = 'Plotting', detail = 'This may take a while...',  max=10, value = 6.6,{
+      #    for (i in 1:100) {
+      #      incProgress(1/100)
+      #      Sys.sleep(0.5)
+      #    }
+      #    plot_GO_MF(entrezlist_input(), input$species)
+      #  })
+      #})
+      
       #Plot output
       output$GOMF_plot <- renderPlot({
-        GO_MF_input()[[1]]
+        GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+        print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
       })
       output$GOMF_cnet <- renderPlot({
-        GO_MF_input()[[2]]
+        GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+        print(GOMF_cnetplot<- cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
       })
+      
       #PDF Output
       output$download_MF_plot <- downloadHandler(
-        filename = "Molecular_Function_Plot.pdf",
+        filename = function() { paste("Molecular_Function_Plot_level_",input$gomf_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
-          print(GO_MF_input()[[1]])
+          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+          print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
           dev.off()
         }
       )
       output$download_MF_cnet <- downloadHandler(
-        filename = "Molecular_Function_Map.pdf",
+        filename = function() { paste("Molecular_Function_Map_level_",input$gomf_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
-          print(GO_MF_input()[[2]])
+          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+          print(GOMF_cnetplot<- cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
           dev.off()
         }
       )
@@ -2809,36 +2829,41 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe CC
     observeEvent(input$analyze_CC,{
-      GO_CC_input <- reactive({
-        withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
-          for (i in 1:100) {
-            incProgress(1/100)
-            Sys.sleep(0.5)
-          }
-          plot_GO_CC(entrezlist_input(), input$species)
-        })
-      })
+      #GO_CC_input <- reactive({
+      #  withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
+      #    for (i in 1:100) {
+      #      incProgress(1/100)
+      #      Sys.sleep(0.5)
+      #    }
+      #    plot_GO_CC(entrezlist_input(), input$species)
+      #  })
+      #})
+      
       #Plot output
       output$GOCC_plot <- renderPlot({
-        GO_CC_input()[[1]]
+        GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+        print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
       })
       output$GOCC_cnet <- renderPlot({
-        GO_CC_input()[[2]]
+        GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+        print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
       })
       #PDF Output
       output$download_CC_plot <- downloadHandler(
-        filename = "Cellular_Components_Plot.pdf",
+        filename = function() { paste("Cellular_Component_Plot_level_",input$gocc_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
-          print(GO_CC_input()[[1]])
+          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+          print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
           dev.off()
         }
       )
       output$download_CC_cnet <- downloadHandler(
-        filename = "Cellular_Components_Map.pdf",
+        filename = function() { paste("Cellular_Component_Map_level_",input$gocc_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
-          print(GO_CC_input()[[2]])
+          GOCCtitle<-paste("Cellualr Component up to level ", input$gocc_level, sep="")
+          print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
           dev.off()
         }
       )
@@ -2846,36 +2871,41 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe BP
     observeEvent(input$analyze_BP,{
-      GO_BP_input <- reactive({
-        withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
-          for (i in 1:100) {
-            incProgress(1/100)
-            Sys.sleep(0.5)
-          }
-          plot_GO_BP(entrezlist_input(), input$species)
-        })
-      })
+      #GO_BP_input <- reactive({
+      #  withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
+      #    for (i in 1:100) {
+      #      incProgress(1/100)
+      #      Sys.sleep(0.5)
+      #    }
+      #    plot_GO_BP(entrezlist_input(), input$species)
+      #  })
+      #})
+      
       #Plot output
       output$GOBP_plot <- renderPlot({
-        GO_BP_input()[[1]]
+        GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+        print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
       })
       output$GOBP_cnet <- renderPlot({
-        GO_BP_input()[[2]]
+        GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+        print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
       })
       #PDF Output
       output$download_BP_plot <- downloadHandler(
-        filename = "Biological_Process_Plot.pdf",
+        filename = function() { paste("Biological _Process_Plot_level_",input$gobp_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
-          print(GO_BP_input()[[1]])
+          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+          print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
           dev.off()
         }
       )
       output$download_BP_cnet <- downloadHandler(
-        filename = "Biological_Process_Map.pdf",
+        filename = function() { paste("Biological _Process_Map_level_",input$gobp_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
-          print(GO_BP_input()[[2]])
+          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+          print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
           dev.off()
         }
       )
@@ -3337,6 +3367,9 @@ server <- shinyServer(function(input, output, session) {
                          GO_MF_report_input = GO_MF_report_input,
                          GO_CC_report_input = GO_CC_report_input,
                          GO_BP_report_input = GO_BP_report_input,
+                         gomf_level = input$gomf_level,
+                         gocc_level = input$gocc_level,
+                         gobp_level = input$gobp_level,
                          box_plot_report_input = box_plot_report_input,
                          rendered_by_shiny = TRUE
           )
