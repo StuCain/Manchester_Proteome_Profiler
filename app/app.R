@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 
 source("R/functions.R")
 
-Version = "0.6.0-beta"
+Version = "0.6.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -187,7 +187,7 @@ ui <- fluidPage(
 #      tags$head(tags$style(HTML('.box {margin-right: 0px;}' ))),
       helpText(paste("By Stuart Cain, Version:", Version)),
       #set infobox height
-      tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 0px;}'))),
+      tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 20px;}'))),
       #Google Analytics
       tags$head(includeHTML(("google-analytics.html"))),
       #Top row of boxes
@@ -708,7 +708,8 @@ ui <- fluidPage(
                                             box(numericInput("pdfheight_MF",
                                                              "PDF Height",
                                                              min = 3, max = 30, value = 8),
-                                                width = 3)
+                                                width = 3),
+                                            downloadButton('download_MF_all', 'Download MF Data', class = "btn-success")
                                           ),
                                  ),
                                  tabPanel(title = "Cellular Components",
@@ -745,7 +746,9 @@ ui <- fluidPage(
                                             box(numericInput("pdfheight_CC",
                                                              "PDF Height",
                                                              min = 3, max = 30, value = 8),
-                                                width = 3)
+                                                width = 3),
+                                            downloadButton('download_CC_all', 'Download CC Data', class = "btn-info")
+                                            
                                           ),
                                           
                                  ),
@@ -783,7 +786,9 @@ ui <- fluidPage(
                                             box(numericInput("pdfheight_BP",
                                                              "PDF Height",
                                                              min = 3, max = 30, value = 8),
-                                                width = 3)
+                                                width = 3),
+                                            downloadButton('download_BP_all', 'Download BP Data', class = "btn-warning")
+                                            
                                           ),
                                  ),
                                  tabPanel(title = "App Variables",
@@ -2786,16 +2791,6 @@ server <- shinyServer(function(input, output, session) {
     #Observe GO Plots
     #Observe MF
     observeEvent(input$analyze_MF,{
-      #GO_MF_input <- reactive({
-      #  withProgress(message = 'Plotting', detail = 'This may take a while...',  max=10, value = 6.6,{
-      #    for (i in 1:100) {
-      #      incProgress(1/100)
-      #      Sys.sleep(0.5)
-      #    }
-      #    plot_GO_MF(entrezlist_input(), input$species)
-      #  })
-      #})
-      
       #Plot output
       output$GOMF_plot <- renderPlot({
         GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
@@ -2825,20 +2820,21 @@ server <- shinyServer(function(input, output, session) {
           dev.off()
         }
       )
+      output$download_MF_all <- downloadHandler(
+        filename = function() { paste("Molecular_Function_Data.txt", sep = "") },
+        content = function(file) {
+          write.table(GO_MF_report_input(),
+                      file,
+                      col.names = TRUE,
+                      row.names = FALSE,
+                      sep ="\t") 
+        }
+      )
     })
     
     #Observe CC
     observeEvent(input$analyze_CC,{
-      #GO_CC_input <- reactive({
-      #  withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
-      #    for (i in 1:100) {
-      #      incProgress(1/100)
-      #      Sys.sleep(0.5)
-      #    }
-      #    plot_GO_CC(entrezlist_input(), input$species)
-      #  })
-      #})
-      
+
       #Plot output
       output$GOCC_plot <- renderPlot({
         GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
@@ -2867,29 +2863,32 @@ server <- shinyServer(function(input, output, session) {
           dev.off()
         }
       )
+      output$download_CC_all <- downloadHandler(
+        filename = function() { paste("Cellular_Component_Data.txt", sep = "") },
+        content = function(file) {
+          write.table(GO_CC_report_input(),
+                      file,
+                      col.names = TRUE,
+                      row.names = FALSE,
+                      sep ="\t") 
+        }
+      )
     })
     
     #Observe BP
     observeEvent(input$analyze_BP,{
-      #GO_BP_input <- reactive({
-      #  withProgress(message = 'Plotting', detail = 'This may take a while...', max=10, value = 6.6,{
-      #    for (i in 1:100) {
-      #      incProgress(1/100)
-      #      Sys.sleep(0.5)
-      #    }
-      #    plot_GO_BP(entrezlist_input(), input$species)
-      #  })
-      #})
-      
+
       #Plot output
       output$GOBP_plot <- renderPlot({
         GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
         print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
       })
+      
       output$GOBP_cnet <- renderPlot({
         GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
         print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
       })
+      
       #PDF Output
       output$download_BP_plot <- downloadHandler(
         filename = function() { paste("Biological _Process_Plot_level_",input$gobp_level, ".pdf", sep = "") },
@@ -2900,6 +2899,7 @@ server <- shinyServer(function(input, output, session) {
           dev.off()
         }
       )
+      
       output$download_BP_cnet <- downloadHandler(
         filename = function() { paste("Biological _Process_Map_level_",input$gobp_level, ".pdf", sep = "") },
         content = function(file) {
@@ -2909,6 +2909,18 @@ server <- shinyServer(function(input, output, session) {
           dev.off()
         }
       )
+      
+      output$download_BP_all <- downloadHandler(
+        filename = function() { paste("Biological _Process_Data.txt", sep = "") },
+        content = function(file) {
+          write.table(GO_BP_report_input(),
+                      file,
+                      col.names = TRUE,
+                      row.names = FALSE,
+                      sep ="\t") 
+        }
+      )
+      
     })
     
     
