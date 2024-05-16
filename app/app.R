@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 
 source("R/functions.R")
 
-Version = "0.6.1-beta"
+Version = "0.6.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -3076,7 +3076,7 @@ server <- shinyServer(function(input, output, session) {
     output$downloadHeatmap <- downloadHandler(
       filename = 'Heatmap.pdf',
       content = function(file) {
-        cairo_pdf(file, height = 10, paper = "a4")
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
         print(heatmap_input())
         dev.off()
       }
