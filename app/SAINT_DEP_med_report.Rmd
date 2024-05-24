@@ -36,6 +36,7 @@ params:
   comp_heatmap_input: NA
   comp_heatmap_input_c1: NA
   comp_heatmap_input_c2: NA
+  venn_input: NA
   cluster_heatmap_input: NA
   dep: NA
   dep_num: NA
@@ -128,7 +129,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Medium)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.0
+Version:0.2.1
 
 ## Method details
  
@@ -248,7 +249,7 @@ print(params$cor_input())
 ### Frequency Plot
 
 ```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
-if(comp_no>1){
+if(comp_no_c1>1){
 print(params$cond_input())
 }
 ```
@@ -307,20 +308,29 @@ shiny::setProgress(0.30)  # set progress to 30%
 ```{r heatmap_c2_text, echo=FALSE, warning=FALSE, results='hide'}
 if (params$comp_type == "2 Rounds of comparisons"){ht_c2_text<-"## Differential Expression Analysis (Results Plots) 
 ### Comparison Heatmaps
-The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the first set of comparisons (Comp1) and the second set of comparisons (Comp2). Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
+The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the first set of comparisons (Comp1) and the second set of comparisons (Comp2). Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.\\
+Shown directly below is a Venn diagram showing the overlap between the protein lists from the 1st and 2nd Rounds of comparisons.
 "}else{ht_c2_text<-""}
 if (params$comp_type == "Use SAINTexpress"){ht_c2_text<-"## Differential Expression Analysis (Results Plots)
 ### Comparison and SAINTexpress Heatmaps
-The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list (1st Heatmap) and a Heatmap consisting of the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds, showing the Log2FC values for the same comparisons. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cut-off thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
+The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list (1st Heatmap) and a Heatmap consisting of the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds, showing the Log2FC values for the same comparisons. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cut-off thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.\\
+Shown directly below is a Venn diagram showing the overlap between the protein lists from the 1st Round of comparisons and the SAINTexpress analysis.
 "}
 
 ```
 
 `r ht_c2_text`
 
+```{r ven, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide', tidy=TRUE}
+if (params$comp_type == "2 Rounds of comparisons"|params$comp_type == "Use SAINTexpress"){
+plot(params$venn_input()[[3]])
+}
+```
+
+
 \pagebreak
 
-```{r heatmap_c1, echo=FALSE, fig.height= (num_signif_c1/8)+4, fig.width=(comp_no_c1/1.5)+2.5,  fig.keep='last', warning=FALSE, results='hide'}
+```{r heatmap_c1, echo=FALSE, fig.height= (num_signif_c1/8)+4, fig.width=(comp_no_c1/1.5)+3,  fig.keep='last', warning=FALSE, results='hide'}
 if (params$comp_type == "2 Rounds of comparisons"){
 print(params$comp_heatmap_input_c1()[[1]])
 }
@@ -335,7 +345,7 @@ shiny::setProgress(0.50)  # set progress to 50%
 ```
 
 \pagebreak
-```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+4, fig.width=(comp_no_c2/1.5)+2.5, fig.keep='last', warning=FALSE, results='hide'}
+```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+4, fig.width=(comp_no_c2/1.5)+3, fig.keep='last', warning=FALSE, results='hide'}
 if (params$comp_type == "2 Rounds of comparisons"){
 print(params$comp_heatmap_input_c2()[[1]])
 }
@@ -345,7 +355,7 @@ shiny::setProgress(0.55)  # set progress to 50%
 ```
 
 \pagebreak
-```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+4, fig.width=(comp_no/1.5)+2.5, fig.keep='last', warning=FALSE, results='hide'}
+```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+4, fig.width=(comp_no/1.5)+3, fig.keep='last', warning=FALSE, results='hide'}
 if (params$comp_type == "Use SAINTexpress"){
 print(params$comp_heatmap_input_c2()[[1]])
 }
@@ -375,7 +385,7 @@ The Heatmap indicates the log2 fold change (log2FC) values of each of the signif
 
 \pagebreak
 
-```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 print(params$clust_height)
 print(params$comp_heatmap_input()[[1]])
 if (params$rendered_by_shiny)
@@ -386,7 +396,7 @@ shiny::setProgress(0.40)  # set progress to 40%
 
 ### Cluster Heatmaps
 
-```{r heatmap_cluster1, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[7])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster1, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[7])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 if(params$k1>0){
   print(params$cluster_heatmap_input()[[1]])
  
@@ -407,7 +417,7 @@ knitr::kable(clust1_table)
 
 \pagebreak
 
-```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[2]])
@@ -426,7 +436,7 @@ knitr::kable(clust2_table)
 
 \pagebreak
 
-```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 
 if(params$k1>2){
   print(params$cluster_heatmap_input()[[3]])
@@ -445,7 +455,7 @@ knitr::kable(clust3_table)
 
 \pagebreak
 
-```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[4]])
@@ -464,7 +474,7 @@ knitr::kable(clust4_table)
 
 \pagebreak
 
-```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[5]])
 }
@@ -481,7 +491,7 @@ knitr::kable(clust5_table)
 
 \pagebreak
 
-```{r heatmap_cluster6, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[12])/8)+4, fig.width=(comp_no/2)+2.5, warning=FALSE, results='hide'}
+```{r heatmap_cluster6, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[12])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 if(params$k1>5){
   print(params$cluster_heatmap_input()[[6]])
 }
