@@ -129,7 +129,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.1
+Version:0.2.2
 
 ## Method details
  

@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.6.3-beta"
+Version = "0.6.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -2749,7 +2749,8 @@ server <- shinyServer(function(input, output, session) {
     
     #Venn Diagram
     output$venn <- renderPlot({
-      venn_input()[[1]]
+      plot(venn_input()[[3]])
+      #venn_input()[[1]]
     })
     
     #Venn table

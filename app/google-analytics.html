@@ -15,24 +15,13 @@
     gtag('event', 'comp_Ht_button', { action: 'downloadcomplexheatmap' });
   });
 
-  $(document).on('click', 'button', function() {
-    gtag('event', 'report_button', { action: 'downloadreport' });
-  });
-  
-  $(document).on('click', 'button', function() {
-    gtag('event', 'load_MaxQ', { action: 'file1' });
-  });
-  
-    $(document).on('click', 'button', function() {
-    gtag('event', 'load_PD', { action: 'filePD' });
-  });
+   $(document).on('change', '#comp_type', function(e) {
+    ga('send', 'event', 'widget', 'select data', $(e.currentTarget).val());
+   });
 
-  $(document).on('click', 'button', function() {
-    gtag('event', 'load_Frag_LFQ', { action: 'lfq_expr' });
-  });
-
-  $(document).on('click', 'button', function() {
-    gtag('event', 'load_Frag_DIA', { action: 'dia_expr' });
-  });
+   $(document).on('change', '#data_type', function(e) {
+    ga('send', 'event', 'widget', 'select data', $(e.currentTarget).val());
+   });
+});
 
 </script>
