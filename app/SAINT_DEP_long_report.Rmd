@@ -66,7 +66,6 @@ params:
 #  volcano_input: NA
 
 header-includes:
-#   - \usepackage{booktabs}
    - \usepackage[default]{sourcesanspro}
    - \usepackage[T1]{fontenc}
 mainfont: SourceSansPro

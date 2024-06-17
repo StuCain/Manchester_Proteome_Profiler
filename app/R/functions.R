@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.0
+Version = 3.1
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -2753,6 +2753,13 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
   FC_data<-data.frame(FC_data)
   FC_data_sig<-FC_data %>% filter(significant)
   
+  #obtain minimum p_val number
+  p_val_min<-min(FC_data$p.val)
+  p_Val_min<- -log10(p_val_min)
+  p_adj_min<-min(FC_data$p.adj)
+  p_adj_min<- -log10(p_adj_min)
+  
+  
   #Set up colour values for each cluster
   keyvals.colour <- ifelse(data_results$name %in% dfc1, mypal[1],
                            ifelse(data_results$name %in% dfc2, mypal[2],
@@ -2785,6 +2792,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       labSize = 3.0,
       drawConnectors = TRUE,
       widthConnectors = 0.5,
+      ylim = c(0, p_Val_min),
       #maxoverlapsConnectors = Inf,
       colCustom = keyvals.colour,
       colAlpha = (alpha_input/10)*0.5,
@@ -2806,6 +2814,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       labSize = 3.0,
       drawConnectors = TRUE,
       widthConnectors = 0.5,
+      ylim = c(0, p_Val_min),
       #maxoverlapsConnectors = Inf,
       colCustom = keyvals.colour,
       colAlpha = (alpha_input/10)*0.5
@@ -2830,6 +2839,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       labSize = 3.0,
       drawConnectors = TRUE,
       widthConnectors = 0.5,
+      ylim = c(0, p_adj_min),
       #maxoverlapsConnectors = Inf,
       colCustom = keyvals.colour,
       colAlpha = (alpha_input/10)*0.5

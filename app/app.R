@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.6.4-beta"
+Version = "0.6.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -2441,6 +2441,7 @@ server <- shinyServer(function(input, output, session) {
       )
       input_volcano_cntrst_enh1 <- req(input$volcano_cntrst_enh1)
       plot_enhanced_volcano (data_results(),
+                             #get_results(dep()),
                              cludf_check_input(),
                              comp_pick = input_volcano_cntrst_enh1,
                              FC=lfc,
