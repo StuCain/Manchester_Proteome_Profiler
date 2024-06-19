@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.6.5-beta"
+Version = "0.6.6-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -108,16 +108,6 @@ ui <- fluidPage(
                                     #                                    downloadLink("lfq_annotation", label="Example annotation")
                                   ),
                                   conditionalPanel(
-                                    condition = "input.exp == 'TMT'",
-                                    fileInput('tmt_expr', 'Upload gene-level TMT-I report *.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    fileInput('tmt_annot', 'Upload sample annotation',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv'))),
-                                  conditionalPanel(
                                     condition = "input.exp == 'DIA'",
                                     fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
                                               accept=c('text/tsv',
@@ -141,7 +131,7 @@ ui <- fluidPage(
                                 #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
                                 downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary")
                        ),
-                       menuItemOutput("columns"),
+                       #menuItemOutput("columns"),
                        menuItem(
                          radioButtons("comp_type",
                                       "Comparisons",
@@ -1275,8 +1265,10 @@ server <- shinyServer(function(input, output, session) {
     
     if (input$data_type == "MaxQuant"){
       cols <- grep("^LFQ", colnames(data))
-      filtered <- DEP:::filter_MaxQuant(data, input$filt)
-      unique_names <- make_unique(filtered, input$name, input$id)
+      #filtered <- DEP:::filter_MaxQuant(data, input$filt)
+      filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
+      #unique_names <- make_unique(filtered, input$name, input$id)
+      unique_names <- make_unique(filtered, "Gene.names", "Protein.IDs", delim = ";")
     }
     
     else if (input$data_type == "Proteome Discoverer"){

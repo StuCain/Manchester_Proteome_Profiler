@@ -1,0 +1,27 @@
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MQRQM5KHVB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-MQRQM5KHVB');
+  
+  $(document).on('click', 'button', function() {
+    gtag('event', 'analyze_button', { action: 'analyze' });
+  });
+  
+  $(document).on('click', 'button', function() {
+    gtag('event', 'comp_Ht_button', { action: 'downloadcomplexheatmap' });
+  });
+
+   $(document).on('change', '#comp_type', function(e) {
+    ga('send', 'event', 'widget', 'select data', $(e.currentTarget).val());
+   });
+
+   $(document).on('change', '#data_type', function(e) {
+    ga('send', 'event', 'widget', 'select data', $(e.currentTarget).val());
+   });
+});
+
+</script>
