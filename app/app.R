@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.6.6-beta"
+Version = "0.6.7-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -901,38 +901,42 @@ server <- shinyServer(function(input, output, session) {
              if (!is.null(expdesign())) {
                combinations<-combn(unique(expdesign()$condition),2)
                comp1_f<-paste0(combinations[2,],"_vs_",combinations[1,])
+               comp1_r<-paste0(combinations[1,],"_vs_",combinations[2,])
+               comp1_all<-c(comp1_f,comp1_r)
                selectizeInput("comp1f",
-                              "1: Select forward comparisons",
-                              choices=make.names(comp1_f),
+                              "1: Select 1st round comparisons",
+                              choices=make.names(comp1_all),
                               multiple = TRUE)
              },
              
-             if (!is.null(expdesign())) {
-               combinations<-combn(unique(expdesign()$condition),2)
-               comp1_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-               selectizeInput("comp1r",
-                              "1: Select reverse comparisons",
-                              choices=make.names(comp1_r),
-                              multiple = TRUE)
-             },
+#             if (!is.null(expdesign())) {
+#               combinations<-combn(unique(expdesign()$condition),2)
+#               comp1_r<-paste0(combinations[1,],"_vs_",combinations[2,])
+#               selectizeInput("comp1r",
+#                              "1: Select reverse comparisons",
+#                              choices=make.names(comp1_r),
+#                              multiple = TRUE)
+#             },
              
              if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
                combinations<-combn(unique(expdesign()$condition),2)
                comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
+               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
+               comp2_all<-c(comp2_f,comp2_r)
                selectizeInput("comp2f",
-                              "2: Select forward comparisons",
-                              choices=make.names(comp2_f),
+                              "2: Select 2nd round comparisons",
+                              choices=make.names(comp2_all),
                               multiple = TRUE)
              },
              
-             if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
-               combinations<-combn(unique(expdesign()$condition),2)
-               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-               selectizeInput("comp2r",
-                              "2: Select forward comparisons",
-                              choices=make.names(comp2_r),
-                              multiple = TRUE)
-             },
+#             if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
+#               combinations<-combn(unique(expdesign()$condition),2)
+#               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
+#               selectizeInput("comp2r",
+#                              "2: Select forward comparisons",
+#                              choices=make.names(comp2_r),
+#                              multiple = TRUE)
+#             },
              helpText("Load Comparisons file"),
              fileInput('comp_file',
                        'comparisons.txt',
@@ -943,7 +947,7 @@ server <- shinyServer(function(input, output, session) {
     )
   })
   
-  #Hide/show Introductio Tab
+  #Hide/show Introduction Tab
   observeEvent(input$analyze, {
     if (input$analyze > 0) {
       hideTab(inputId =  "main_body_tab", target = "Introduction")
@@ -1331,7 +1335,8 @@ server <- shinyServer(function(input, output, session) {
   comp <- reactive({
     inFile <- input$comp_file
     if (is.null(inFile)){
-      comp<-c(input$comp1f,input$comp1r)
+#      comp<-c(input$comp1f,input$comp1r)
+      comp<-c(input$comp1f)
     }else{
       comp_input<-data.frame(compfile())
       comp<-paste0(comp_input$comp1_A, "_vs_", comp_input$comp1_B)
@@ -1345,7 +1350,9 @@ server <- shinyServer(function(input, output, session) {
       return(NULL)
     inFile <- input$comp_file
     if (is.null(inFile)){
-      comp2<-c(input$comp2f,input$comp2r)
+#      comp2<-c(input$comp2f,input$comp2r)
+      comp2<-c(input$comp2f)
+      
     }else{
       comp_input<-data.frame(compfile())
       comp2<-paste0(comp_input$comp2_A, "_vs_", comp_input$comp2_B)
