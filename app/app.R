@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.1-beta"
+Version = "0.7.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1402,7 +1402,7 @@ server <- shinyServer(function(input, output, session) {
   comp <- reactive({
     inFile <- input$comp_file
     if (is.null(inFile)){
-#      comp<-c(input$comp1f,input$comp1r)
+      #      comp<-c(input$comp1f,input$comp1r)
       comp<-c(input$comp1f)
     }else{
       comp_input<-data.frame(compfile())
@@ -1417,7 +1417,7 @@ server <- shinyServer(function(input, output, session) {
       return(NULL)
     inFile <- input$comp_file
     if (is.null(inFile)){
-#      comp2<-c(input$comp2f,input$comp2r)
+      #      comp2<-c(input$comp2f,input$comp2r)
       comp2<-c(input$comp2f)
       
     }else{
@@ -1468,7 +1468,7 @@ server <- shinyServer(function(input, output, session) {
     )
     #validate(need(try(df() != "try-error"), base::stop(shiny::safeError(warning(test_diff(imp(), type = "manual", test = comp()))))))
     if(input$pval_use == FALSE){
-    add_rejections(df(), input$p, log2(input$lfc))
+      add_rejections(df(), input$p, log2(input$lfc))
     }else{add_rejections_pval(df(), input$p, log2(input$lfc))}
   }) 
   
@@ -2075,10 +2075,10 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
-    #    #PCA Input (Comp2)
-    #    pca_c2_input <- reactive({
-    #      plot_pca(dep2(), x = 1, y = 2, point_size = 4)
-    #    })
+    #PCA Input (Comp2)
+    pca_c2_input <- reactive({
+      plot_pca(dep2(), x = 1, y = 2, point_size = 4)
+    })
     
     #Correlation Input
     cor_input <- reactive({
@@ -2427,7 +2427,7 @@ server <- shinyServer(function(input, output, session) {
         comp_heatmap_input()[[1]],
         comp_heatmap_input()[[2]],
         input$k1
-#        colour_functions_input()[[1]]
+        #        colour_functions_input()[[1]]
       )
       data.frame(cludf)
     })
@@ -2770,10 +2770,10 @@ server <- shinyServer(function(input, output, session) {
       pca_input()
     })
     
-    #    #PCA output (Comp2)
-    #    output$pca_c2 <- renderPlot({
-    #      pca_c2_input()
-    #    })
+    #PCA output (Comp2)
+    output$pca_c2 <- renderPlot({
+      pca_c2_input()
+    })
     
     
     #Correlation output
@@ -2850,8 +2850,8 @@ server <- shinyServer(function(input, output, session) {
     output$downloadreport <- renderUI({
       if(!is.null(dep())){
         #Check for single protein clusters
-#        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
- #       )
+        #        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
+        #       )
         
         if(input$report_type=="with Box Plots"){
           box<-box_plot_report_input()
@@ -2952,7 +2952,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe CC
     observeEvent(input$analyze_CC,{
-
+      
       #Plot output
       output$GOCC_plot <- renderPlot({
         GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
@@ -2995,7 +2995,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe BP
     observeEvent(input$analyze_BP,{
-
+      
       #Plot output
       output$GOBP_plot <- renderPlot({
         GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
@@ -3054,7 +3054,7 @@ server <- shinyServer(function(input, output, session) {
              #select(-significant),
              "full_dataset" = get_df_wide(dep()),
              "Cluster_list" = cludf_check_input()
-             )
+      )
     }
     )
     
