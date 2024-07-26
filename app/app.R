@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.0-beta"
+Version = "0.7.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -76,60 +76,60 @@ ui <- fluidPage(
                                     choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
                                     #selected = "MaxQuant"
                        ),
-                                conditionalPanel(
-                                  condition = "input.data_type == 'MaxQuant'",
-                                  fileInput('file1',
-                                            'ProteinGroups.txt',
-                                            accept=c('text/csv',
-                                                     'text/comma-separated-values,text/plain',
-                                                     '.csv'))
-                                ),
-                                conditionalPanel(
-                                  condition = "input.data_type == 'Proteome Discoverer'",
-                                  fileInput('filePD',
-                                            'PD Output .xlsx',
-                                            accept=c(".xlsx"))
-                                ), 
-                                conditionalPanel(
-                                  condition = "input.data_type == 'FragPipe'",
-                                  selectInput("exp", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'LFQ'",
-                                    fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    radioButtons("lfq_type",
-                                                 "Intensity Type",
-                                                 choices = c("Intensity"="Intensity",
-                                                             "MaxLFQ Intensity"="MaxLFQ"),
-                                                 #                                                            "Spectral Count"="Spectral Count"),
-                                                 selected = "MaxLFQ"),
-                                  ),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'DIA'",
-                                    fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    radioButtons("dia_species",
-                                                 "Choose Species",
-                                                 choices = c("Human", "Mouse"),
-                                                 selected = "Human"),
-                                  ),
-                                ),
-                                
-                                #                                menuItemOutput("file_input"),
-                                #                                infoBoxOutput("ibox"), #Info box for testing
-                                fileInput('file2',
-                                          'ExperimentalDesign.txt',
-                                          accept=c('text/csv',
-                                                   'text/comma-separated-values,text/plain',
-                                                   '.csv')),
-                                helpText("Generate Experimental template"),
-                                #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
-                                downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary"),
-
+                       conditionalPanel(
+                         condition = "input.data_type == 'MaxQuant'",
+                         fileInput('file1',
+                                   'ProteinGroups.txt',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv'))
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_type == 'Proteome Discoverer'",
+                         fileInput('filePD',
+                                   'PD Output .xlsx',
+                                   accept=c(".xlsx"))
+                       ), 
+                       conditionalPanel(
+                         condition = "input.data_type == 'FragPipe'",
+                         selectInput("exp", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
+                         conditionalPanel(
+                           condition = "input.exp == 'LFQ'",
+                           fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("lfq_type",
+                                        "Intensity Type",
+                                        choices = c("Intensity"="Intensity",
+                                                    "MaxLFQ Intensity"="MaxLFQ"),
+                                        #                                                            "Spectral Count"="Spectral Count"),
+                                        selected = "MaxLFQ"),
+                         ),
+                         conditionalPanel(
+                           condition = "input.exp == 'DIA'",
+                           fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("dia_species",
+                                        "Choose Species",
+                                        choices = c("Human", "Mouse"),
+                                        selected = "Human"),
+                         ),
+                       ),
+                       
+                       #                                menuItemOutput("file_input"),
+                       #                                infoBoxOutput("ibox"), #Info box for testing
+                       fileInput('file2',
+                                 'ExperimentalDesign.txt',
+                                 accept=c('text/csv',
+                                          'text/comma-separated-values,text/plain',
+                                          '.csv')),
+                       helpText("Generate Experimental template"),
+                       #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
+                       downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary"),
+                       
                        #menuItemOutput("columns"),
                        conditionalPanel(
                          condition = "input.data_mode == false",
@@ -270,7 +270,7 @@ ui <- fluidPage(
               width = 1, height = 120),
         ),
         conditionalPanel(
-          condition = "input.comp_type == '2 Rounds of comparisons'",
+          condition = "input.data_mode == true || input.comp_type == '2 Rounds of comparisons'",
           box(numericInput("p2",
                            "adj. P value (Comp2)",
                            min = 0.0001, max = 0.1, value = 0.05),
@@ -440,10 +440,10 @@ ui <- fluidPage(
                                                     plotOutput("cond", height = 600),
                                                     downloadButton('downloadcond', 'Save', class = "btn-primary")
                                            ),
-                                           #                                 tabPanel(title = "PCA (Comp2)",
-                                           #                                          plotOutput("pca_c2", height = 600),
-                                           #                                          downloadButton('downloadpca_c2', 'Save', class = "btn-primary")
-                                           #                                 ),
+                                           tabPanel(title = "PCA (Comp2)",
+                                                    plotOutput("pca_c2", height = 600),
+                                                    downloadButton('downloadpca_c2', 'Save', class = "btn-primary")
+                                           ),
                                            tabPanel(title = "Correlation (Comp2)",
                                                     plotOutput("cor_c2", height = 600),
                                                     downloadButton('downloadcor_c2', 'Save', class = "btn-primary")
@@ -1013,39 +1013,38 @@ server <- shinyServer(function(input, output, session) {
   })
   
   #Hide/show comparison heatmaps
-  observeEvent(input$comp_type, {
-    if (input$comp_type == "1 Round of comparisons") {
-      hideTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")
-    }else{showTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")}
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$comp_type != "1 Round of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")
+    }else{hideTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")}
     if (input$comp_type == "1 Round of comparisons"|input$comp_type == "2 Rounds of comparisons") {
       hideTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
-      hideTab(inputId =  "comp_heat_tab", target = "SAINT Input")
+      #hideTab(inputId =  "comp_heat_tab", target = "SAINT Input")
       hideTab(inputId =  "comp_heat_tab", target = "SAINT Output")
     }else{showTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
-      showTab(inputId =  "comp_heat_tab", target = "SAINT Input")
+      #showTab(inputId =  "comp_heat_tab", target = "SAINT Input")
       showTab(inputId =  "comp_heat_tab", target = "SAINT Output")
     }
   })
   
-  #Hide/show Volcano Plts
-  observeEvent(input$comp_type, {
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
-      hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
-    }else{showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
+  #Hide/show Volcano Plots
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
+    }else{hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
   })
   
-  #Hide/show Correlation plots
-  #Hide/show Volcano Plts
-  observeEvent(input$comp_type, {
-    #    if (input$comp_type == "1 Round of comparisons") {
-    #      hideTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
-    #    }else{showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")}
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
-      hideTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")
-    }else{showTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")}
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
-      hideTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")
-    }else{showTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")}
+  #Hide/show Correlation plots/PCA Plots/Frequency PLots
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "PCA (Comp2)")}
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")}
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")}
   })
   
   #### Reactive functions  --------------------------------------------------
