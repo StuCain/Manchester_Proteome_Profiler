@@ -14,6 +14,7 @@ library(tidyverse) #contains: ggplot2, dplyr, tidyr,
 # readr, purr, tibble, stringr, forcats
 library(shiny)
 library(shinydashboard)
+library(shinyWidgets)
 library(ComplexHeatmap)
 library(circlize)
 library(data.table)
@@ -31,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.6.9-beta"
+Version = "0.7.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -61,14 +62,20 @@ ui <- fluidPage(
     #"SAINT_DEP + Cluster"),
     dashboardSidebar(width=300,#changed with of sidebar
                      sidebarMenu(
-                       menuItem(
-                         radioButtons("data_type",
-                                      "Data File type",
-                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
-                                      #selected = "MaxQuant"
-                         )
+                       tags$hr(), #adds a line
+                       helpText("Two Dataset comparison mode"),
+                       switchInput(
+                         inputId = "data_mode",
+                         size = "mini",
+                         onStatus = "success", 
+                         offStatus = "danger"
                        ),
-                       menuItem("Files", selected = TRUE,
+                       
+                       radioButtons("data_type",
+                                    "Data File type",
+                                    choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
+                                    #selected = "MaxQuant"
+                       ),
                                 conditionalPanel(
                                   condition = "input.data_type == 'MaxQuant'",
                                   fileInput('file1',
@@ -92,20 +99,12 @@ ui <- fluidPage(
                                               accept=c('text/tsv',
                                                        'text/tab-separated-values,text/plain',
                                                        '.tsv')),
-                                    #                                   fileInput('lfq_manifest', 'Upload sample annotation',
-                                    #                                             accept=c('text/tsv',
-                                    #                                                       'text/tab-separated-values,text/plain',
-                                    #                                                       '.tsv')),
                                     radioButtons("lfq_type",
                                                  "Intensity Type",
                                                  choices = c("Intensity"="Intensity",
                                                              "MaxLFQ Intensity"="MaxLFQ"),
                                                  #                                                            "Spectral Count"="Spectral Count"),
                                                  selected = "MaxLFQ"),
-                                    #                                    tags$hr(),
-                                    #                                   downloadLink("lfq_example", label="Example LFQ data"),
-                                    #                                   br(),
-                                    #                                    downloadLink("lfq_annotation", label="Example annotation")
                                   ),
                                   conditionalPanel(
                                     condition = "input.exp == 'DIA'",
@@ -129,16 +128,79 @@ ui <- fluidPage(
                                                    '.csv')),
                                 helpText("Generate Experimental template"),
                                 #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
-                                downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary")
-                       ),
+                                downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary"),
+
                        #menuItemOutput("columns"),
-                       menuItem(
+                       conditionalPanel(
+                         condition = "input.data_mode == false",
                          radioButtons("comp_type",
                                       "Comparisons",
                                       choices = c("1 Round of comparisons", "2 Rounds of comparisons", "Use SAINTexpress"),
                                       #selected = "1 Round of comparisons"
-                         )
+                         ),
                        ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true",
+                         radioButtons("data_type2",
+                                      "Data File type 2",
+                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
+                         ),
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true & input.data_type2 == 'MaxQuant'",
+                         fileInput('fileMax2',
+                                   'ProteinGroups.txt',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv'))
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true &input.data_type2 == 'Proteome Discoverer'",
+                         fileInput('filePD2',
+                                   'PD Output .xlsx',
+                                   accept=c(".xlsx"))
+                       ), 
+                       conditionalPanel(
+                         condition = "input.data_mode == true & input.data_type2 == 'FragPipe'",
+                         selectInput("exp2", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
+                         conditionalPanel(
+                           condition = "input.exp2 == 'LFQ'",
+                           fileInput('lfq_expr2', 'Upload FragPipe combined_protein.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("lfq_type2",
+                                        "Intensity Type",
+                                        choices = c("Intensity"="Intensity",
+                                                    "MaxLFQ Intensity"="MaxLFQ"),
+                                        #                                                            "Spectral Count"="Spectral Count"),
+                                        selected = "MaxLFQ"),
+                         ),
+                         conditionalPanel(
+                           condition = "input.exp2 == 'DIA'",
+                           fileInput('dia_expr2', 'Upload protein group (PG) matrix *.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("dia_species2",
+                                        "Choose Species",
+                                        choices = c("Human", "Mouse"),
+                                        selected = "Human"),
+                         ),
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true",
+                         fileInput('file22',
+                                   'ExperimentalDesign.txt',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv')),
+                         helpText("Generate Experimental template"),
+                         #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
+                         downloadButton('downloadexp_template2', 'Save Exp. template', class = "btn-primary")
+                         
+                       ),
+                       
                        menuItemOutput("comparisons"),
                        menuItem("Imputation options",
                                 radioButtons("imputation",
@@ -516,19 +578,19 @@ ui <- fluidPage(
                                            tabPanel(title = "Comparison Heatmaps",
                                                     fluidRow(
                                                       box(title = "Overlap Details",
-                                                        column(width=6,
-                                                               fluidRow(
-                                                                 plotOutput("venn", height = 400),
-                                                                 downloadButton('download_venn', 'Save Venn Diagram', class = "btn-primary"),
-                                                               ),
-                                                        ),
-                                                        column(width=6,
-                                                               fluidRow(
-                                                                 DT::dataTableOutput("venn_table"), width = 12,
-                                                                 downloadButton('download_venntable', 'Save Venn table', class = "btn-primary")
-                                                               ),
-                                                        ),
-                                                         width = 12),
+                                                          column(width=6,
+                                                                 fluidRow(
+                                                                   plotOutput("venn", height = 400),
+                                                                   downloadButton('download_venn', 'Save Venn Diagram', class = "btn-primary"),
+                                                                 ),
+                                                          ),
+                                                          column(width=6,
+                                                                 fluidRow(
+                                                                   DT::dataTableOutput("venn_table"), width = 12,
+                                                                   downloadButton('download_venntable', 'Save Venn table', class = "btn-primary")
+                                                                 ),
+                                                          ),
+                                                          width = 12),
                                                     ),
                                                     fluidRow(
                                                       column(width = 6,
@@ -910,15 +972,6 @@ server <- shinyServer(function(input, output, session) {
                               multiple = TRUE)
              },
              
-#             if (!is.null(expdesign())) {
-#               combinations<-combn(unique(expdesign()$condition),2)
-#               comp1_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-#               selectizeInput("comp1r",
-#                              "1: Select reverse comparisons",
-#                              choices=make.names(comp1_r),
-#                              multiple = TRUE)
-#             },
-             
              if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
                combinations<-combn(unique(expdesign()$condition),2)
                comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
@@ -930,14 +983,18 @@ server <- shinyServer(function(input, output, session) {
                               multiple = TRUE)
              },
              
-#             if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
-#               combinations<-combn(unique(expdesign()$condition),2)
-#               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-#               selectizeInput("comp2r",
-#                              "2: Select forward comparisons",
-#                              choices=make.names(comp2_r),
-#                              multiple = TRUE)
-#             },
+             if (!is.null(expdesign2()) && input$data_mode == TRUE) {
+               combinations<-combn(unique(expdesign2()$condition),2)
+               comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
+               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
+               comp2_all<-c(comp2_f,comp2_r)
+               selectizeInput("comp2f",
+                              "2: Select 2nd Dataset comparisons",
+                              choices=make.names(comp2_all),
+                              multiple = TRUE)
+             },
+             
+             
              helpText("Load Comparisons file"),
              fileInput('comp_file',
                        'comparisons.txt',
@@ -1245,7 +1302,7 @@ server <- shinyServer(function(input, output, session) {
     data_unique_defn<-as.data.frame(data_unique_defn)
   })
   
-  #Experimental design file input
+  #Experimental design files input
   expdesign <- reactive({
     inFile <- input$file2
     if (is.null(inFile))
@@ -1254,6 +1311,16 @@ server <- shinyServer(function(input, output, session) {
              sep = "\t", stringsAsFactors = FALSE, colClasses = c("character")) %>%
       mutate(id = row_number())
   })
+  
+  expdesign2 <- reactive({
+    inFile <- input$file22
+    if (is.null(inFile))
+      return(NULL)
+    read.csv(inFile$datapath, header = TRUE,
+             sep = "\t", stringsAsFactors = FALSE, colClasses = c("character")) %>%
+      mutate(id = row_number())
+  })
+  
   
   #comparisons file input
   compfile <- reactive({
