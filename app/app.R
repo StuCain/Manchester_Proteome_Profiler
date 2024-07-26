@@ -31,7 +31,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.6.7-beta"
+Version = "0.6.8-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -242,6 +242,7 @@ ui <- fluidPage(
           box(
             uiOutput("downloadreport"),
             helpText("Long report takes several minutes to generate"),
+            #helpText("Check Heatmap has no single protein clusters"),
             width = 2, height = 120)
         ),
         box(
@@ -2783,8 +2784,8 @@ server <- shinyServer(function(input, output, session) {
     output$downloadreport <- renderUI({
       if(!is.null(dep())){
         #Check for single protein clusters
-        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
-        )
+#        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
+ #       )
         
         if(input$report_type=="with Box Plots"){
           box<-box_plot_report_input()
