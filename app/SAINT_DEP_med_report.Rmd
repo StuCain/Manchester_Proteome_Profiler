@@ -3,6 +3,7 @@ params:
   data: NA
   data2: NA
   expdesign: NA
+  expdesign2: NA
   data_mode: NA
   data_type: NA
   exp: NA
@@ -24,17 +25,24 @@ params:
   comp: NA
   comp2: NA
   imputation: NA
+  imputation2: NA
   shift: NA
   width: NA
   tested_contrasts: NA
   numbers_input: NA
-  coverage_input: NA
+  numbers_input2: NA
+#  coverage_input: NA
   pca_input: NA
+  pca_c2_input: NA
   cor_input: NA
+  cor_c2_input: NA
   cond_input: NA
+  cond_c2_input: NA
   imputation_input: NA
+  imputation_input2: NA
   norm_input: = NA
-  missval_input: NA
+  norm_input2: = NA
+#  missval_input: NA
   detect_input: NA
   density_input: NA
 #  p_hist_input: NA
@@ -143,7 +151,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Medium)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.3
+Version:0.2.4
 
 ## Method details
  
@@ -206,9 +214,9 @@ if (params$data_mode == TRUE){result_output2<-paste0 ("The 2nd dataset result ou
 if (params$data_type == "FragPipe"){exp_text<-paste0 ("* FragPipe Data Type = \\textbf{", params$exp, "}")}else{exp_text<-""}
 if (params$data_type == "FragPipe" && params$exp == "LFQ"){lfq_int_text<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text<-""}
 if (params$data_mode == TRUE){input_data_type2<-paste0 ("* Input Data File Type (Dataset 2)= \\textbf{", params$data_type2, "}")}else {input_data_type2<-""}
-if (params$data_type2 == "FragPipe"){exp_text2<-paste0 ("* FragPipe Data Type (Dataset 2) = \\textbf{", params$exp2, "}")}else{exp_text2<-""}
-if (params$data_type2 == "FragPipe" && params$exp2 == "LFQ"){lfq_int_text2<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text2<-""}
-if (params$data_mode == FALSE){comp_type_text<- paste0 ("* Comparison Type= \textbf{", params$comp_type, "}")}else{comp_type_text<-"* Comparison Type= \\textbf{Two Datasets}"}
+if (params$data_mode == TRUE && params$data_type2 == "FragPipe"){exp_text2<-paste0 ("* FragPipe Data Type (Dataset 2) = \\textbf{", params$exp2, "}")}else{exp_text2<-""}
+if (params$data_mode == TRUE && params$data_type2 == "FragPipe" && params$exp2 == "LFQ"){lfq_int_text2<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text2<-""}
+if (params$data_mode == FALSE){comp_type_text<- paste0 ("* Comparison Type= \\textbf{", params$comp_type, "}")}else{comp_type_text<-"* Comparison Type= \\textbf{Two Datasets}"}
 if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cut-off 2 >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
 if (params$pval_use == FALSE){p_text<-paste0 ("* Adjusted _p-value_ cut-off <= \\textbf{", params$p, "}")} else {p_text<-paste0 ("* _p-value_ cut-off <= \\textbf{", params$p, "}")}
 if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){if (params$pval_use == FALSE){p2_text<-paste0 ("* Adjusted _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")
@@ -251,36 +259,18 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 
 ```{r exp_design, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::kable(params$expdesign())
-print(comp_no)
+if(params$data_mode == TRUE){exp_text<-"## Experimental Template (Dataset 2)"}else exp_text<-""
 ```
 
 
 \pagebreak
 
-## Exploratory Analysis (QC Plots)
+`r exp_text`
 
-### Principle Component Analysis (PCA) plot
-
-
-```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
-print(params$pca_input())
+```{r exp_design2, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){knitr::kable(params$expdesign2())}
 ```
-\pagebreak
 
-### Sample Correlation matrix
-
-```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
-print(params$cor_input())
-```
-\pagebreak
-
-### Frequency Plot
-
-```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
-if(comp_no_c1>1){
-print(params$cond_input())
-}
-```
 \pagebreak
 
 ### Proteomics Experiment Summary
@@ -289,47 +279,101 @@ Protein quantified per sample (after pre-processing).
 
 ```{r numbers, echo=FALSE, warning=FALSE, results='hide', message=FALSE }
 print(params$numbers_input())
+if(params$data_mode == TRUE){number_txt<-"Protein quantified per sample (Dataset 2)."}else{number_txt<-""}
 ```
-\pagebreak
 
-Protein overlap in all samples.
+`r number_txt`
 
-
-```{r coverage, echo=FALSE, warning=FALSE}
-print(params$coverage_input())
-if (params$rendered_by_shiny)
-shiny::setProgress(0.20)  # set progress to 20%
-
+```{r numbers2, echo=FALSE, warning=FALSE, results='hide', message=FALSE }
+if(params$data_mode == TRUE){print(params$numbers_input2())}
 ```
+
 \pagebreak
 
 ## Normalization Plot
 
-
 ```{r norm, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
 print(params$norm_input())
+if(params$data_mode == TRUE){norm_txt<-"## Normalization Plot (Dataset 2)"}else{norm_txt<-""}
 ```
+\pagebreak
+
+`r norm_txt`
+
+```{r norm2, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
+if(params$data_mode == TRUE){print(params$norm_input2())}
+```
+
+
 \pagebreak
 
 ## Imputation Plot
 
-
 ```{r imputation_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
 print(params$imputation_input())
+if(params$data_mode == TRUE){imp_txt<-"## Imputation Plot (Dataset 2)"}else{imp_txt<-""}
 ```
 \pagebreak
 
-## Missing Value handling
+`r imp_txt`
 
-### Missing value heatmap
-A heatmap for proteins with missing value in each dataset. Each row represent a protein with missing value in one or more replicate. Each replicate is clustered based on presence of missing values in the sample. 
+```{r imputation_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){print(params$imputation_input2())}
+```
+\pagebreak
+
+## Exploratory Analysis (QC Plots)
+
+### Principle Component Analysis (PCA) plot
+
+```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+print(params$pca_input())
+if(params$data_mode == TRUE){pca_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else pca_text<-""
+```
+
+\pagebreak
+
+`r pca_text`
+
+```{r pca_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){print(params$pca_c2_input())}
+```
 
 
-```{r missing_value_heatmap, echo=FALSE, message=FALSE, results='hide',warning=FALSE, fig.keep='first', tidy=TRUE}
-print(params$missval_input())
 
-if (params$rendered_by_shiny)
-shiny::setProgress(0.30)  # set progress to 30%
+### Sample Correlation matrix
+
+```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
+print(params$cor_input())
+if(params$data_mode == TRUE){cor_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else cor_text<-""
+```
+\pagebreak
+
+`r pca_text`
+
+```{r correlation_heatmap2, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
+if(params$data_mode == TRUE){print(params$cor_c2_input())}
+```
+\pagebreak
+
+### Frequency Plot
+
+```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+freq_text<-""
+if(comp_no_c1>1){
+print(params$cond_input())
+if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
+}
+```
+\pagebreak
+
+`r freq_text`
+
+```{r frequency_plot2, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+if(comp_no_c2>1){
+print(params$cond_c2_input())
+if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
+}
 ```
 \pagebreak
 

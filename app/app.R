@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.4-beta"
+Version = "0.7.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -454,10 +454,15 @@ ui <- fluidPage(
                                            )
                                            
                                     ),
-                                    tabBox(title = "QC Plots", width = 12,
+                                    tabBox(id = "QC_plots",
+                                           title = "QC Plots", width = 12,
                                            tabPanel(title = "Protein Numbers",
                                                     plotOutput("numbers", height = 600),
                                                     downloadButton('downloadNumbers', 'Save', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "Protein Numbers (Dataset 2)",
+                                                    plotOutput("numbers2", height = 600),
+                                                    downloadButton('downloadNumbers2', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Sample coverage",
                                                     plotOutput("coverage", height = 600),
@@ -466,6 +471,10 @@ ui <- fluidPage(
                                            tabPanel(title = "Normalization",
                                                     plotOutput("norm", height = 600),
                                                     downloadButton('downloadNorm', 'Save', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "Normalization (Dataset 2)",
+                                                    plotOutput("norm2", height = 600),
+                                                    downloadButton('downloadNorm2', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Missing values - Quant",
                                                     plotOutput("detect", height = 600),
@@ -478,6 +487,10 @@ ui <- fluidPage(
                                            tabPanel(title = "Imputation",
                                                     plotOutput("imputation", height = 600),
                                                     downloadButton('downloadImputation', 'Save', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "Imputation (Dataset 2)",
+                                                    plotOutput("imputation2", height = 600),
+                                                    downloadButton('downloadImputation2', 'Save', class = "btn-primary")
                                            ),
                                     )
                              )
@@ -1034,7 +1047,7 @@ server <- shinyServer(function(input, output, session) {
     }else{hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
   })
   
-  #Hide/show Correlation plots/PCA Plots/Frequency PLots
+  #Hide/show Correlation plots/PCA Plots/Frequency Plots
   observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
     if (input$data_mode == TRUE) {
       showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
@@ -1046,6 +1059,20 @@ server <- shinyServer(function(input, output, session) {
       showTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")
     }else{hideTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")}
   })
+  
+  #Hide/show Numbers/Normalisation/Imputation Plots
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "QC_plots", target = "Protein Numbers (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Protein Numbers (Dataset 2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "QC_plots", target = "Normalization (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Normalization (Dataset 2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")}
+  })
+  
   
   #### Reactive functions  --------------------------------------------------
   set.seed(123) #random seed to give consistent kmeans clustering
@@ -1641,7 +1668,7 @@ server <- shinyServer(function(input, output, session) {
   imp2 <- reactive({
     if (input$imputation == "man"){
       DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm2(), input$imputation)}
+        DEP::impute(norm2(), input$imputation2)}
   })
   
   
@@ -1654,7 +1681,7 @@ server <- shinyServer(function(input, output, session) {
   #Get imputed data table
   imp_data2 <- reactive({
     data_imp<-SummarizedExperiment::assay(imp2())
-    return(as.data.frame(data_imp))
+    return(as.data.frame(data_imp2))
   })
   
   
@@ -1756,6 +1783,11 @@ server <- shinyServer(function(input, output, session) {
   df_long_input <- reactive({
     norm_long <-get_df_long(norm())
   })
+  
+  df_long_input2 <- reactive({
+    norm_long2 <-get_df_long(norm2())
+  })
+  
   
   
   #SAINTexpress Processing
@@ -2311,6 +2343,12 @@ server <- shinyServer(function(input, output, session) {
                          norm())
     })
     
+    norm_input2 <- reactive({
+      plot_normalization(filt2(),
+                         norm2())
+    })
+    
+    
     missval_input <- reactive({
       plot_missval(norm())
     })
@@ -2324,8 +2362,17 @@ server <- shinyServer(function(input, output, session) {
                       df())
     })
     
+    imputation_input2 <- reactive({
+      plot_imputation(norm2(),
+                      df2())
+    })
+
     numbers_input <- reactive({
       plot_numbers(norm())
+    })
+    
+    numbers_input2 <- reactive({
+      plot_numbers(norm2())
     })
     
     coverage_input <- reactive({
@@ -3092,6 +3139,11 @@ server <- shinyServer(function(input, output, session) {
       norm_input()
     })
     
+    output$norm2 <- renderPlot({
+      norm_input2()
+    })
+    
+    
     output$missval <- renderPlot({
       missval_input()
     })
@@ -3104,10 +3156,18 @@ server <- shinyServer(function(input, output, session) {
       imputation_input()
     })
     
+    output$imputation2 <- renderPlot({
+      imputation_input2()
+    })
+
     output$numbers <- renderPlot({
       numbers_input()
     })
     
+    output$numbers2 <- renderPlot({
+      numbers_input2()
+    })
+
     output$coverage <- renderPlot({
       coverage_input()
     })
@@ -3578,6 +3638,16 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadNorm2 <- downloadHandler(
+      filename = "normalization (dataset 2).pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(norm_input2())
+        dev.off()
+      }
+    )
+    
+    
     output$downloadMissval <- downloadHandler(
       filename = "missing_values_heatmap.pdf",
       content = function(file) {
@@ -3604,6 +3674,16 @@ server <- shinyServer(function(input, output, session) {
         dev.off()
       }
     )
+    
+    output$downloadImputation2 <- downloadHandler(
+      filename = "imputation (dataset 2).pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(imputation_input2())
+        dev.off()
+      }
+    )
+    
     
     #PCA Plot Download
     output$downloadpca <- downloadHandler(
@@ -3675,6 +3755,15 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadNumbers2 <- downloadHandler(
+      filename = "numbers (dataset 2).pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(numbers_input2())
+        dev.off()
+      }
+    )
+
     output$downloadCoverage <- downloadHandler(
       filename = "coverage.pdf",
       content = function(file) {
@@ -3810,6 +3899,7 @@ server <- shinyServer(function(input, output, session) {
           params <- list(data = data,
                          data2 = data2,
                          expdesign = expdesign,
+                         expdesign2 = expdesign2,
                          data_mode = input$data_mode,
                          data_type = input$data_type,
                          exp = input$exp,
@@ -3832,15 +3922,21 @@ server <- shinyServer(function(input, output, session) {
                          imputation = input$imputation,
                          shift = input$shift,
                          width = input$width,
-                         missval_input = missval_input,
+                         #missval_input = missval_input,
                          # p_hist_input = p_hist_input,
                          pca_input = pca_input,
+                         pca_c2_input = pca_c2_input,
                          norm_input = norm_input,
-                         numbers_input = numbers_input, 
-                         coverage_input = coverage_input,
+                         norm_input2 = norm_input2,
+                         numbers_input = numbers_input,
+                         numbers_input2 = numbers_input2, 
+                         #coverage_input = coverage_input,
                          cor_input = cor_input,
+                         cor_c2_input = cor_c2_input,
                          cond_input = cond_input,
+                         cond_c2_input = cond_c2_input,
                          imputation_input = imputation_input,
+                         imputation_input2 = imputation_input2,
                          comp_heatmap_input = comp_heatmap_input,
                          comp_heatmap_input_c1 = comp_heatmap_input_c1,
                          comp_heatmap_input_c2 = comp_heatmap_input_c2,
