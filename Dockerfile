@@ -48,7 +48,7 @@ RUN tlmgr install bookmark
 #Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
 RUN sudo rm /srv/shiny-server/index.html
-RUN Rscript -e 'install.package("shinyWidgets", dependencies=TRUE)'
+RUN Rscript -e 'install.packages("shinyWidgets", dependencies=TRUE)'
 
 # Make the ShinyApp available at port 80
 EXPOSE 80
