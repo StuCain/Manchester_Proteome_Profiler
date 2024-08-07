@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.3-beta"
+Version = "0.7.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -2438,7 +2438,9 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == TRUE){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, " and ",  input$data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          if(input$data_type2 == "FragPipe"){data_type2 <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type2<-input$data_type2}
+          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
                                            #                     input$pres,
@@ -2515,7 +2517,9 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == TRUE){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, " and ",  input$data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          if(input$data_type2 == "FragPipe"){data_type2 <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type2<-input$data_type2}
+          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
                                            #                     input$pres,
@@ -2539,7 +2543,8 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           ht<-plot_complex_heatmap_2xcomp(data_results1(),
                                           #                     input$pres,
                                           #                     kmeans = TRUE,
@@ -2556,7 +2561,8 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results1(),
                                         #                     input$pres,
@@ -2579,37 +2585,39 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
-          plot_complex_heatmap_2xcomp(data_results1(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1_c1,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=6,
-                                      cluster_cols=input$cluster_cols,
-                                      comp_list=comp(),
-                                      data_results1=data_results1(),
-                                      data_results2=data_results2())
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          ht<-plot_complex_heatmap_2xcomp(data_results1(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c1,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=6,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
-          plot_complex_heatmap_BFDR(data_results1(),
-                                    #                     input$pres,
-                                    #                     kmeans = TRUE,
-                                    input$k1_c1,
-                                    ht_title,
-                                    colour_functions_input()[[1]],
-                                    colour_functions_input()[[2]],
-                                    font_size=6,
-                                    cluster_cols=input$cluster_cols,
-                                    comp_list=comp(),
-                                    data_results1=data_results1(),
-                                    saintlist=saintlist()[[2]])
+          ht<-plot_complex_heatmap_BFDR(data_results1(),
+                                        #                     input$pres,
+                                        #                     kmeans = TRUE,
+                                        input$k1_c1,
+                                        ht_title,
+                                        colour_functions_input()[[1]],
+                                        colour_functions_input()[[2]],
+                                        font_size=6,
+                                        cluster_cols=input$cluster_cols,
+                                        comp_list=comp(),
+                                        data_results1=data_results1(),
+                                        saintlist=saintlist()[[2]])
         }
       })
     })
@@ -2617,7 +2625,8 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input_c2 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste(input$data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
@@ -2634,7 +2643,9 @@ server <- shinyServer(function(input, output, session) {
         }
         else{
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          if(input$data_mode == FALSE){data_type<-input$data_type}else{data_type<-input$data_type2}
+          if(input$data_mode == FALSE){
+            if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+            }else{if(input$data_type2 == "FragPipe"){data_type <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type<-input$data_type2}}
           ht_title<-paste(data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
@@ -3797,10 +3808,15 @@ server <- shinyServer(function(input, output, session) {
           clust_height<-(dep_num()/8)+4
           # Set up parameters to pass to Rmd document
           params <- list(data = data,
+                         data2 = data2,
                          expdesign = expdesign,
+                         data_mode = input$data_mode,
                          data_type = input$data_type,
                          exp = input$exp,
                          lfq_type = input$lfq_type,
+                         data_type2 = input$data_type2,
+                         exp2 = input$exp2,
+                         lfq_type2 = input$lfq_type2,
                          thr = input$thr,
                          pval_use = input$pval_use,
                          p = input$p,
@@ -3835,6 +3851,7 @@ server <- shinyServer(function(input, output, session) {
                          data_results = data_results,
                          p_adj_enh1 = input$p_adj_enh1,
                          dep = dep,
+                         dep2 = dep2,
                          dep_num = dep_num,
                          dep_num_c1 = dep_num_c1,
                          dep_num_c2 = dep_num_c2,
