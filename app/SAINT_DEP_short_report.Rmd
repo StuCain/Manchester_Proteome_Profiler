@@ -151,7 +151,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.4
+Version:0.2.5
 
 ## Method details
  
@@ -370,7 +370,7 @@ if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else fr
 `r freq_text`
 
 ```{r frequency_plot2, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
-if(comp_no_c2>1){
+if(params$data_mode == TRUE && comp_no_c2>1){
 print(params$cond_c2_input())
 if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
 }

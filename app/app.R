@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.5-beta"
+Version = "0.7.6-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
