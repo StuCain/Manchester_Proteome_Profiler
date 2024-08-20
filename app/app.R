@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.6-beta"
+Version = "0.7.7-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1660,15 +1660,17 @@ server <- shinyServer(function(input, output, session) {
   
   
   imp <- reactive({
+    set.seed(123)
     if (input$imputation == "man"){
       DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
         DEP::impute(norm(), input$imputation)}
   })
   
   imp2 <- reactive({
+    set.seed(123)
     if (input$imputation == "man"){
       DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm2(), input$imputation2)}
+        DEP::impute(norm2(), input$imputation)}
   })
   
   
@@ -1680,7 +1682,7 @@ server <- shinyServer(function(input, output, session) {
   
   #Get imputed data table
   imp_data2 <- reactive({
-    data_imp<-SummarizedExperiment::assay(imp2())
+    data_imp2<-SummarizedExperiment::assay(imp2())
     return(as.data.frame(data_imp2))
   })
   
