@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.7-beta"
+Version = "0.7.8-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -53,11 +53,12 @@ ui <- fluidPage(
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
     dashboardHeader( # Set height of dashboardHeader
-      tags$li(class = "dropdown",
-              tags$style(".main-header {max-height: 70px}, {background-color: #2297E6;}"),
-              tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
       title = tags$img(src='app_logo v7.jpg', width = "100%", height = "100%"),
+      tags$li(class="dropdown", tags$img(src='CELL MATRIX RGB2.jpg', width = "40%", height = "40%", style="float:right")),
       titleWidth = 300
+      #tags$li(class="dropdown",tags$a(href="https://github.com/aagarw30/R-Shinyapp-Tutorial", icon("github"), "Source Code", target="_blank"))
+      #tags$li(class="dropdown",tags$a(tags$img(src='app_logo v7.jpg', width = "10%", height = "10%", style="float:right"), "", target="_blank"))
+      
     ),
     #"SAINT_DEP + Cluster"),
     dashboardSidebar(width=300,#changed with of sidebar
