@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.1
+Version = 3.3
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -141,27 +141,30 @@ add_rejections_pval<-function (diff, alpha = 0.05, lfc = 1)
 ####Complex Heatmap function####
 plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list) {
   set.seed(123)
-  FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
-  #Change column names
-  for ( col in 1:ncol(FC_data)){
-    colnames(FC_data)[col] <-  sub("_ratio", "", colnames(FC_data)[col])
+  if (switch==3){
+    FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
+    #Change column names
+    for ( col in 1:ncol(FC_data)){
+      colnames(FC_data)[col] <-  sub("_ratio", "", colnames(FC_data)[col])
+    }
+    FC_matrix <- FC_data %>% remove_rownames %>% column_to_rownames(var="name")
   }
-  FC_matrix <- FC_data %>% remove_rownames %>% column_to_rownames(var="name")
   
- 
+  if (switch==1){imp_matrix<-data_results}
   
-  #Set up label data
-  if (switch == 1){
-    label = "Imputed_Int_Sig"
-  }
-  if (switch == 2){
-    label = "Orig_Int_Sig"
-  }
-  if (switch == 3) {
-    label = "Contrast"
-  } 
   
-
+  #  #Set up label data
+  #  if (switch == 1){
+  #    label = "Imputed_Int_Sig"
+  #  }
+  #  if (switch == 2){
+  #    label = "Orig_Int_Sig"
+  #  }
+  #  if (switch == 3) {
+  #    label = "Contrast"
+  #  } 
+  
+  
   ####Set up Heatmaps####
   #Choose which set ofdata to use (Intensities or Log2FC)
   if (switch == 3) {
@@ -175,23 +178,33 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     kmeans<-kmeans
   } 
   if (switch == 1) {
-    my_mat <- as.matrix(imp_matrix_filt)
-    #my_mat <- log2(my_mat)
+    my_mat <- as.matrix(imp_matrix)
+    my_mat<- my_mat[ order(rowMeans(my_mat), decreasing = T), ]
+    my_mat<-my_mat[1:100,]
+    #my_mat_a <- log2(my_mat)
     CSr = rowMeans(my_mat)
-    my_mat <- my_mat - CSr
+    CSrmax<-max(CSr)
+    CSrmin<-min(CSr)
+    col_fun = colorRamp2(c(CSrmax, CSrmin), c("blue", "yellow"))
+    col_fun(seq(CSrmax, CSrmin))
+    
+    #my_mat <- my_mat - CSr
     CSi = colMeans(my_mat)
-    col_fun = col_int
+    col_fun = col_fun
     kmeans<-kmeans
   }
   
   if (switch == 2) {
+    col_fun = colorRamp2(c(30, 25), c("blue", "yellow"))
+    col_fun(seq(25, 30))
+    
     my_mat <- as.matrix(norm_matrix_filt)
     #my_mat <- log2(my_mat)
     CSr = rowMeans(my_mat,na.rm=TRUE)
     my_mat <- my_mat - CSr
     my_mat[is.na(my_mat)] = 0
     CSi = colMeans(my_mat)
-    col_fun = col_int
+    col_fun = col_fun
     kmeans<-kmeans
   }
   
@@ -200,7 +213,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   
   
   ####Generate Annotated Heatmap####
-
+  
   CS= colMeans(my_mat) #creates a mean of each column
   
   #Set up Heatmap annotations
@@ -236,62 +249,55 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   
   #Right Annotation
   #For RA
-  dfdata_sig<-data_results[, c(1,grep("_significant",colnames(data_results)))]
-  dfdata_sig2 <- dfdata_sig%>% mutate(sigcount = rowSums(dfdata_sig[-1], na.rm = TRUE))
-  #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
-  sc3max<- max(dfdata_sig2$sigcount)
-  
-  ra = rowAnnotation("Sig.
+  if(switch==3){
+    dfdata_sig<-data_results[, c(1,grep("_significant",colnames(data_results)))]
+    dfdata_sig2 <- dfdata_sig%>% mutate(sigcount = rowSums(dfdata_sig[-1], na.rm = TRUE))
+    #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
+    sc3max<- max(dfdata_sig2$sigcount)
+    
+    ra = rowAnnotation("Sig.
 Freq" = anno_barplot(
   dfdata_sig2$sigcount,
   ylim = c(0 , sc3max),
   gp = gpar(fill = mypal[1], fontsize = 8)))
-  
+  }else{ra = rowAnnotation("Log2Int" = anno_barplot(
+    CSr,
+    #ylim = c(0 , sc3max),
+    gp = gpar(fill = mypal[1], fontsize = 8)))
+  }
   
   
   #Set up left annotation to match kmeans number
-  if (kmeans == 1) {
-    la = rowAnnotation(foo = anno_block(
-      gp = gpar(fill = mypal[c(1:8)]),
-      labels = c("Cluster 1"),
-      labels_gp = gpar(col = "white", fontsize = font_size+4)
-    ))
-  } else{
-    if (kmeans == 2) {
+  if(switch==3){
+    if (kmeans == 1) {
       la = rowAnnotation(foo = anno_block(
         gp = gpar(fill = mypal[c(1:8)]),
-        labels = c("Cluster 1", "Cluster 2"),
+        labels = c("Cluster 1"),
         labels_gp = gpar(col = "white", fontsize = font_size+4)
       ))
     } else{
-      if (kmeans == 3) {
+      if (kmeans == 2) {
         la = rowAnnotation(foo = anno_block(
           gp = gpar(fill = mypal[c(1:8)]),
-          labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
+          labels = c("Cluster 1", "Cluster 2"),
           labels_gp = gpar(col = "white", fontsize = font_size+4)
         ))
       } else{
-        if (kmeans == 4) {
+        if (kmeans == 3) {
           la = rowAnnotation(foo = anno_block(
             gp = gpar(fill = mypal[c(1:8)]),
-            labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
+            labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
             labels_gp = gpar(col = "white", fontsize = font_size+4)
           ))
         } else{
-          if (kmeans == 5) {
+          if (kmeans == 4) {
             la = rowAnnotation(foo = anno_block(
               gp = gpar(fill = mypal[c(1:8)]),
-              labels = c(
-                "Cluster 1",
-                "Cluster 2",
-                "Cluster 3",
-                "Cluster 4",
-                "Cluster 5"
-              ),
+              labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
               labels_gp = gpar(col = "white", fontsize = font_size+4)
             ))
           } else{
-            if (kmeans == 6) {
+            if (kmeans == 5) {
               la = rowAnnotation(foo = anno_block(
                 gp = gpar(fill = mypal[c(1:8)]),
                 labels = c(
@@ -299,48 +305,87 @@ Freq" = anno_barplot(
                   "Cluster 2",
                   "Cluster 3",
                   "Cluster 4",
-                  "Cluster 5",
-                  "Cluster 6"
+                  "Cluster 5"
                 ),
                 labels_gp = gpar(col = "white", fontsize = font_size+4)
               ))
             } else{
-              if (kmeans > 6) {
-                la = rowAnnotation(" " = anno_empty(
-                  border = FALSE,
-                  zoom = FALSE,
-                  width = unit(0.01, "cm")
+              if (kmeans == 6) {
+                la = rowAnnotation(foo = anno_block(
+                  gp = gpar(fill = mypal[c(1:8)]),
+                  labels = c(
+                    "Cluster 1",
+                    "Cluster 2",
+                    "Cluster 3",
+                    "Cluster 4",
+                    "Cluster 5",
+                    "Cluster 6"
+                  ),
+                  labels_gp = gpar(col = "white", fontsize = font_size+4)
                 ))
+              } else{
+                if (kmeans > 6) {
+                  la = rowAnnotation(" " = anno_empty(
+                    border = FALSE,
+                    zoom = FALSE,
+                    width = unit(0.01, "cm")
+                  ))
+                }
               }
             }
           }
         }
       }
     }
+  }else{                  la = rowAnnotation(" " = anno_empty(
+    border = FALSE,
+    zoom = FALSE,
+    width = unit(0.01, "cm")
+  ))
   }
   #ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(",LFQ_GL_Count, " Proteins)", "<br>",kmeans," Clusters ",label , sep="")
-  
-  ht = Heatmap(my_mat,
-               name = htname,
-               cluster_rows = TRUE, 
-               cluster_columns = cluster_cols,
-               column_dend_side = "bottom",
-               top_annotation = ha,
-               left_annotation = la,
-               right_annotation = ra,
-               #bottom_annotation = ba,
-               row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
-               cluster_row_slices = FALSE,
-               #column_km = 5, column_km_repeats = 2000, # kmeans clustering
-               col = col_fun,
-               #column_split = column_split,
-               border = TRUE,
-               row_names_gp = gpar(fontsize = font_size),
-               column_names_gp = gpar(fontsize = font_size+2),
-               column_title = gt_render (ht_title))
+  if(switch==3){
+    ht = Heatmap(my_mat,
+                 name = htname,
+                 cluster_rows = TRUE, 
+                 cluster_columns = cluster_cols,
+                 column_dend_side = "bottom",
+                 top_annotation = ha,
+                 left_annotation = la,
+                 right_annotation = ra,
+                 #bottom_annotation = ba,
+                 row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
+                 cluster_row_slices = FALSE,
+                 col = col_fun,
+                 #column_split = column_split,
+                 border = TRUE,
+                 row_names_gp = gpar(fontsize = font_size),
+                 column_names_gp = gpar(fontsize = font_size+2),
+                 column_title = gt_render (ht_title))
+  }else{
+    
+    
+    ht = Heatmap(my_mat,
+                 name = htname,
+                 cluster_rows = FALSE, 
+                 cluster_columns = cluster_cols,
+                 column_dend_side = "bottom",
+                 top_annotation = ha,
+                 left_annotation = la,
+                 right_annotation = ra,
+                 ##bottom_annotation = ba,
+                 #row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
+                 #cluster_row_slices = FALSE,
+                 col = col_fun,
+                 #column_split = column_split,
+                 border = TRUE,
+                 row_names_gp = gpar(fontsize = font_size),
+                 column_names_gp = gpar(fontsize = font_size+2),
+                 column_title = gt_render (ht_title))
+  }
   #ht = draw(ht)
-  
-  compht<-list(ht, my_mat, dfdata_sig2)
+  if(switch==3){
+    compht<-list(ht, my_mat, dfdata_sig2)}else{compht<-list(ht, my_mat)}
   
   return(compht)
   

@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.8-beta"
+Version = "0.7.10-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1195,10 +1195,13 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Sequence.length=Length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.x", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         data<-data_2 %>% 
           dplyr::rename(
-            Protein.names=Protein.names.x)
+            Protein.names=Protein.names.y)
+        #data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
+        
+        
         
       } # end of DIA
     }
@@ -1296,7 +1299,7 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Gene.names=Genes,
             Protein.IDs=Protein.Group,
-            Protein.names=First.Protein.Description,
+            #Protein.names=First.Protein.Description,
             #  Sequence.length=Protein.Length
           )
         data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
@@ -1308,10 +1311,11 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Sequence.length=Length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.x", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         data<-data_2 %>% 
           dplyr::rename(
-            Protein.names=Protein.names.x)
+            Protein.names=Protein.names.y)
+        data$Protein.names  <- gsub("\\(.*", "", data$Protein.names)
         
       } # end of DIA
     }
