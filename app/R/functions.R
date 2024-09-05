@@ -262,10 +262,13 @@ Freq" = anno_barplot(
   dfdata_sig2$sigcount,
   ylim = c(0 , sc3max),
   gp = gpar(fill = mypal[1], fontsize = 8)))
-  }else{ra = rowAnnotation("Log2Int" = anno_barplot(
-    CSr,
-    #ylim = c(0 , sc3max),
-    gp = gpar(fill = mypal[1], fontsize = 8)))
+  }else{
+    ra = rowAnnotation("Log2Int" = anno_points(
+      CSr,
+      ylim = c(CSrmin,CSrmax),
+      gp = gpar(col = mypal[1], fontsize = 8),
+      width = unit(2, "cm")
+    ))
   }
   
   

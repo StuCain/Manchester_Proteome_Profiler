@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.12-beta"
+Version = "0.7.13-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -373,7 +373,11 @@ ui <- fluidPage(
                                                     ),
                                                     fluidRow(
                                                       uiOutput("plot"),
-                                                      downloadButton('downloadHeatmap', 'Save heatmap', class = "btn-primary"))
+                                                      downloadButton('downloadHeatmap', 'Save heatmap', class = "btn-primary")),
+                                                    fluidRow(
+                                                      DT::dataTableOutput("table_abund"), #add table for abundance
+                                                      downloadButton('downloadabundancetable', 'Save Abundance Table', class = "btn-primary"),
+                                           ),
                                            ),
                                            tabPanel(title = "Volcano plot",
                                                     fluidRow(
@@ -2327,8 +2331,8 @@ server <- shinyServer(function(input, output, session) {
         
         if(input$abund_choice == "normalised"){
           abund_matrix<-norm_data()
-          abund_matrix[is.na(abund_matrix)] = 0
-          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+          #abund_matrix[is.na(abund_matrix)] = 0
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix,na.rm=TRUE), decreasing = T), ]
           abund_matrix[abund_matrix==0]<-NA
           abund_matrix<-abund_matrix[1:input$size,]
           abund_matrix<-as.matrix(abund_matrix)
@@ -2352,7 +2356,17 @@ server <- shinyServer(function(input, output, session) {
       })
     })
     
-    volcano_input <- reactive({
+    #data annotations for abundance table
+    data_defn_abundance <- reactive({
+      abund_table_matrix<-heatmap_input()[[2]]
+      abund_table <- data.frame(name = row.names(abund_table_matrix), abund_table_matrix)
+      abund_table_merge <- merge(data_defn(), abund_table, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+      abund_table_merge[match(abund_table$name, abund_table_merge$name),]
+      
+    })
+    
+    
+     volcano_input <- reactive({
       if(!is.null(input$volcano_cntrst)) {
         plot_volcano(dep(),
                      input$volcano_cntrst,
@@ -3129,6 +3143,11 @@ server <- shinyServer(function(input, output, session) {
       #norm_data()
     })
     
+    #Abundance Table
+    output$table_abund <- DT::renderDataTable({
+      data_defn_abundance()
+    })
+    
     #Saint Outputs
     output$tablesaint_output1 <- DT::renderDataTable({
       saint_output()[[1]]
@@ -3514,6 +3533,19 @@ server <- shinyServer(function(input, output, session) {
                     sep ="\t") 
       }
     )
+    
+    #Abundance table
+    output$downloadabundancetable <- downloadHandler(
+      filename = function() { paste("Top_", input$size, "_Abundant_Proteins_", input$abund_choice, ".txt", sep = "") },
+      content = function(file) {
+        write.table(data_defn_abundance(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
     
     #Cluster table
     output$downloadclustertable <- downloadHandler(
