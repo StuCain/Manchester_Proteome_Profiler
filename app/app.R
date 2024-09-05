@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.10-beta"
+Version = "0.7.12-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -350,26 +350,26 @@ ui <- fluidPage(
                                                       plotOutput("selected_plot"),
                                                     ),
                                                     downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
-                                           tabPanel(title = "Heatmap",
+                                           tabPanel(title = "Abundance Heatmap",
                                                     fluidRow(
-                                                      box(numericInput("limit",
-                                                                       "Colour limit (log2)",
-                                                                       min = 0, max = 16, value = 6),
-                                                          width = 3),
+                                                      #box(numericInput("limit",
+                                                      #                 "Colour limit (log2)",
+                                                      #                 min = 0, max = 16, value = 6),
+                                                      #    width = 3),
                                                       box(numericInput("size",
-                                                                       "Heatmap size (4-30)",
-                                                                       min = 4, max = 30, value = 10),
-                                                          width = 3),
-                                                      #Kmeans Cluster box
-                                                      box(numericInput("k",
-                                                                       "Kmeans clusters",
-                                                                       min = 1, max = 6, value = 4),
-                                                          width = 3),
-                                                      box(radioButtons("pres",
-                                                                       "Data presentation",
-                                                                       c("contrast", "centered"),
-                                                                       selected = "contrast"),
-                                                          width = 1),
+                                                                       "Number of Most Abundant Proteins",
+                                                                       min = 0, max = 1000, value = 100, step = 50),
+                                                          width = 6),
+                                                    #  #Kmeans Cluster box
+                                                     # box(numericInput("k",
+                                                     #                  "Kmeans clusters",
+                                                    #                   min = 1, max = 6, value = 4),
+                                                    #      width = 3),
+                                                      box(radioButtons("abund_choice",
+                                                                       "Data Input",
+                                                                       c("normalised", "imputed"),
+                                                                       selected = "imputed"),
+                                                          width = 6),
                                                     ),
                                                     fluidRow(
                                                       uiOutput("plot"),
@@ -2314,13 +2314,41 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #Abundance Heatmap
     heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        plot_heatmap(dep(),
-                     input$pres,
-                     kmeans = TRUE,
-                     input$k,
-                     input$limit)
+        if(input$abund_choice == "imputed"){
+        abund_matrix<-imp_data()
+        abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+        abund_matrix<-abund_matrix[1:input$size,]
+        abund_matrix<-as.matrix(abund_matrix)
+        switch_no<-1
+        }
+        
+        if(input$abund_choice == "normalised"){
+          abund_matrix<-norm_data()
+          abund_matrix[is.na(abund_matrix)] = 0
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+          abund_matrix[abund_matrix==0]<-NA
+          abund_matrix<-abund_matrix[1:input$size,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-2
+                  }
+        
+        ht_title<-paste(input$size, " most abundant proteins", "<br>", input$abund_choice, " intensity values", sep = "")
+        
+        ht<-plot_complex_heatmap(abund_matrix,
+                                 #                     input$pres,
+                                 #                     kmeans = TRUE,
+                                 kmeans=1,
+                                 ht_title,
+                                 colour_functions_input()[[1]],
+                                 colour_functions_input()[[2]],
+                                 switch = switch_no,
+                                 font_size=8,
+                                 cluster_cols=FALSE,
+                                 comp_list=comp()
+        )
       })
     })
     
@@ -3061,8 +3089,9 @@ server <- shinyServer(function(input, output, session) {
     
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
-      #data_results4()
-      data_results()
+      data_results() #should be default
+      #heatmap_input()[[2]]
+      #norm_data()
       #data() #to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
@@ -3130,7 +3159,7 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$heatmap <- renderPlot({
-      heatmap_input()
+      heatmap_input()[[1]]
     })
     
     output$volcano <- renderPlot({
@@ -3284,7 +3313,10 @@ server <- shinyServer(function(input, output, session) {
     ####Observe####
     observe({
       output$plot <- renderUI({
-        plotOutput("heatmap", height = (100 * as.numeric(input$size)))
+        ht_height<-((input$size*12)+270)
+        if (ht_height < 420){ht_height<-ht_height+80}
+        plotOutput("heatmap", height = ht_height)
+        #plotOutput("heatmap", height = (100 * as.numeric(input$size)))
       })
     })
     

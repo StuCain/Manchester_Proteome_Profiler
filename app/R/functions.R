@@ -151,6 +151,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   }
   
   if (switch==1){imp_matrix<-data_results}
+  if (switch==2){norm_matrix<-data_results}
   
   
   #  #Set up label data
@@ -173,14 +174,14 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
     if (ncol(my_mat)>1){my_mat<-my_mat[,comp_list]}
-    CS = colMeans(FC_matrix) #creates a mean of each column
+    #CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
   } 
   if (switch == 1) {
     my_mat <- as.matrix(imp_matrix)
-    my_mat<- my_mat[ order(rowMeans(my_mat), decreasing = T), ]
-    my_mat<-my_mat[1:100,]
+    #my_mat<- my_mat[ order(rowMeans(my_mat), decreasing = T), ]
+    #my_mat<-my_mat[1:100,]
     #my_mat_a <- log2(my_mat)
     CSr = rowMeans(my_mat)
     CSrmax<-max(CSr)
@@ -195,15 +196,16 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   }
   
   if (switch == 2) {
-    col_fun = colorRamp2(c(30, 25), c("blue", "yellow"))
-    col_fun(seq(25, 30))
-    
-    my_mat <- as.matrix(norm_matrix_filt)
+    my_mat <- as.matrix(norm_matrix)
     #my_mat <- log2(my_mat)
     CSr = rowMeans(my_mat,na.rm=TRUE)
-    my_mat <- my_mat - CSr
-    my_mat[is.na(my_mat)] = 0
-    CSi = colMeans(my_mat)
+    CSrmax<-max(CSr)
+    CSrmin<-min(CSr)
+    col_fun = colorRamp2(c(CSrmax, CSrmin), c("blue", "yellow"))
+    col_fun(seq(CSrmax, CSrmin))
+    #my_mat <- my_mat - CSr
+    #my_mat[is.na(my_mat)] = 0
+    CSi = colMeans(my_mat,na.rm=TRUE)
     col_fun = col_fun
     kmeans<-kmeans
   }
@@ -239,7 +241,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
         height = unit(2, "cm"),
         gp = gpar(fill = mypal[c(1:8)])
       ),
-      Int_mean = CS,
+      Int_mean = CSi,
       col = list(Int_mean = col_fun),
       gp = gpar(col = "black"),
       show_legend=FALSE
@@ -377,6 +379,7 @@ Freq" = anno_barplot(
                  #row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
                  #cluster_row_slices = FALSE,
                  col = col_fun,
+                 na_col = "grey",
                  #column_split = column_split,
                  border = TRUE,
                  row_names_gp = gpar(fontsize = font_size),
@@ -391,7 +394,7 @@ Freq" = anno_barplot(
   
 }
 
-
+####2 Round ComplexHeatmap####
 plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, data_results2) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
@@ -622,7 +625,7 @@ Freq2" = anno_barplot(
   
 }
 
-#BFDR Heatmap
+####BFDR Heatmap####
 plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, saintlist) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
