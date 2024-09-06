@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.13-beta"
+Version = "0.7.14-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -369,7 +369,11 @@ ui <- fluidPage(
                                                                        "Data Input",
                                                                        c("normalised", "imputed"),
                                                                        selected = "imputed"),
-                                                          width = 6),
+                                                          width = 3),
+                                                    box(checkboxInput("signif_choice",
+                                                                      "Significant Proteins Only",
+                                                                      value = FALSE),
+                                                        width = 3)
                                                     ),
                                                     fluidRow(
                                                       uiOutput("plot"),
@@ -2323,23 +2327,30 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if(input$abund_choice == "imputed"){
         abund_matrix<-imp_data()
+        if(input$signif_choice==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+        protein_no<-abund_matrix %>% nrow()
+        if (protein_no>input$size){protein_no<-input$size}
         abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
-        abund_matrix<-abund_matrix[1:input$size,]
+        abund_matrix<-abund_matrix[1:protein_no,]
         abund_matrix<-as.matrix(abund_matrix)
         switch_no<-1
         }
         
         if(input$abund_choice == "normalised"){
           abund_matrix<-norm_data()
+          if(input$signif_choice==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size){protein_no<-input$size}
           #abund_matrix[is.na(abund_matrix)] = 0
           abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix,na.rm=TRUE), decreasing = T), ]
           abund_matrix[abund_matrix==0]<-NA
-          abund_matrix<-abund_matrix[1:input$size,]
+          abund_matrix<-abund_matrix[1:protein_no,]
           abund_matrix<-as.matrix(abund_matrix)
           switch_no<-2
                   }
         
-        ht_title<-paste(input$size, " most abundant proteins", "<br>", input$abund_choice, " intensity values", sep = "")
+        if(input$signif_choice==TRUE){sign_txt<-"significant proteins only"}else{sign_txt<-"all proteins"}
+        ht_title<-paste(protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
         
         ht<-plot_complex_heatmap(abund_matrix,
                                  #                     input$pres,
