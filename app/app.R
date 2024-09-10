@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 source("R/functions.R")
 
-Version = "0.7.14-beta"
+Version = "0.7.16-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -352,28 +352,19 @@ ui <- fluidPage(
                                                     downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
                                            tabPanel(title = "Abundance Heatmap",
                                                     fluidRow(
-                                                      #box(numericInput("limit",
-                                                      #                 "Colour limit (log2)",
-                                                      #                 min = 0, max = 16, value = 6),
-                                                      #    width = 3),
                                                       box(numericInput("size",
                                                                        "Number of Most Abundant Proteins",
                                                                        min = 0, max = 1000, value = 100, step = 50),
                                                           width = 6),
-                                                    #  #Kmeans Cluster box
-                                                     # box(numericInput("k",
-                                                     #                  "Kmeans clusters",
-                                                    #                   min = 1, max = 6, value = 4),
-                                                    #      width = 3),
                                                       box(radioButtons("abund_choice",
                                                                        "Data Input",
                                                                        c("normalised", "imputed"),
                                                                        selected = "imputed"),
                                                           width = 3),
-                                                    box(checkboxInput("signif_choice",
-                                                                      "Significant Proteins Only",
-                                                                      value = FALSE),
-                                                        width = 3)
+                                                      box(checkboxInput("signif_choice",
+                                                                        "Significant Proteins Only",
+                                                                        value = FALSE),
+                                                          width = 3)
                                                     ),
                                                     fluidRow(
                                                       uiOutput("plot"),
@@ -381,7 +372,31 @@ ui <- fluidPage(
                                                     fluidRow(
                                                       DT::dataTableOutput("table_abund"), #add table for abundance
                                                       downloadButton('downloadabundancetable', 'Save Abundance Table', class = "btn-primary"),
+                                                    ),
                                            ),
+                                           tabPanel(title = "Abundance Heatmap (Dataset 2)",
+                                                    fluidRow(
+                                                      box(numericInput("size2",
+                                                                       "Number of Most Abundant Proteins",
+                                                                       min = 0, max = 1000, value = 100, step = 50),
+                                                          width = 6),
+                                                      box(radioButtons("abund_choice2",
+                                                                       "Data Input",
+                                                                       c("normalised", "imputed"),
+                                                                       selected = "imputed"),
+                                                          width = 3),
+                                                      box(checkboxInput("signif_choice2",
+                                                                        "Significant Proteins Only",
+                                                                        value = FALSE),
+                                                          width = 3)
+                                                    ),
+                                                    fluidRow(
+                                                      uiOutput("plot2"),
+                                                      downloadButton('downloadHeatmap2', 'Save heatmap', class = "btn-primary")),
+                                                    fluidRow(
+                                                      DT::dataTableOutput("table_abund2"), #add table for abundance
+                                                      downloadButton('downloadabundancetable2', 'Save Abundance Table', class = "btn-primary"),
+                                                    ),
                                            ),
                                            tabPanel(title = "Volcano plot",
                                                     fluidRow(
@@ -1054,6 +1069,10 @@ server <- shinyServer(function(input, output, session) {
     if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
       showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
     }else{hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Abundance Heatmap (Dataset 2)")
+    }else{hideTab(inputId =  "result_plots", target = "Abundance Heatmap (Dataset 2)")}
+    
   })
   
   #Hide/show Correlation plots/PCA Plots/Frequency Plots
@@ -1527,6 +1546,13 @@ server <- shinyServer(function(input, output, session) {
     data_unique_defn<-as.data.frame(data_unique_defn)
   })
   
+  data_defn2 <- reactive({
+    data_unique <- make_unique(data2(), "Gene.names", "Protein.IDs", delim = ";")
+    data_unique_defn <-data_unique[, c("name", "Protein.names", "ID")]
+    data_unique_defn$Protein.names  <- sub('\\;.*', '', data_unique_defn$Protein.names)
+    data_unique_defn<-as.data.frame(data_unique_defn)
+  })
+
   #Experimental design files input
   expdesign <- reactive({
     inFile <- input$file2
@@ -2350,7 +2376,7 @@ server <- shinyServer(function(input, output, session) {
                   }
         
         if(input$signif_choice==TRUE){sign_txt<-"significant proteins only"}else{sign_txt<-"all proteins"}
-        ht_title<-paste(protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
+        ht_title<-paste(input$data_type, "<br>", protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
         
         ht<-plot_complex_heatmap(abund_matrix,
                                  #                     input$pres,
@@ -2367,16 +2393,66 @@ server <- shinyServer(function(input, output, session) {
       })
     })
     
+    heatmap_input2 <- reactive({
+      withProgress(message = 'Plotting', value = 0.66, {
+        if(input$abund_choice2 == "imputed"){
+          abund_matrix<-imp_data2()
+          if(input$signif_choice2==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size2){protein_no<-input$size2}
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+          abund_matrix<-abund_matrix[1:protein_no,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-1
+        }
+        
+        if(input$abund_choice2 == "normalised"){
+          abund_matrix<-norm_data2()
+          if(input$signif_choice2==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size2){protein_no<-input$size2}
+          #abund_matrix[is.na(abund_matrix)] = 0
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix,na.rm=TRUE), decreasing = T), ]
+          abund_matrix[abund_matrix==0]<-NA
+          abund_matrix<-abund_matrix[1:protein_no,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-2
+        }
+        
+        if(input$signif_choice2==TRUE){sign_txt<-"significant proteins only"}else{sign_txt<-"all proteins"}
+        ht_title<-paste(input$data_type2, "<br>", protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
+        
+        ht<-plot_complex_heatmap(abund_matrix,
+                                 #                     input$pres,
+                                 #                     kmeans = TRUE,
+                                 kmeans=1,
+                                 ht_title,
+                                 colour_functions_input()[[1]],
+                                 colour_functions_input()[[2]],
+                                 switch = switch_no,
+                                 font_size=8,
+                                 cluster_cols=FALSE,
+                                 comp_list=comp()
+        )
+      })
+    })
+    
+    
     #data annotations for abundance table
     data_defn_abundance <- reactive({
       abund_table_matrix<-heatmap_input()[[2]]
       abund_table <- data.frame(name = row.names(abund_table_matrix), abund_table_matrix)
       abund_table_merge <- merge(data_defn(), abund_table, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
       abund_table_merge[match(abund_table$name, abund_table_merge$name),]
-      
     })
     
-    
+    data_defn_abundance2 <- reactive({
+      abund_table_matrix<-heatmap_input2()[[2]]
+      abund_table <- data.frame(name = row.names(abund_table_matrix), abund_table_matrix)
+      abund_table_merge <- merge(data_defn2(), abund_table, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+      abund_table_merge[match(abund_table$name, abund_table_merge$name),]
+    })
+
      volcano_input <- reactive({
       if(!is.null(input$volcano_cntrst)) {
         plot_volcano(dep(),
@@ -3159,6 +3235,11 @@ server <- shinyServer(function(input, output, session) {
       data_defn_abundance()
     })
     
+    output$table_abund2 <- DT::renderDataTable({
+      data_defn_abundance2()
+    })
+    
+    
     #Saint Outputs
     output$tablesaint_output1 <- DT::renderDataTable({
       saint_output()[[1]]
@@ -3191,6 +3272,11 @@ server <- shinyServer(function(input, output, session) {
     output$heatmap <- renderPlot({
       heatmap_input()[[1]]
     })
+    
+    output$heatmap2 <- renderPlot({
+      heatmap_input2()[[1]]
+    })
+    
     
     output$volcano <- renderPlot({
       volcano_input()
@@ -3349,6 +3435,16 @@ server <- shinyServer(function(input, output, session) {
         #plotOutput("heatmap", height = (100 * as.numeric(input$size)))
       })
     })
+    
+    observe({
+      output$plot2 <- renderUI({
+        ht_height<-((input$size2*12)+270)
+        if (ht_height < 420){ht_height<-ht_height+80}
+        plotOutput("heatmap2", height = ht_height)
+        #plotOutput("heatmap", height = (100 * as.numeric(input$size)))
+      })
+    })
+    
     
     observe({
       output$plot_comp <- renderUI({
@@ -3557,6 +3653,17 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    #Abundance table2
+    output$downloadabundancetable2 <- downloadHandler(
+      filename = function() { paste("Top_", input$size, "_Abundant_Proteins_dataset2", input$abund_choice, ".txt", sep = "") },
+      content = function(file) {
+        write.table(data_defn_abundance2(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
     
     #Cluster table
     output$downloadclustertable <- downloadHandler(
@@ -3699,6 +3806,16 @@ server <- shinyServer(function(input, output, session) {
         dev.off()
       }
     )
+    
+    output$downloadHeatmap2 <- downloadHandler(
+      filename = 'Heatmap_dataset2.pdf',
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(heatmap_input2())
+        dev.off()
+      }
+    )
+    
     
     output$downloadVolcano <- downloadHandler(
       filename = function() {
@@ -4019,6 +4136,8 @@ server <- shinyServer(function(input, output, session) {
                          cond_c2_input = cond_c2_input,
                          imputation_input = imputation_input,
                          imputation_input2 = imputation_input2,
+                         heatmap_input = heatmap_input,
+                         heatmap_input2 = heatmap_input2,
                          comp_heatmap_input = comp_heatmap_input,
                          comp_heatmap_input_c1 = comp_heatmap_input_c1,
                          comp_heatmap_input_c2 = comp_heatmap_input_c2,

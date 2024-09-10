@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.3
+Version = 3.4
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -186,8 +186,8 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     CSr = rowMeans(my_mat)
     CSrmax<-max(CSr)
     CSrmin<-min(CSr)
-    col_fun = colorRamp2(c(CSrmax, CSrmin), c("blue", "yellow"))
-    col_fun(seq(CSrmax, CSrmin))
+    col_fun = colorRamp2(c(CSrmax+1, CSrmin-1), c("blue", "yellow"))
+    col_fun(seq(CSrmax+1, CSrmin-1))
     
     #my_mat <- my_mat - CSr
     CSi = colMeans(my_mat)
@@ -201,8 +201,8 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     CSr = rowMeans(my_mat,na.rm=TRUE)
     CSrmax<-max(CSr)
     CSrmin<-min(CSr)
-    col_fun = colorRamp2(c(CSrmax, CSrmin), c("blue", "yellow"))
-    col_fun(seq(CSrmax, CSrmin))
+    col_fun = colorRamp2(c(CSrmax+1, CSrmin-1), c("blue", "yellow"))
+    col_fun(seq(CSrmax+1, CSrmin-1))
     #my_mat <- my_mat - CSr
     #my_mat[is.na(my_mat)] = 0
     CSi = colMeans(my_mat,na.rm=TRUE)
