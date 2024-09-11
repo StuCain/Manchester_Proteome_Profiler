@@ -7,7 +7,7 @@
 #Use to install packages not listed on CRAN
 #install.packages("BiocManager")
 #BiocManager::install(c("EnhancedVolcano", "enrichplot",  "clusterProfiler",
-#"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail"))
+#"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail", "QFeatures"))
 #BiocManager::install("org.Mm.eg.db")
 library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
@@ -30,9 +30,10 @@ library(readxl)
 library(rmarkdown)
 library(SummarizedExperiment)
 library(VennDetail)
+library(QFeatures)
 source("R/functions.R")
 
-Version = "0.7.16-beta"
+Version = "0.7.17-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -203,6 +204,7 @@ ui <- fluidPage(
                        ),
                        
                        menuItemOutput("comparisons"),
+                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
                        menuItem("Imputation options",
                                 radioButtons("imputation",
                                              "Imputation type",
@@ -220,7 +222,12 @@ ui <- fluidPage(
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
                        ),
-                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
+                       menuItemOutput("normalisations"),
+#                                radioButtons("nomalisation_choice",
+#                                             "Normalisation Method",
+#                                             choices = c("vsn", "quantile"),
+#                                             selected = "vsn")
+#                       ),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -1041,6 +1048,22 @@ server <- shinyServer(function(input, output, session) {
              downloadButton('downloadcomp_template', 'Save Comp. template', class="btn btn-primary")
     )
   })
+
+  output$normalisations <- renderMenu({
+    menuItem("Normalisation options",
+           radioButtons("nomalisation_choice",
+                        "Normalisation Method",
+                        choices = c("vsn", "quantile"),
+                        selected = "vsn"),
+           if (input$data_mode == TRUE) {
+             radioButtons("nomalisation_choice2",
+                          "Normalisation Method Dataset 2)",
+                          choices = c("vsn", "quantile"),
+                          selected = "vsn")
+           }
+           
+  )
+  })
   
   #Hide/show Introduction Tab
   observeEvent(input$analyze, {
@@ -1674,15 +1697,17 @@ server <- shinyServer(function(input, output, session) {
     filter_missval(se, input$thr) #filtering set less stringent
   })
   
-  
   norm <- reactive({
-    normalize_vsn(filt())
+    if(input$nomalisation_choice=="quantile"){
+      QFeatures::normalize(filt(), method = "quantiles")}else
+      {normalize_vsn(filt())}
   })
   
   norm2 <- reactive({
-    normalize_vsn(filt2())
+    if(input$nomalisation_choice2=="quantile"){
+      QFeatures::normalize(filt2(), method = "quantiles")}else
+      {normalize_vsn(filt2())}
   })
-  
   
   #Get Normalized data
   norm_data <- reactive({
