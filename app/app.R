@@ -33,7 +33,7 @@ library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
 
-Version = "0.7.17-beta"
+Version = "0.7.18-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -461,7 +461,8 @@ ui <- fluidPage(
                                            title = "Correlation Plots", width = 12,
                                            tabPanel(title = "PCA",
                                                     plotOutput("pca", height = 600),
-                                                    downloadButton('downloadpca', 'Save', class = "btn-primary")
+                                                    downloadButton('downloadpca', 'Save Plot', class = "btn-primary"),
+                                                    downloadButton('downloadpca_txt', 'Save Values', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Correlation",
                                                     plotOutput("cor", height = 600),
@@ -473,7 +474,8 @@ ui <- fluidPage(
                                            ),
                                            tabPanel(title = "PCA (Comp2)",
                                                     plotOutput("pca_c2", height = 600),
-                                                    downloadButton('downloadpca_c2', 'Save', class = "btn-primary")
+                                                    downloadButton('downloadpca_c2', 'Save Plot', class = "btn-primary"),
+                                                    downloadButton('downloadpca_c2_txt', 'Save Values', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Correlation (Comp2)",
                                                     plotOutput("cor_c2", height = 600),
@@ -2544,15 +2546,20 @@ server <- shinyServer(function(input, output, session) {
     pca_input <- reactive({
       num_total <- dep() %>% nrow()
       if(num_total >= 500){
-        plot_pca(dep(), x = 1, y = 2, point_size = 4)
+        plot_pca_txt(dep(), x = 1, y = 2, point_size = 4)
       }else{
-        plot_pca(dep(), x = 1, y = 2, n=num_total, point_size = 4)
+        plot_pca_txt(dep(), x = 1, y = 2, n=num_total, point_size = 4)
       }
     })
     
     #PCA Input (Comp2)
     pca_c2_input <- reactive({
-      plot_pca(dep2(), x = 1, y = 2, point_size = 4)
+      num_total <- dep2() %>% nrow()
+      if(num_total >= 500){
+        plot_pca_txt(dep2(), x = 1, y = 2, point_size = 4)
+      }else{
+        plot_pca_txt(dep2(), x = 1, y = 2, n=num_total, point_size = 4)
+      }
     })
     
     #Correlation Input
@@ -3216,6 +3223,7 @@ server <- shinyServer(function(input, output, session) {
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
       data_results() #should be default
+      #pca_input()[[2]]
       #heatmap_input()[[2]]
       #norm_data()
       #data() #to test data input
@@ -3351,12 +3359,12 @@ server <- shinyServer(function(input, output, session) {
     
     #PCA output
     output$pca <- renderPlot({
-      pca_input()
+      pca_input()[[1]]
     })
     
     #PCA output (Comp2)
     output$pca_c2 <- renderPlot({
-      pca_c2_input()
+      pca_c2_input()[[1]]
     })
     
     
@@ -3573,7 +3581,7 @@ server <- shinyServer(function(input, output, session) {
         filename = function() { paste("Cellular_Component_Map_level_",input$gocc_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
-          GOCCtitle<-paste("Cellualr Component up to level ", input$gocc_level, sep="")
+          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
           print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
           dev.off()
         }
@@ -3689,6 +3697,7 @@ server <- shinyServer(function(input, output, session) {
                     sep ="\t") 
       }
     )
+    
     
     #Cluster table
     output$downloadclustertable <- downloadHandler(
@@ -3914,20 +3923,43 @@ server <- shinyServer(function(input, output, session) {
       filename = "PCA.pdf",
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
-        plot(pca_input())
+        plot(pca_input()[[1]])
         dev.off()
       }
     )
     
-    #    #PCA Plot Download (comp2)
-    #    output$downloadpca <- downloadHandler(
-    #      filename = "PCA (Comp2).pdf",
-    #      content = function(file) {
-    #        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
-    #        print(pca_c2_input())
-    #        dev.off()
-    #      }
-    #    )
+    output$downloadpca_c2 <- downloadHandler(
+      filename = "PCA2.pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        plot(pca_c2_input()[[1]])
+        dev.off()
+      }
+    )
+    
+    
+    #PCA table 1
+    output$downloadpca_txt <- downloadHandler(
+      filename = function() { paste("PCA1_values.txt", sep = "") },
+      content = function(file) {
+        write.table(pca_input()[[2]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    output$downloadpca_c2_txt <- downloadHandler(
+      filename = function() { paste("PCA2_values.txt", sep = "") },
+      content = function(file) {
+        write.table(pca_c2_input()[[2]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
     
     #Correlation Plot Download
     output$downloadcor <- downloadHandler(

@@ -355,7 +355,7 @@ if(params$data_mode == TRUE){print(params$heatmap_input2()[[1]])}
 ### Principle Component Analysis (PCA) plot
 
 ```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
-print(params$pca_input())
+print(params$pca_input()[[1]])
 if(params$data_mode == TRUE){pca_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else pca_text<-""
 ```
 
@@ -364,7 +364,7 @@ if(params$data_mode == TRUE){pca_text<-"### Principle Component Analysis (PCA) p
 `r pca_text`
 
 ```{r pca_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
-if(params$data_mode == TRUE){print(params$pca_c2_input())}
+if(params$data_mode == TRUE){print(params$pca_c2_input()[[1]])}
 ```
 
 
@@ -388,7 +388,7 @@ if(params$data_mode == TRUE){print(params$cor_c2_input())}
 
 ```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
 freq_text<-""
-if(comp_no_c1>1){
+if(comp_no_c1>1 && comp_no_c1<5){
 print(params$cond_input())
 if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
 }
@@ -398,7 +398,7 @@ if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else fr
 `r freq_text`
 
 ```{r frequency_plot2, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
-if(params$data_mode == TRUE && comp_no_c2>1){
+if(params$data_mode == TRUE && comp_no_c2>1 && comp_no_c2<5){
 print(params$cond_c2_input())
 if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
 }

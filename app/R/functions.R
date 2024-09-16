@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.4
+Version = 3.5
 
 #library(DEP)
 #library(SummarizedExperiment)
@@ -137,6 +137,94 @@ add_rejections_pval<-function (diff, alpha = 0.05, lfc = 1)
   return(diff)
 }
 
+####PCA with txt output####
+plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"), 
+                        label = FALSE, n = 500, point_size = 4, label_size = 3, plot = TRUE) 
+{
+  if (is.integer(x)) 
+    x <- as.numeric(x)
+  if (is.integer(y)) 
+    y <- as.numeric(y)
+  if (is.integer(n)) 
+    n <- as.numeric(n)
+  if (is.integer(point_size)) 
+    point_size <- as.numeric(point_size)
+  if (is.integer(label_size)) 
+    label_size <- as.numeric(label_size)
+  assertthat::assert_that(inherits(dep, "SummarizedExperiment"), 
+                          is.numeric(x), length(x) == 1, is.numeric(y), length(y) == 
+                            1, is.numeric(n), length(n) == 1, is.character(indicate), 
+                          is.logical(label), is.numeric(point_size), length(point_size) == 
+                            1, is.numeric(label_size), length(label_size) == 
+                            1, is.logical(plot), length(plot) == 1)
+  if (x > ncol(dep) | y > ncol(dep)) {
+    stop(paste0("'x' and/or 'y' arguments are not valid\n", 
+                "Run plot_pca() with 'x' and 'y' <= ", ncol(dep), 
+                "."), call. = FALSE)
+  }
+  if (n > nrow(dep)) {
+    stop(paste0("'n' argument is not valid.\n", "Run plot_pca() with 'n' <= ", 
+                nrow(dep), "."), call. = FALSE)
+  }
+  columns <- colnames(colData(dep))
+  if (!is.null(indicate)) {
+    if (length(indicate) > 3) {
+      stop("Too many features in 'indicate'\n        Run plot_pca() with a maximum of 3 indicate features")
+    }
+    if (any(!indicate %in% columns)) {
+      stop(paste0("'", paste0(indicate, collapse = "' and/or '"), 
+                  "' column(s) is/are not present in ", deparse(substitute(dep)), 
+                  ".\nValid columns are: '", paste(columns, collapse = "', '"), 
+                  "'."), call. = FALSE)
+    }
+  }
+  var <- apply(assay(dep), 1, sd)
+  df <- assay(dep)[order(var, decreasing = TRUE)[seq_len(n)], 
+  ]
+  pca <- prcomp(t(df), scale = FALSE)
+  pca_df <- pca$x %>% data.frame() %>% rownames_to_column() %>% 
+    left_join(., data.frame(colData(dep)), by = c(rowname = "ID"))
+  percent <- round(100 * pca$sdev^2/sum(pca$sdev^2), 1)
+  for (feat in indicate) {
+    pca_df[[feat]] <- as.factor(pca_df[[feat]])
+  }
+  p <- ggplot(pca_df, aes(get(paste0("PC", x)), get(paste0("PC", 
+                                                           y)))) + labs(title = paste0("PCA plot - top ", n, " variable proteins"), 
+                                                                        x = paste0("PC", x, ": ", percent[x], "%"), y = paste0("PC", 
+                                                                                                                               y, ": ", percent[y], "%")) + coord_fixed() + theme_DEP1()
+  if (length(indicate) == 0) {
+    p <- p + geom_point(size = point_size)
+  }
+  if (length(indicate) == 1) {
+    p <- p + geom_point(aes(col = pca_df[[indicate[1]]]), 
+                        size = point_size) + labs(col = indicate[1])
+  }
+  if (length(indicate) == 2) {
+    p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
+                            shape = pca_df[[indicate[2]]]), size = point_size) + 
+      labs(col = indicate[1], shape = indicate[2])
+  }
+  if (length(indicate) == 3) {
+    p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
+                            shape = pca_df[[indicate[2]]]), size = point_size) + 
+      facet_wrap(~pca_df[[indicate[3]]])
+    labs(col = indicate[1], shape = indicate[2])
+  }
+  if (label) {
+    p <- p + geom_text(aes(label = rowname), size = label_size)
+  }
+  if (plot) {
+    pca_out<-list(p, pca_df)
+    return(pca_out)
+  }
+  else {
+    df <- pca_df %>% select(rowname, paste0("PC", c(x, y)), 
+                            match(indicate, colnames(pca_df)))
+    colnames(df)[1] <- "sample"
+    pca_out<-list(df, pca_df)
+    return(pca_out)
+  }
+}
 
 ####Complex Heatmap function####
 plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list) {
