@@ -33,7 +33,7 @@ library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
 
-Version = "0.7.18-beta"
+Version = "0.7.19-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -460,6 +460,17 @@ ui <- fluidPage(
                                     tabBox(id = "correlation_plots",
                                            title = "Correlation Plots", width = 12,
                                            tabPanel(title = "PCA",
+                                                    fluidRow(
+                                                      box(numericInput("pca_num",
+                                                                       "Protein number",
+                                                                       min = 0, max = 5000, value = 500, step = 100),
+                                                          width = 6
+                                                          ),
+                                                      box(checkboxInput("pca_split",
+                                                                        "Split by condition_type",
+                                                                        value = FALSE),
+                                                          width = 6)
+                                                      ),
                                                     plotOutput("pca", height = 600),
                                                     downloadButton('downloadpca', 'Save Plot', class = "btn-primary"),
                                                     downloadButton('downloadpca_txt', 'Save Values', class = "btn-primary")
@@ -473,6 +484,17 @@ ui <- fluidPage(
                                                     downloadButton('downloadcond', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "PCA (Comp2)",
+                                                    fluidRow(
+                                                      box(numericInput("pca_num2",
+                                                                       "Protein number",
+                                                                       min = 0, max = 5000, value = 500, step = 100),
+                                                          width = 6
+                                                      ),
+                                                      box(checkboxInput("pca_split2",
+                                                                        "Split by condition_type",
+                                                                        value = FALSE),
+                                                          width = 6)
+                                                    ),
                                                     plotOutput("pca_c2", height = 600),
                                                     downloadButton('downloadpca_c2', 'Save Plot', class = "btn-primary"),
                                                     downloadButton('downloadpca_c2_txt', 'Save Values', class = "btn-primary")
@@ -2545,8 +2567,10 @@ server <- shinyServer(function(input, output, session) {
     #PCA Input
     pca_input <- reactive({
       num_total <- dep() %>% nrow()
-      if(num_total >= 500){
-        plot_pca_txt(dep(), x = 1, y = 2, point_size = 4)
+      if(num_total >= input$pca_num){
+        if(input$pca_split==FALSE){
+        plot_pca_txt(dep(), x = 1, y = 2, n=input$pca_num, point_size = 4)
+        }else{plot_pca_txt(dep(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num, point_size = 4)}
       }else{
         plot_pca_txt(dep(), x = 1, y = 2, n=num_total, point_size = 4)
       }
@@ -2555,8 +2579,10 @@ server <- shinyServer(function(input, output, session) {
     #PCA Input (Comp2)
     pca_c2_input <- reactive({
       num_total <- dep2() %>% nrow()
-      if(num_total >= 500){
-        plot_pca_txt(dep2(), x = 1, y = 2, point_size = 4)
+      if(num_total >= input$pca_num2){
+        if(input$pca_split2==FALSE){
+          plot_pca_txt(dep2(), x = 1, y = 2, n=input$pca_num2, point_size = 4)
+        }else{plot_pca_txt(dep2(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num2, point_size = 4)}
       }else{
         plot_pca_txt(dep2(), x = 1, y = 2, n=num_total, point_size = 4)
       }

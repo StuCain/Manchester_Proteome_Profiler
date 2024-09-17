@@ -337,7 +337,7 @@ if(params$data_mode == TRUE){print(params$imputation_input2())}
 ```
 \pagebreak
 
-## Abundnce Heatmap Plot
+## Abundance Heatmap Plot
 
 ```{r abundance_heatmap_plot, echo=FALSE, fig.height=(abund_heatmap_no/8)+4, fig.width=(abund_heatmap_col/3)+3, message=FALSE, warning=FALSE}
 print(params$heatmap_input()[[1]])

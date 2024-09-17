@@ -188,26 +188,27 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
   for (feat in indicate) {
     pca_df[[feat]] <- as.factor(pca_df[[feat]])
   }
-  p <- ggplot(pca_df, aes(get(paste0("PC", x)), get(paste0("PC", 
-                                                           y)))) + labs(title = paste0("PCA plot - top ", n, " variable proteins"), 
-                                                                        x = paste0("PC", x, ": ", percent[x], "%"), y = paste0("PC", 
-                                                                                                                               y, ": ", percent[y], "%")) + coord_fixed() + theme_DEP1()
+  p <- ggplot(pca_df, aes(get(paste0("PC", x)), get(paste0("PC", y)))) + 
+    labs(title = paste0("PCA plot - top ", n, " variable proteins"), 
+         x = paste0("PC", x, ": ", percent[x], "%"), 
+         y = paste0("PC", y, ": ", percent[y], "%")) + 
+    coord_fixed() + theme_DEP1()
   if (length(indicate) == 0) {
     p <- p + geom_point(size = point_size)
   }
   if (length(indicate) == 1) {
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]]), 
-                        size = point_size) + labs(col = indicate[1])
+        size = point_size) + labs(col = indicate[1])
   }
   if (length(indicate) == 2) {
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
-                            shape = pca_df[[indicate[2]]]), size = point_size) + 
+      shape = pca_df[[indicate[2]]]), size = point_size) + 
       labs(col = indicate[1], shape = indicate[2])
   }
   if (length(indicate) == 3) {
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
-                            shape = pca_df[[indicate[2]]]), size = point_size) + 
-      facet_wrap(~pca_df[[indicate[3]]])
+        shape = pca_df[[indicate[2]]]), size = point_size) + 
+      facet_wrap(~pca_df[[indicate[3]]]) +
     labs(col = indicate[1], shape = indicate[2])
   }
   if (label) {
@@ -614,7 +615,7 @@ Freq2" = anno_barplot(
   gp = gpar(fill = mypal[3], fontsize = 6), 
 ))
   
-
+  
   
   
   #Set up left annotation to match kmeans number
@@ -1056,7 +1057,7 @@ plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.
   if(comp_length>1){
     co = column_order(ht)
     my_mat<-my_mat[,co]
-    }
+  }
   
   #Split into the Clusters
   
@@ -1122,7 +1123,7 @@ plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.
   #check
   clu_df
   
-
+  
   #Create filtered lists
   Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
   Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
@@ -3068,7 +3069,7 @@ get_entrezlist <- function(clu_df, species="Human"){
       "Cluster 5",
       "Cluster 6"
     )
-return(entrezlist)
+  return(entrezlist)
 }
 
 ####Cellualr Compartment####
@@ -3085,7 +3086,7 @@ plot_GO_CC <- function(entrezlist, species="Human"){
     readable = T
   )
   #GOCCtitle<-paste("Cellular Component ",sep="")
-
+  
   #GOCC_dotplot<- dotplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle)
   
   #GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
@@ -3110,7 +3111,7 @@ plot_GO_MF <- function(entrezlist, species="Human"){
     readable = T
   )
   #GOMFtitle<-paste("Molecular Function ", sep="")
-
+  
   #GOMF_dotplot<- dotplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle)
   
   #GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
@@ -3126,7 +3127,7 @@ plot_GO_MF <- function(entrezlist, species="Human"){
 
 plot_GO_BP <- function(entrezlist, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
-
+  
   GOBP <- compareCluster(
     geneClusters = entrezlist,
     fun = "enrichGO",
@@ -3170,7 +3171,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   dfc4 <- Cluster4$GeneID
   dfc5 <- Cluster5$GeneID
   dfc6 <- Cluster6$GeneID
-
+  
   clusterID <- paste("dfc", cluster_no,  sep = "")
   clusterID <- eval(parse(text = clusterID))#converts text to variable
   protein_list <- clusterID
@@ -3183,7 +3184,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   orig_melt_filt = setDT(orig_melt)[rowname %chin% protein_list]
   
   if(cluster_no > 0){
-  origtitle<-paste("Original values ", " Cluster ", cluster_no,sep="")
+    origtitle<-paste("Original values ", " Cluster ", cluster_no,sep="")
   }else{origtitle<-paste("Original values", sep="")}
   
   orig<-ggplot(orig_melt_filt, aes(Condition, val))+
