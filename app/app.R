@@ -33,7 +33,7 @@ library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
 
-Version = "0.7.19-beta"
+Version = "0.8.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -444,7 +444,32 @@ ui <- fluidPage(
                                                       plotOutput("volcano_c2", height = 600),
                                                       downloadButton('downloadVolcano_c2', 'Save volcano', class = "btn-primary")
                                                     )
+                                           ),
+                                           tabPanel(title = "Significance Counts",
+                                                    fluidRow(
+                                                      box(numericInput("max_cutoff",
+                                                                       "Maximum Cut-off",
+                                                                       min = 0, max = 40, value = 20, step = 5),
+                                                          width = 6),
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("signif_plot", height = 600),
+                                                      downloadButton('downloadsignif_plot', 'Save', class = "btn-primary")
+                                                    )
+                                           ),
+                                           tabPanel(title = "Significance Counts (Comp2)",
+                                                    fluidRow(
+                                                      box(numericInput("max_cutoff2",
+                                                                       "Maximum Cut-off",
+                                                                       min = 0, max = 40, value = 20, step = 5),
+                                                          width = 6),
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("signif_plot2", height = 600),
+                                                      downloadButton('downloadsignif_plot2', 'Save', class = "btn-primary")
+                                                    )
                                            )
+                                           
                                     ),
                                     fluidRow(
                                       box(numericInput("pdfwidth",
@@ -1119,7 +1144,9 @@ server <- shinyServer(function(input, output, session) {
     if (input$data_mode == TRUE) {
       showTab(inputId =  "result_plots", target = "Abundance Heatmap (Dataset 2)")
     }else{hideTab(inputId =  "result_plots", target = "Abundance Heatmap (Dataset 2)")}
-    
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Significance Counts (Comp2)")
+    }else{hideTab(inputId =  "result_plots", target = "Significance Counts (Comp2)")}
   })
   
   #Hide/show Correlation plots/PCA Plots/Frequency Plots
@@ -2522,6 +2549,19 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #Significance Plot
+    signif_plot_input <- reactive({
+      if(input$pval_use == FALSE){
+        signif_count(df(), max_cutoff = input$max_cutoff)
+      }else{signif_count_pval(df(), max_cutoff = input$max_cutoff)}
+    })
+    
+    signif_plot_input2 <- reactive({
+      if(input$pval_use == FALSE){
+        signif_count(df2(), input$max_cutoff2)
+      }else{signif_count_pval(df2(), input$max_cutoff2)}
+    })
+    
     
     norm_input <- reactive({
       plot_normalization(filt(),
@@ -3345,6 +3385,14 @@ server <- shinyServer(function(input, output, session) {
       volcano_c2_input()
     })
     
+    #signif plot output
+    output$signif_plot <- renderPlot({
+    signif_plot_input()
+    })
+    
+    output$signif_plot2 <- renderPlot({
+      signif_plot_input2()
+    })
     
     output$norm <- renderPlot({
       norm_input()
@@ -3887,6 +3935,39 @@ server <- shinyServer(function(input, output, session) {
         dev.off()
       }
     )
+    
+    output$downloadVolcano_c2 <- downloadHandler(
+      filename = function() {
+        paste0("Volcano_", input$volcano_cntrst_c2, ".pdf")
+      },
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(volcano_c2_input())
+        dev.off()
+      }
+    )
+    
+    
+    output$downloadsignif_plot <- downloadHandler(
+      if (input$pval_use == FALSE){pval_txt<-"padj"}else{pval_txt<-"pVal"},
+      filename = function() {paste0("Signif_plot_", pval_txt, ".pdf")},
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(signif_plot_input())
+        dev.off()
+      }
+    )
+    
+    output$downloadsignif_plot2 <- downloadHandler(
+      if (input$pval_use == FALSE){pval_txt<-"padj"}else{pval_txt<-"pVal"},
+      filename = function() {paste0("Signif_plot2_", pval_txt, ".pdf")},
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(signif_plot_input2())
+        dev.off()
+      }
+    )
+    
     
     output$downloadNorm <- downloadHandler(
       filename = "normalization.pdf",

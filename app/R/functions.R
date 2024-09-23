@@ -4,21 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.5
-
-#library(DEP)
-#library(SummarizedExperiment)
-#library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
-## readr, purr, tibble, stringr, forcats
-#library(ComplexHeatmap)
-#library(circlize)
-#library(data.table)
-#library(clusterProfiler)
-#library(enrichplot)
-#library(scales)
-#library(gridtext)
-#library(EnhancedVolcano)
-#library("RColorBrewer")
+Version = 3.6
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -136,6 +122,90 @@ add_rejections_pval<-function (diff, alpha = 0.05, lfc = 1)
   }
   return(diff)
 }
+
+####Significance Count Functions####
+#Using p.adj
+signif_count <- function( df, max_cutoff=20 ) {
+  sig_count_0.05<-vector(mode="numeric")
+  sig_count_0.1<-vector(mode="numeric")
+  sig_count_0.5<-vector(mode="numeric")
+  
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections(df, 0.05, log2(i))
+    sig_count_0.05[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections(df, 0.1, log2(i))
+    sig_count_0.1[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections(df, 0.5, log2(i))
+    sig_count_0.5[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  
+  fc_val<-1:max_cutoff
+  sig_plot_data <-data.frame(fc_val,sig_count_0.05, sig_count_0.1, sig_count_0.5)
+  sig_plot_graph<- sig_plot_data %>% gather(key = p.adj, value = value, sig_count_0.05:sig_count_0.5)
+  sig_plot<-ggplot(sig_plot_graph, aes(x = fc_val, y = value, group = p.adj, colour = p.adj)) +
+    labs(title = "Significance Count Plot", 
+         x = "Fold Change Cut-off", 
+         y = "Number of Significant Proteins" 
+    ) + 
+    theme_DEP1()+
+    geom_line() +
+    geom_point()+
+    scale_color_discrete (name = "p.adj cut-off", labels = c("0.05", "0.1", "0.5"))
+  
+  return(sig_plot)
+}
+
+#Using p.adj
+signif_count_pval <- function( df, max_cutoff=20 ) {
+  sig_count_0.05<-vector(mode="numeric")
+  sig_count_0.1<-vector(mode="numeric")
+  sig_count_0.5<-vector(mode="numeric")
+  
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections_pval(df, 0.05, log2(i))
+    sig_count_0.05[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections_pval(df, 0.1, log2(i))
+    sig_count_0.1[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections_pval(df, 0.5, log2(i))
+    sig_count_0.5[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  
+  fc_val<-1:max_cutoff
+  sig_plot_data <-data.frame(fc_val,sig_count_0.05, sig_count_0.1, sig_count_0.5)
+  sig_plot_graph<- sig_plot_data %>% gather(key = p.adj, value = value, sig_count_0.05:sig_count_0.5)
+  sig_plot<-ggplot(sig_plot_graph, aes(x = fc_val, y = value, group = p.adj, colour = p.adj)) +
+    labs(title = "Significance Count Plot", 
+         x = "Fold Change Cut-off", 
+         y = "Number of Significant Proteins" 
+    ) + 
+    theme_DEP1()+
+    geom_line() +
+    geom_point()+
+    scale_color_discrete (name = "p.Val cut-off", labels = c("0.05", "0.1", "0.5"))
+  
+  return(sig_plot)
+}
+
 
 ####PCA with txt output####
 plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"), 
