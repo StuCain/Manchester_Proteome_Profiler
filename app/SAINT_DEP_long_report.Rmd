@@ -48,6 +48,8 @@ params:
 #  p_hist_input: NA
   heatmap_input: NA
   heatmap_input2: NA
+  signif_plot_input: NA
+  signif_plot_input2: NA
   comp_heatmap_input: NA
   comp_heatmap_input_c1: NA
   comp_heatmap_input_c2: NA
@@ -158,7 +160,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.5
+Version:0.2.6
 
 ## Method details
  
@@ -337,7 +339,7 @@ if(params$data_mode == TRUE){print(params$imputation_input2())}
 ```
 \pagebreak
 
-## Abundnce Heatmap Plot
+## Abundance Heatmap Plot
 
 ```{r abundance_heatmap_plot, echo=FALSE, fig.height=(abund_heatmap_no/8)+4, fig.width=(abund_heatmap_col/3)+3, message=FALSE, warning=FALSE}
 print(params$heatmap_input()[[1]])
@@ -346,6 +348,21 @@ print(params$heatmap_input()[[1]])
 
 ```{r abundance_heatmap2_plot, echo=FALSE, fig.height=(abund_heatmap2_no/8)+4, fig.width=(abund_heatmap2_col/3)+3, message=FALSE, warning=FALSE}
 if(params$data_mode == TRUE){print(params$heatmap_input2()[[1]])}
+```
+\pagebreak
+
+## Significance Count Plot
+
+```{r signif_count_plot, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+print(params$signif_plot_input())
+if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){sign_text<-"### Significance Count Plot (Comp 2)"}else sign_text<-""
+```
+\pagebreak
+
+`r sign_text`
+
+```{r signif_count_plot2, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+{print(params$signif_plot_input2())}
 ```
 \pagebreak
 

@@ -33,7 +33,7 @@ library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
 
-Version = "0.8.0-beta"
+Version = "0.8.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -4300,6 +4300,8 @@ server <- shinyServer(function(input, output, session) {
                          cond_c2_input = cond_c2_input,
                          imputation_input = imputation_input,
                          imputation_input2 = imputation_input2,
+                         signif_plot_input = signif_plot_input,
+                         signif_plot_input2 = signif_plot_input2,
                          heatmap_input = heatmap_input,
                          heatmap_input2 = heatmap_input2,
                          comp_heatmap_input = comp_heatmap_input,
