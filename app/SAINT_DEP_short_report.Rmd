@@ -87,7 +87,7 @@ header-includes:
    - \usepackage[default]{sourcesanspro}
    - \usepackage[T1]{fontenc}
 mainfont: SourceSansPro
-geometry: margin=0.5in
+geometry: margin=0.25in
 
 output: 
   pdf_document:
@@ -160,7 +160,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.6
+Version:0.3.0
 
 ## Method details
  
@@ -326,7 +326,7 @@ if(params$data_mode == TRUE){print(params$norm_input2())}
 
 ## Imputation Plot
 
-```{r imputation_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+```{r imputation_plot, echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
 print(params$imputation_input())
 if(params$data_mode == TRUE){imp_txt<-"## Imputation Plot (Dataset 2)"}else{imp_txt<-""}
 ```
@@ -334,19 +334,19 @@ if(params$data_mode == TRUE){imp_txt<-"## Imputation Plot (Dataset 2)"}else{imp_
 
 `r imp_txt`
 
-```{r imputation_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+```{r imputation_plot2, echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
 if(params$data_mode == TRUE){print(params$imputation_input2())}
 ```
 \pagebreak
 
 ## Abundance Heatmap Plot
 
-```{r abundance_heatmap_plot, echo=FALSE, fig.height=(abund_heatmap_no/8)+4, fig.width=(abund_heatmap_col/3)+3, message=FALSE, warning=FALSE}
+```{r abundance_heatmap_plot, echo=FALSE, fig.height=(abund_heatmap_no/9)+3, fig.width=(abund_heatmap_col/3)+2, out.height='90%', message=FALSE, warning=FALSE}
 print(params$heatmap_input()[[1]])
 ```
 \pagebreak
 
-```{r abundance_heatmap2_plot, echo=FALSE, fig.height=(abund_heatmap2_no/8)+4, fig.width=(abund_heatmap2_col/3)+3, message=FALSE, warning=FALSE}
+```{r abundance_heatmap2_plot, echo=FALSE, fig.height=(abund_heatmap2_no/9)+3, fig.width=(abund_heatmap2_col/3)+2, out.height='90%', message=FALSE, warning=FALSE}
 if(params$data_mode == TRUE){print(params$heatmap_input2()[[1]])}
 ```
 \pagebreak
@@ -362,7 +362,7 @@ if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){sig
 `r sign_text`
 
 ```{r signif_count_plot2, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
-{print(params$signif_plot_input2())}
+if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){print(params$signif_plot_input2())}
 ```
 \pagebreak
 
@@ -371,7 +371,7 @@ if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){sig
 
 ### Principle Component Analysis (PCA) plot
 
-```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+```{r pca_plot, echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
 print(params$pca_input()[[1]])
 if(params$data_mode == TRUE){pca_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else pca_text<-""
 ```
@@ -380,7 +380,7 @@ if(params$data_mode == TRUE){pca_text<-"### Principle Component Analysis (PCA) p
 
 `r pca_text`
 
-```{r pca_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+```{r pca_plot2, echo=FALSE, fig.height=7, fig.width=7, message=FALSE, warning=FALSE}
 if(params$data_mode == TRUE){print(params$pca_c2_input()[[1]])}
 ```
 
@@ -388,7 +388,7 @@ if(params$data_mode == TRUE){print(params$pca_c2_input()[[1]])}
 
 ### Sample Correlation matrix
 
-```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
+```{r correlation_heatmap, echo=FALSE, fig.height=7, fig.width=7, warning=FALSE, fig.keep='first', out.height='70%', tidy=T}
 print(params$cor_input())
 if(params$data_mode == TRUE){cor_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else cor_text<-""
 ```
@@ -396,14 +396,14 @@ if(params$data_mode == TRUE){cor_text<-"### Principle Component Analysis (PCA) p
 
 `r pca_text`
 
-```{r correlation_heatmap2, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
+```{r correlation_heatmap2, echo=FALSE, fig.height=7, fig.width=7, warning=FALSE, fig.keep='first', out.height='70%', tidy=T}
 if(params$data_mode == TRUE){print(params$cor_c2_input())}
 ```
 \pagebreak
 
 ### Frequency Plot
 
-```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+```{r frequency_plot, echo=FALSE, fig.height=6, fig.width=7, message=FALSE, warning=FALSE, out.width='80%', tidy=T}
 freq_text<-""
 if(comp_no_c1>1 && comp_no_c1<5){
 print(params$cond_input())
@@ -414,7 +414,7 @@ if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else fr
 
 `r freq_text`
 
-```{r frequency_plot2, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+```{r frequency_plot2, echo=FALSE, fig.height=7, fig.width=8, message=FALSE, warning=FALSE, out.width='80%', tidy=T}
 if(params$data_mode == TRUE && comp_no_c2>1 && comp_no_c2<5){
 print(params$cond_c2_input())
 if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
@@ -447,7 +447,7 @@ plot(params$venn_input()[[3]])
 
 \pagebreak
 
-```{r heatmap_c1, echo=FALSE, fig.height= (num_signif_c1/8)+4, fig.width=(comp_no_c1/1.5)+3,  fig.keep='last', warning=FALSE, results='hide'}
+```{r heatmap_c1, echo=FALSE, fig.height= (num_signif_c1/8)+3, fig.width=(comp_no_c1/1.5)+2,  fig.keep='last', out.height='90%', warning=FALSE, results='hide'}
 if (params$comp_type == "2 Rounds of comparisons"){
 print(params$comp_heatmap_input_c1()[[1]])
 }
@@ -464,7 +464,7 @@ shiny::setProgress(0.50)  # set progress to 50%
 ```
 
 \pagebreak
-```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+4, fig.width=(comp_no_c2/1.5)+3, fig.keep='last', warning=FALSE, results='hide'}
+```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+3, fig.width=(comp_no_c2/1.5)+2, fig.keep='last', out.height='90%', warning=FALSE, results='hide'}
 if (params$comp_type == "2 Rounds of comparisons"){
 print(params$comp_heatmap_input_c2()[[1]])
 }
@@ -477,7 +477,7 @@ shiny::setProgress(0.55)  # set progress to 50%
 ```
 
 \pagebreak
-```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+4, fig.width=(comp_no/1.5)+3, fig.keep='last', warning=FALSE, results='hide'}
+```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+3, fig.width=(comp_no/1.5)+2, out.height='90%', fig.keep='last', warning=FALSE, results='hide'}
 if (params$comp_type == "Use SAINTexpress"){
 print(params$comp_heatmap_input_c2()[[1]])
 }
@@ -511,7 +511,7 @@ The Heatmap indicates the log2 fold change (log2FC) values of each of the signif
 
 \pagebreak
 
-```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_main, echo=FALSE, fig.height= clust_height, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 print(params$clust_height)
 print(params$comp_heatmap_input()[[1]])
 if (params$rendered_by_shiny)
@@ -637,7 +637,7 @@ knitr::kable(clust6_table)
 
 \pagebreak
 ### Enhanced Volcano Plots
-```{r enh_volcano, echo=FALSE, fig.height=10, fig.width=8, warning=FALSE, comment=NA}
+```{r enh_volcano, echo=FALSE, fig.height=9, fig.width=7, warning=FALSE, comment=NA}
       if (params$comp_type == "2 Rounds of comparisons"){
         lfc<-as.numeric(params$lfc2)
         p<-as.numeric(params$p2)
