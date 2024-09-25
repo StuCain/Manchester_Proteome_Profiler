@@ -7,13 +7,14 @@
 #Use to install packages not listed on CRAN
 #install.packages("BiocManager")
 #BiocManager::install(c("EnhancedVolcano", "enrichplot",  "clusterProfiler",
-#"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail"))
+#"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail", "QFeatures"))
 #BiocManager::install("org.Mm.eg.db")
 library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
 library(shiny)
 library(shinydashboard)
+library(shinyWidgets)
 library(ComplexHeatmap)
 library(circlize)
 library(data.table)
@@ -29,9 +30,10 @@ library(readxl)
 library(rmarkdown)
 library(SummarizedExperiment)
 library(VennDetail)
+library(QFeatures)
 source("R/functions.R")
 
-Version = "0.6.9-beta"
+Version = "0.8.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -52,94 +54,157 @@ ui <- fluidPage(
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
     dashboardHeader( # Set height of dashboardHeader
-      tags$li(class = "dropdown",
-              tags$style(".main-header {max-height: 70px}, {background-color: #2297E6;}"),
-              tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
       title = tags$img(src='app_logo v7.jpg', width = "100%", height = "100%"),
+      tags$li(class="dropdown", tags$img(src='CELL MATRIX RGB2.jpg', width = "40%", height = "40%", style="float:right")),
       titleWidth = 300
+      #tags$li(class="dropdown",tags$a(href="https://github.com/aagarw30/R-Shinyapp-Tutorial", icon("github"), "Source Code", target="_blank"))
+      #tags$li(class="dropdown",tags$a(tags$img(src='app_logo v7.jpg', width = "10%", height = "10%", style="float:right"), "", target="_blank"))
+      
     ),
     #"SAINT_DEP + Cluster"),
     dashboardSidebar(width=300,#changed with of sidebar
                      sidebarMenu(
-                       menuItem(
-                         radioButtons("data_type",
-                                      "Data File type",
-                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
-                                      #selected = "MaxQuant"
-                         )
+                       tags$hr(), #adds a line
+                       helpText("Two Dataset comparison mode"),
+                       switchInput(
+                         inputId = "data_mode",
+                         size = "mini",
+                         onStatus = "success", 
+                         offStatus = "danger"
                        ),
-                       menuItem("Files", selected = TRUE,
-                                conditionalPanel(
-                                  condition = "input.data_type == 'MaxQuant'",
-                                  fileInput('file1',
-                                            'ProteinGroups.txt',
-                                            accept=c('text/csv',
-                                                     'text/comma-separated-values,text/plain',
-                                                     '.csv'))
-                                ),
-                                conditionalPanel(
-                                  condition = "input.data_type == 'Proteome Discoverer'",
-                                  fileInput('filePD',
-                                            'PD Output .xlsx',
-                                            accept=c(".xlsx"))
-                                ), 
-                                conditionalPanel(
-                                  condition = "input.data_type == 'FragPipe'",
-                                  selectInput("exp", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'LFQ'",
-                                    fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    #                                   fileInput('lfq_manifest', 'Upload sample annotation',
-                                    #                                             accept=c('text/tsv',
-                                    #                                                       'text/tab-separated-values,text/plain',
-                                    #                                                       '.tsv')),
-                                    radioButtons("lfq_type",
-                                                 "Intensity Type",
-                                                 choices = c("Intensity"="Intensity",
-                                                             "MaxLFQ Intensity"="MaxLFQ"),
-                                                 #                                                            "Spectral Count"="Spectral Count"),
-                                                 selected = "MaxLFQ"),
-                                    #                                    tags$hr(),
-                                    #                                   downloadLink("lfq_example", label="Example LFQ data"),
-                                    #                                   br(),
-                                    #                                    downloadLink("lfq_annotation", label="Example annotation")
-                                  ),
-                                  conditionalPanel(
-                                    condition = "input.exp == 'DIA'",
-                                    fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
-                                              accept=c('text/tsv',
-                                                       'text/tab-separated-values,text/plain',
-                                                       '.tsv')),
-                                    radioButtons("dia_species",
-                                                 "Choose Species",
-                                                 choices = c("Human", "Mouse"),
-                                                 selected = "Human"),
-                                  ),
-                                ),
-                                
-                                #                                menuItemOutput("file_input"),
-                                #                                infoBoxOutput("ibox"), #Info box for testing
-                                fileInput('file2',
-                                          'ExperimentalDesign.txt',
-                                          accept=c('text/csv',
-                                                   'text/comma-separated-values,text/plain',
-                                                   '.csv')),
-                                helpText("Generate Experimental template"),
-                                #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
-                                downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary")
+                       
+                       radioButtons("data_type",
+                                    "Data File type",
+                                    choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
+                                    #selected = "MaxQuant"
                        ),
+                       conditionalPanel(
+                         condition = "input.data_type == 'MaxQuant'",
+                         fileInput('file1',
+                                   'ProteinGroups.txt',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv'))
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_type == 'Proteome Discoverer'",
+                         fileInput('filePD',
+                                   'PD Output .xlsx',
+                                   accept=c(".xlsx"))
+                       ), 
+                       conditionalPanel(
+                         condition = "input.data_type == 'FragPipe'",
+                         selectInput("exp", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
+                         conditionalPanel(
+                           condition = "input.exp == 'LFQ'",
+                           fileInput('lfq_expr', 'Upload FragPipe combined_protein.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("lfq_type",
+                                        "Intensity Type",
+                                        choices = c("Intensity"="Intensity",
+                                                    "MaxLFQ Intensity"="MaxLFQ"),
+                                        #                                                            "Spectral Count"="Spectral Count"),
+                                        selected = "MaxLFQ"),
+                         ),
+                         conditionalPanel(
+                           condition = "input.exp == 'DIA'",
+                           fileInput('dia_expr', 'Upload protein group (PG) matrix *.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("dia_species",
+                                        "Choose Species",
+                                        choices = c("Human", "Mouse"),
+                                        selected = "Human"),
+                         ),
+                       ),
+                       
+                       #                                menuItemOutput("file_input"),
+                       #                                infoBoxOutput("ibox"), #Info box for testing
+                       fileInput('file2',
+                                 'ExperimentalDesign.txt',
+                                 accept=c('text/csv',
+                                          'text/comma-separated-values,text/plain',
+                                          '.csv')),
+                       helpText("Generate Experimental template"),
+                       #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
+                       downloadButton('downloadexp_template', 'Save Exp. template', class = "btn-primary"),
+                       
                        #menuItemOutput("columns"),
-                       menuItem(
+                       conditionalPanel(
+                         condition = "input.data_mode == false",
                          radioButtons("comp_type",
                                       "Comparisons",
                                       choices = c("1 Round of comparisons", "2 Rounds of comparisons", "Use SAINTexpress"),
                                       #selected = "1 Round of comparisons"
-                         )
+                         ),
                        ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true",
+                         radioButtons("data_type2",
+                                      "Data File type 2",
+                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
+                         ),
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true & input.data_type2 == 'MaxQuant'",
+                         fileInput('fileMax2',
+                                   'ProteinGroups.txt',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv'))
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true &input.data_type2 == 'Proteome Discoverer'",
+                         fileInput('filePD2',
+                                   'PD Output .xlsx',
+                                   accept=c(".xlsx"))
+                       ), 
+                       conditionalPanel(
+                         condition = "input.data_mode == true & input.data_type2 == 'FragPipe'",
+                         selectInput("exp2", "Data type:", choices = c("LFQ", "DIA"), selected = "LFQ"),
+                         conditionalPanel(
+                           condition = "input.exp2 == 'LFQ'",
+                           fileInput('lfq_expr2', 'Upload FragPipe combined_protein.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("lfq_type2",
+                                        "Intensity Type",
+                                        choices = c("Intensity"="Intensity",
+                                                    "MaxLFQ Intensity"="MaxLFQ"),
+                                        #                                                            "Spectral Count"="Spectral Count"),
+                                        selected = "MaxLFQ"),
+                         ),
+                         conditionalPanel(
+                           condition = "input.exp2 == 'DIA'",
+                           fileInput('dia_expr2', 'Upload protein group (PG) matrix *.tsv',
+                                     accept=c('text/tsv',
+                                              'text/tab-separated-values,text/plain',
+                                              '.tsv')),
+                           radioButtons("dia_species2",
+                                        "Choose Species",
+                                        choices = c("Human", "Mouse"),
+                                        selected = "Human"),
+                         ),
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_mode == true",
+                         fileInput('file22',
+                                   'ExperimentalDesign.txt',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv')),
+                         helpText("Generate Experimental template"),
+                         #(=h3("Only one set of comparisons selected", style = 'font-size:16px;color:blue;')
+                         downloadButton('downloadexp_template2', 'Save Exp. template', class = "btn-primary")
+                         
+                       ),
+                       
                        menuItemOutput("comparisons"),
+                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
                        menuItem("Imputation options",
                                 radioButtons("imputation",
                                              "Imputation type",
@@ -157,7 +222,12 @@ ui <- fluidPage(
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
                        ),
-                       actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
+                       menuItemOutput("normalisations"),
+#                                radioButtons("nomalisation_choice",
+#                                             "Normalisation Method",
+#                                             choices = c("vsn", "quantile"),
+#                                             selected = "vsn")
+#                       ),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -208,7 +278,7 @@ ui <- fluidPage(
               width = 1, height = 120),
         ),
         conditionalPanel(
-          condition = "input.comp_type == '2 Rounds of comparisons'",
+          condition = "input.data_mode == true || input.comp_type == '2 Rounds of comparisons'",
           box(numericInput("p2",
                            "adj. P value (Comp2)",
                            min = 0.0001, max = 0.1, value = 0.05),
@@ -228,7 +298,7 @@ ui <- fluidPage(
             width = 2, height = 120),
         ),
         conditionalPanel(
-          condition = "input.comp_type == '2 Rounds of comparisons'",
+          condition = "input.data_mode == true || input.comp_type == '2 Rounds of comparisons'",
           infoBoxOutput("significantBox2"), #shows number of Sig. Proteins
           infoBoxOutput("significantBox3"), #shows number of Sig. Proteins
         ),
@@ -287,30 +357,53 @@ ui <- fluidPage(
                                                       plotOutput("selected_plot"),
                                                     ),
                                                     downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
-                                           tabPanel(title = "Heatmap",
+                                           tabPanel(title = "Abundance Heatmap",
                                                     fluidRow(
-                                                      box(numericInput("limit",
-                                                                       "Colour limit (log2)",
-                                                                       min = 0, max = 16, value = 6),
-                                                          width = 3),
                                                       box(numericInput("size",
-                                                                       "Heatmap size (4-30)",
-                                                                       min = 4, max = 30, value = 10),
+                                                                       "Number of Most Abundant Proteins",
+                                                                       min = 0, max = 1000, value = 100, step = 50),
+                                                          width = 6),
+                                                      box(radioButtons("abund_choice",
+                                                                       "Data Input",
+                                                                       c("normalised", "imputed"),
+                                                                       selected = "imputed"),
                                                           width = 3),
-                                                      #Kmeans Cluster box
-                                                      box(numericInput("k",
-                                                                       "Kmeans clusters",
-                                                                       min = 1, max = 6, value = 4),
-                                                          width = 3),
-                                                      box(radioButtons("pres",
-                                                                       "Data presentation",
-                                                                       c("contrast", "centered"),
-                                                                       selected = "contrast"),
-                                                          width = 1),
+                                                      box(checkboxInput("signif_choice",
+                                                                        "Significant Proteins Only",
+                                                                        value = FALSE),
+                                                          width = 3)
                                                     ),
                                                     fluidRow(
                                                       uiOutput("plot"),
-                                                      downloadButton('downloadHeatmap', 'Save heatmap', class = "btn-primary"))
+                                                      downloadButton('downloadHeatmap', 'Save heatmap', class = "btn-primary")),
+                                                    fluidRow(
+                                                      DT::dataTableOutput("table_abund"), #add table for abundance
+                                                      downloadButton('downloadabundancetable', 'Save Abundance Table', class = "btn-primary"),
+                                                    ),
+                                           ),
+                                           tabPanel(title = "Abundance Heatmap (Dataset 2)",
+                                                    fluidRow(
+                                                      box(numericInput("size2",
+                                                                       "Number of Most Abundant Proteins",
+                                                                       min = 0, max = 1000, value = 100, step = 50),
+                                                          width = 6),
+                                                      box(radioButtons("abund_choice2",
+                                                                       "Data Input",
+                                                                       c("normalised", "imputed"),
+                                                                       selected = "imputed"),
+                                                          width = 3),
+                                                      box(checkboxInput("signif_choice2",
+                                                                        "Significant Proteins Only",
+                                                                        value = FALSE),
+                                                          width = 3)
+                                                    ),
+                                                    fluidRow(
+                                                      uiOutput("plot2"),
+                                                      downloadButton('downloadHeatmap2', 'Save heatmap', class = "btn-primary")),
+                                                    fluidRow(
+                                                      DT::dataTableOutput("table_abund2"), #add table for abundance
+                                                      downloadButton('downloadabundancetable2', 'Save Abundance Table', class = "btn-primary"),
+                                                    ),
                                            ),
                                            tabPanel(title = "Volcano plot",
                                                     fluidRow(
@@ -351,7 +444,32 @@ ui <- fluidPage(
                                                       plotOutput("volcano_c2", height = 600),
                                                       downloadButton('downloadVolcano_c2', 'Save volcano', class = "btn-primary")
                                                     )
+                                           ),
+                                           tabPanel(title = "Significance Counts",
+                                                    fluidRow(
+                                                      box(numericInput("max_cutoff",
+                                                                       "Maximum Cut-off",
+                                                                       min = 0, max = 40, value = 20, step = 5),
+                                                          width = 6),
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("signif_plot", height = 600),
+                                                      downloadButton('downloadsignif_plot', 'Save', class = "btn-primary")
+                                                    )
+                                           ),
+                                           tabPanel(title = "Significance Counts (Comp2)",
+                                                    fluidRow(
+                                                      box(numericInput("max_cutoff2",
+                                                                       "Maximum Cut-off",
+                                                                       min = 0, max = 40, value = 20, step = 5),
+                                                          width = 6),
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("signif_plot2", height = 600),
+                                                      downloadButton('downloadsignif_plot2', 'Save', class = "btn-primary")
+                                                    )
                                            )
+                                           
                                     ),
                                     fluidRow(
                                       box(numericInput("pdfwidth",
@@ -367,8 +485,20 @@ ui <- fluidPage(
                                     tabBox(id = "correlation_plots",
                                            title = "Correlation Plots", width = 12,
                                            tabPanel(title = "PCA",
+                                                    fluidRow(
+                                                      box(numericInput("pca_num",
+                                                                       "Protein number",
+                                                                       min = 0, max = 5000, value = 500, step = 100),
+                                                          width = 6
+                                                          ),
+                                                      box(checkboxInput("pca_split",
+                                                                        "Split by condition_type",
+                                                                        value = FALSE),
+                                                          width = 6)
+                                                      ),
                                                     plotOutput("pca", height = 600),
-                                                    downloadButton('downloadpca', 'Save', class = "btn-primary")
+                                                    downloadButton('downloadpca', 'Save Plot', class = "btn-primary"),
+                                                    downloadButton('downloadpca_txt', 'Save Values', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Correlation",
                                                     plotOutput("cor", height = 600),
@@ -378,10 +508,22 @@ ui <- fluidPage(
                                                     plotOutput("cond", height = 600),
                                                     downloadButton('downloadcond', 'Save', class = "btn-primary")
                                            ),
-                                           #                                 tabPanel(title = "PCA (Comp2)",
-                                           #                                          plotOutput("pca_c2", height = 600),
-                                           #                                          downloadButton('downloadpca_c2', 'Save', class = "btn-primary")
-                                           #                                 ),
+                                           tabPanel(title = "PCA (Comp2)",
+                                                    fluidRow(
+                                                      box(numericInput("pca_num2",
+                                                                       "Protein number",
+                                                                       min = 0, max = 5000, value = 500, step = 100),
+                                                          width = 6
+                                                      ),
+                                                      box(checkboxInput("pca_split2",
+                                                                        "Split by condition_type",
+                                                                        value = FALSE),
+                                                          width = 6)
+                                                    ),
+                                                    plotOutput("pca_c2", height = 600),
+                                                    downloadButton('downloadpca_c2', 'Save Plot', class = "btn-primary"),
+                                                    downloadButton('downloadpca_c2_txt', 'Save Values', class = "btn-primary")
+                                           ),
                                            tabPanel(title = "Correlation (Comp2)",
                                                     plotOutput("cor_c2", height = 600),
                                                     downloadButton('downloadcor_c2', 'Save', class = "btn-primary")
@@ -392,10 +534,15 @@ ui <- fluidPage(
                                            )
                                            
                                     ),
-                                    tabBox(title = "QC Plots", width = 12,
+                                    tabBox(id = "QC_plots",
+                                           title = "QC Plots", width = 12,
                                            tabPanel(title = "Protein Numbers",
                                                     plotOutput("numbers", height = 600),
                                                     downloadButton('downloadNumbers', 'Save', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "Protein Numbers (Dataset 2)",
+                                                    plotOutput("numbers2", height = 600),
+                                                    downloadButton('downloadNumbers2', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Sample coverage",
                                                     plotOutput("coverage", height = 600),
@@ -404,6 +551,10 @@ ui <- fluidPage(
                                            tabPanel(title = "Normalization",
                                                     plotOutput("norm", height = 600),
                                                     downloadButton('downloadNorm', 'Save', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "Normalization (Dataset 2)",
+                                                    plotOutput("norm2", height = 600),
+                                                    downloadButton('downloadNorm2', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Missing values - Quant",
                                                     plotOutput("detect", height = 600),
@@ -416,6 +567,10 @@ ui <- fluidPage(
                                            tabPanel(title = "Imputation",
                                                     plotOutput("imputation", height = 600),
                                                     downloadButton('downloadImputation', 'Save', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "Imputation (Dataset 2)",
+                                                    plotOutput("imputation2", height = 600),
+                                                    downloadButton('downloadImputation2', 'Save', class = "btn-primary")
                                            ),
                                     )
                              )
@@ -516,19 +671,19 @@ ui <- fluidPage(
                                            tabPanel(title = "Comparison Heatmaps",
                                                     fluidRow(
                                                       box(title = "Overlap Details",
-                                                        column(width=6,
-                                                               fluidRow(
-                                                                 plotOutput("venn", height = 400),
-                                                                 downloadButton('download_venn', 'Save Venn Diagram', class = "btn-primary"),
-                                                               ),
-                                                        ),
-                                                        column(width=6,
-                                                               fluidRow(
-                                                                 DT::dataTableOutput("venn_table"), width = 12,
-                                                                 downloadButton('download_venntable', 'Save Venn table', class = "btn-primary")
-                                                               ),
-                                                        ),
-                                                         width = 12),
+                                                          column(width=6,
+                                                                 fluidRow(
+                                                                   plotOutput("venn", height = 400),
+                                                                   downloadButton('download_venn', 'Save Venn Diagram', class = "btn-primary"),
+                                                                 ),
+                                                          ),
+                                                          column(width=6,
+                                                                 fluidRow(
+                                                                   DT::dataTableOutput("venn_table"), width = 12,
+                                                                   downloadButton('download_venntable', 'Save Venn table', class = "btn-primary")
+                                                                 ),
+                                                          ),
+                                                          width = 12),
                                                     ),
                                                     fluidRow(
                                                       column(width = 6,
@@ -910,15 +1065,6 @@ server <- shinyServer(function(input, output, session) {
                               multiple = TRUE)
              },
              
-#             if (!is.null(expdesign())) {
-#               combinations<-combn(unique(expdesign()$condition),2)
-#               comp1_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-#               selectizeInput("comp1r",
-#                              "1: Select reverse comparisons",
-#                              choices=make.names(comp1_r),
-#                              multiple = TRUE)
-#             },
-             
              if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
                combinations<-combn(unique(expdesign()$condition),2)
                comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
@@ -930,14 +1076,18 @@ server <- shinyServer(function(input, output, session) {
                               multiple = TRUE)
              },
              
-#             if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
-#               combinations<-combn(unique(expdesign()$condition),2)
-#               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-#               selectizeInput("comp2r",
-#                              "2: Select forward comparisons",
-#                              choices=make.names(comp2_r),
-#                              multiple = TRUE)
-#             },
+             if (!is.null(expdesign2()) && input$data_mode == TRUE) {
+               combinations<-combn(unique(expdesign2()$condition),2)
+               comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
+               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
+               comp2_all<-c(comp2_f,comp2_r)
+               selectizeInput("comp2f",
+                              "2: Select 2nd Dataset comparisons",
+                              choices=make.names(comp2_all),
+                              multiple = TRUE)
+             },
+             
+             
              helpText("Load Comparisons file"),
              fileInput('comp_file',
                        'comparisons.txt',
@@ -946,6 +1096,22 @@ server <- shinyServer(function(input, output, session) {
                                 '.csv')),
              downloadButton('downloadcomp_template', 'Save Comp. template', class="btn btn-primary")
     )
+  })
+
+  output$normalisations <- renderMenu({
+    menuItem("Normalisation options",
+           radioButtons("nomalisation_choice",
+                        "Normalisation Method",
+                        choices = c("vsn", "quantile"),
+                        selected = "vsn"),
+           if (input$data_mode == TRUE) {
+             radioButtons("nomalisation_choice2",
+                          "Normalisation Method Dataset 2)",
+                          choices = c("vsn", "quantile"),
+                          selected = "vsn")
+           }
+           
+  )
   })
   
   #Hide/show Introduction Tab
@@ -956,40 +1122,59 @@ server <- shinyServer(function(input, output, session) {
   })
   
   #Hide/show comparison heatmaps
-  observeEvent(input$comp_type, {
-    if (input$comp_type == "1 Round of comparisons") {
-      hideTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")
-    }else{showTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")}
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$comp_type != "1 Round of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")
+    }else{hideTab(inputId =  "comp_heat_tab", target = "Comparison Heatmaps")}
     if (input$comp_type == "1 Round of comparisons"|input$comp_type == "2 Rounds of comparisons") {
       hideTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
-      hideTab(inputId =  "comp_heat_tab", target = "SAINT Input")
+      #hideTab(inputId =  "comp_heat_tab", target = "SAINT Input")
       hideTab(inputId =  "comp_heat_tab", target = "SAINT Output")
     }else{showTab(inputId =  "comp_heat_tab", target = "BFDR Filtering")
-      showTab(inputId =  "comp_heat_tab", target = "SAINT Input")
+      #showTab(inputId =  "comp_heat_tab", target = "SAINT Input")
       showTab(inputId =  "comp_heat_tab", target = "SAINT Output")
     }
   })
   
-  #Hide/show Volcano Plts
-  observeEvent(input$comp_type, {
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
-      hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
-    }else{showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
+  #Hide/show Volcano Plots
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
+    }else{hideTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Abundance Heatmap (Dataset 2)")
+    }else{hideTab(inputId =  "result_plots", target = "Abundance Heatmap (Dataset 2)")}
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Significance Counts (Comp2)")
+    }else{hideTab(inputId =  "result_plots", target = "Significance Counts (Comp2)")}
   })
   
-  #Hide/show Correlation plots
-  #Hide/show Volcano Plts
-  observeEvent(input$comp_type, {
-    #    if (input$comp_type == "1 Round of comparisons") {
-    #      hideTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
-    #    }else{showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")}
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
-      hideTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")
-    }else{showTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")}
-    if (input$comp_type == "1 Round of comparisons"|input$comp_type == "Use SAINTexpress") {
-      hideTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")
-    }else{showTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")}
+  #Hide/show Correlation plots/PCA Plots/Frequency Plots
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "PCA (Comp2)")}
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")}
+    if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "Freq. Plot (Comp2)")}
   })
+  
+  #Hide/show Numbers/Normalisation/Imputation Plots
+  observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "QC_plots", target = "Protein Numbers (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Protein Numbers (Dataset 2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "QC_plots", target = "Normalization (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Normalization (Dataset 2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")}
+  })
+  
   
   #### Reactive functions  --------------------------------------------------
   set.seed(123) #random seed to give consistent kmeans clustering
@@ -1111,15 +1296,133 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Sequence.length=Length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.x", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         data<-data_2 %>% 
           dplyr::rename(
-            Protein.names=Protein.names.x)
+            Protein.names=Protein.names.y)
+        #data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
+        
+        
         
       } # end of DIA
     }
     #    return(data1)
   })
+  
+  data2 <- reactive({
+    if (input$data_type2 == "MaxQuant"){
+      inFile <- input$fileMax2
+      if (is.null(inFile))
+        return(NULL)
+      maxdata<-read.csv(inFile$datapath, header = TRUE,
+                        sep = "\t", stringsAsFactors = FALSE) %>%
+        mutate(id = row_number())
+      data1<-maxdata[, c(grep("Protein.IDs", colnames(maxdata)),grep("Protein.names", colnames(maxdata)),grep("Gene.names", colnames(maxdata)),  grep("LFQ.",colnames(maxdata)), grep ("\\Sequence.length\\b", colnames(maxdata)), grep("Reverse",colnames(maxdata)), grep("Potential.contaminant",colnames(maxdata)))]
+    }
+    
+    else if (input$data_type2 == "Proteome Discoverer"){
+      inFile <- input$filePD2
+      if (is.null(inFile))
+        return(NULL)
+      pd<-read_excel(path = inFile$datapath, sheet = 1, .name_repair = "universal") %>%
+        mutate(id = row_number())
+      data<-pd %>% 
+        dplyr::rename(
+          Gene.names=Gene.Symbol,
+          Protein.IDs=Accession,
+          Protein.names=Description,
+          Sequence.length=..AAs
+        ) 
+      #      data1<-data[, c(1,2,3,  grep("Abundance..*Sample..", colnames(data)))]
+      data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep("Abundance..*Sample..", colnames(data)), grep("Abundance..*Control..", colnames(data)), grep ("Sequence.length", colnames(data)))]
+    }
+    
+    else if (input$data_type2 == "FragPipe"){
+      if (input$exp2 == "LFQ") {
+        inFile <- input$lfq_expr2
+      } else if (input$exp2 == "TMT") {
+        inFile <- input$tmt_expr2
+      } else if (input$exp2 == "DIA") {
+        inFile <- input$dia_expr2
+      }
+      if(is.null(inFile))
+        return(NULL)
+      if (input$exp2 == "LFQ") {
+        temp_data <- read.csv(inFile$datapath,
+                              header = TRUE,
+                              fill= TRUE, # to fill any missing data
+                              sep = "\t",
+                              quote = "",
+                              comment.char = "",
+                              blank.lines.skip = F,
+                              check.names = T)
+        colnames(temp_data) <- make.unique(colnames(temp_data), "_")
+        temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+        data<-temp_data %>% 
+          dplyr::rename(
+            Gene.names=Gene,
+            Protein.IDs=Protein.ID,
+            Protein.names=Description,
+            Sequence.length=Protein.Length
+          )
+        
+        if (input$lfq_type2 == "Intensity") {
+          lfq_columns <- setdiff(grep("Intensity", colnames(data)),
+                                 grep("MaxLFQ", colnames(data)))
+          lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
+          lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+          #        data1<-data1 %>% 
+          #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+          
+        } else if (input$lfq_type2 == "MaxLFQ") {
+          lfq_columns<-grep("MaxLFQ", colnames(data))
+          if (length(lfq_columns) == 0) {
+            stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
+          }
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        }
+      }else if(input$exp2 == "DIA"){
+        temp_data <- read.table(inFile$datapath,
+                                header = T,
+                                sep="\t",
+                                check.names = T,
+                                stringsAsFactors = FALSE,
+                                fill= TRUE, # to fill any missing data
+                                quote = "",
+                                comment.char = "",
+                                blank.lines.skip = F,
+        )
+        temp_data<-temp_data %>% dplyr::filter(!grepl('contam_sp', Protein.Group))
+        temp_data<-temp_data %>% dplyr::filter(!grepl('rev_sp', Protein.Group)) 
+        
+        data<-temp_data %>% 
+          dplyr::rename(
+            Gene.names=Genes,
+            Protein.IDs=Protein.Group,
+            #Protein.names=First.Protein.Description,
+            #  Sequence.length=Protein.Length
+          )
+        data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
+        lfq_columns<- 6:ncol(data)
+        if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+        if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "Entry", all.x = TRUE, all.y = FALSE)
+        data<-data_m %>% 
+          dplyr::rename(
+            Sequence.length=Length
+          )
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data<-data_2 %>% 
+          dplyr::rename(
+            Protein.names=Protein.names.y)
+        data$Protein.names  <- gsub("\\(.*", "", data$Protein.names)
+        
+      } # end of DIA
+    }
+    #    return(data1)
+  })
+  
   
   
   #make experimental template
@@ -1188,6 +1491,72 @@ server <- shinyServer(function(input, output, session) {
     return(exp_template_new)
   })
   
+  exp_template2<- reactive({
+    if (input$data_type2 == "MaxQuant"){
+      LFQ_columns<- grep("LFQ.",colnames(data2())) 
+      label<-colnames(data2()[LFQ_columns])
+      label <- gsub('LFQ.intensity.', '', label)
+      condition<-""
+      substrRight <- function(x, n){
+        substr(x, nchar(x)-n+1, nchar(x))
+      }
+      replicate<-substrRight(label, 1)
+      condition_type<-"1"
+      bait_id<-"T"
+      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+    }
+    
+    else if (input$data_type2 == "Proteome Discoverer"){
+      Sample_columns<- grep("Abundance..*Sample..", colnames(data2()))
+      Control_columns<- grep("Abundance..*Control..", colnames(data2()))
+      LFQ_columns<-c(Sample_columns, Control_columns)
+      label<-colnames(data2()[LFQ_columns])
+      condition<-""
+      replicate<-""
+      condition_type<-"1"
+      bait_id<-"T"
+      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+    }
+    
+    else if (input$data_type2 == "FragPipe"){
+      if(input$exp2 == "LFQ")
+      {
+        LFQ_columns<- grep(".Intensity", colnames(data2()))
+        label<-colnames(data2()[LFQ_columns])
+        label <- gsub('.MaxLFQ.Intensity', '', label)
+        label <- gsub('.Intensity', '', label)
+        condition<-""
+        substrRight <- function(x, n){
+          substr(x, nchar(x)-n+1, nchar(x))
+        }
+        replicate<-substrRight(label, 1)
+        condition_type<-"1"
+        bait_id<-"T"
+        exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+      }else if (input$exp == "DIA")
+      {
+        end<-ncol(data2())
+        end_1<-end-1
+        LFQ_columns<- 4:end_1
+        label<-colnames(data2()[LFQ_columns])
+        #label <- gsub('.MaxLFQ.Intensity', '', label)
+        #label <- gsub('.Intensity', '', label)
+        condition<-""
+        #substrRight <- function(x, n){
+        #  substr(x, nchar(x)-n+1, nchar(x))
+        #}
+        replicate<-""
+        condition_type<-"1"
+        bait_id<-"T"
+        exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
+        
+      }
+    }
+    
+    return(exp_template_new)
+  })
+  
+  
   #Experimental table download
   output$downloadexp_template <- downloadHandler(
     filename = "ExperimentalTemplate.txt",
@@ -1200,27 +1569,33 @@ server <- shinyServer(function(input, output, session) {
                   sep ="\t") }
   )
   
+  output$downloadexp_template2 <- downloadHandler(
+    filename = "ExperimentalTemplate2.txt",
+    content = function(file) {
+      write.table(exp_template2(),
+                  file,
+                  col.names =TRUE,
+                  row.names=FALSE,
+                  quote=FALSE,
+                  sep ="\t") }
+  )
+  
+  
   #Comparisons Template
   comp_template<- reactive({
+    condition<-""
+    condition2<-""
+    comp1_A<-""
+    comp1_B<-""
+    comp2_A<-""
+    comp2_B<-""
     inFile <- input$file2
+    inFile2 <- input$file22
     expfile<-expdesign()
-    if (!is.null(inFile)){
-      condition<-unique(expfile$condition)
-      comp1_A<-""
-      comp1_B<-""
-      comp2_A<-""
-      comp2_B<-""
-      comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
-    }
-    
-    if (is.null(inFile)){
-      condition<-""
-      comp1_A<-""
-      comp1_B<-""
-      comp2_A<-""
-      comp2_B<-""
-      comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B)
-    }
+    expfile2<-expdesign2()
+    if (!is.null(inFile2)){condition2<-unique(expfile2$condition)}
+    if (!is.null(inFile)){condition<-unique(expfile$condition)}
+    comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B, condition2)
     
     return(comp_template_new)
   })
@@ -1245,7 +1620,14 @@ server <- shinyServer(function(input, output, session) {
     data_unique_defn<-as.data.frame(data_unique_defn)
   })
   
-  #Experimental design file input
+  data_defn2 <- reactive({
+    data_unique <- make_unique(data2(), "Gene.names", "Protein.IDs", delim = ";")
+    data_unique_defn <-data_unique[, c("name", "Protein.names", "ID")]
+    data_unique_defn$Protein.names  <- sub('\\;.*', '', data_unique_defn$Protein.names)
+    data_unique_defn<-as.data.frame(data_unique_defn)
+  })
+
+  #Experimental design files input
   expdesign <- reactive({
     inFile <- input$file2
     if (is.null(inFile))
@@ -1254,6 +1636,16 @@ server <- shinyServer(function(input, output, session) {
              sep = "\t", stringsAsFactors = FALSE, colClasses = c("character")) %>%
       mutate(id = row_number())
   })
+  
+  expdesign2 <- reactive({
+    inFile <- input$file22
+    if (is.null(inFile))
+      return(NULL)
+    read.csv(inFile$datapath, header = TRUE,
+             sep = "\t", stringsAsFactors = FALSE, colClasses = c("character")) %>%
+      mutate(id = row_number())
+  })
+  
   
   #comparisons file input
   compfile <- reactive({
@@ -1265,6 +1657,7 @@ server <- shinyServer(function(input, output, session) {
       mutate(id = row_number())
   })
   
+  #Filter the Data using missing value threshold
   filt <- reactive({
     data <- data()
     
@@ -1310,8 +1703,61 @@ server <- shinyServer(function(input, output, session) {
     filter_missval(se, input$thr) #filtering set less stringent
   })
   
+  filt2 <- reactive({
+    data <- data2()
+    
+    if (input$data_type2 == "MaxQuant"){
+      cols <- grep("^LFQ", colnames(data))
+      #filtered <- DEP:::filter_MaxQuant(data, input$filt)
+      filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
+      #unique_names <- make_unique(filtered, input$name, input$id)
+      unique_names <- make_unique(filtered, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    else if (input$data_type2 == "Proteome Discoverer"){
+      Sample_columns<- grep("Abundance..*Sample..", colnames(data2()))
+      Control_columns<- grep("Abundance..*Control..", colnames(data2()))
+      cols<-c(Sample_columns, Control_columns)
+      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    else if (input$data_type2 == "FragPipe"){
+      if(input$exp2 == "LFQ")
+      {
+        cols<- grep(".Intensity", colnames(data))
+        data<-data %>% 
+          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
+        data<-data %>% 
+          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+      }else if(input$exp2 == "DIA")
+      {
+        end<-ncol(data2())
+        end_1<-end-1
+        cols<- 4:end_1
+        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+      }
+      
+    }
+    #Check for Experimental Design File
+    validate(need(!is.null(expdesign2()), "You need to upload an Experimental Design File for 2nd dataset.
+    Use the Experimental template to assist you. ")
+    )
+    
+    se <- make_se(unique_names, cols, expdesign2())
+    filter_missval(se, input$thr) #filtering set less stringent
+  })
+  
   norm <- reactive({
-    normalize_vsn(filt())
+    if(input$nomalisation_choice=="quantile"){
+      QFeatures::normalize(filt(), method = "quantiles")}else
+      {normalize_vsn(filt())}
+  })
+  
+  norm2 <- reactive({
+    if(input$nomalisation_choice2=="quantile"){
+      QFeatures::normalize(filt2(), method = "quantiles")}else
+      {normalize_vsn(filt2())}
   })
   
   #Get Normalized data
@@ -1321,11 +1767,27 @@ server <- shinyServer(function(input, output, session) {
     return(data_norm)
   })
   
+  norm_data2 <- reactive({
+    data_norm<-SummarizedExperiment::assay(norm2())
+    data_norm<-as.data.frame(data_norm)
+    return(data_norm)
+  })
+  
+  
   imp <- reactive({
+    set.seed(123)
     if (input$imputation == "man"){
       DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
         DEP::impute(norm(), input$imputation)}
   })
+  
+  imp2 <- reactive({
+    set.seed(123)
+    if (input$imputation == "man"){
+      DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+        DEP::impute(norm2(), input$imputation)}
+  })
+  
   
   #Get imputed data table
   imp_data <- reactive({
@@ -1333,10 +1795,17 @@ server <- shinyServer(function(input, output, session) {
     return(as.data.frame(data_imp))
   })
   
+  #Get imputed data table
+  imp_data2 <- reactive({
+    data_imp2<-SummarizedExperiment::assay(imp2())
+    return(as.data.frame(data_imp2))
+  })
+  
+  
   comp <- reactive({
     inFile <- input$comp_file
     if (is.null(inFile)){
-#      comp<-c(input$comp1f,input$comp1r)
+      #      comp<-c(input$comp1f,input$comp1r)
       comp<-c(input$comp1f)
     }else{
       comp_input<-data.frame(compfile())
@@ -1347,11 +1816,11 @@ server <- shinyServer(function(input, output, session) {
   })
   
   comp2 <- reactive({
-    if (input$comp_type == "1 Round of comparisons")
+    if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
       return(NULL)
     inFile <- input$comp_file
     if (is.null(inFile)){
-#      comp2<-c(input$comp2f,input$comp2r)
+      #      comp2<-c(input$comp2f,input$comp2r)
       comp2<-c(input$comp2f)
       
     }else{
@@ -1383,10 +1852,11 @@ server <- shinyServer(function(input, output, session) {
   })
   
   df2 <- reactive({
-    if (input$comp_type == "1 Round of comparisons")
-      return(NULL)
     if (input$comp_type == "2 Rounds of comparisons"){
       test_diff(imp(), type = "manual", test = comp2())
+    }
+    else{
+      test_diff(imp2(), type = "manual", test = comp2())
     }
   })
   
@@ -1402,12 +1872,12 @@ server <- shinyServer(function(input, output, session) {
     )
     #validate(need(try(df() != "try-error"), base::stop(shiny::safeError(warning(test_diff(imp(), type = "manual", test = comp()))))))
     if(input$pval_use == FALSE){
-    add_rejections(df(), input$p, log2(input$lfc))
+      add_rejections(df(), input$p, log2(input$lfc))
     }else{add_rejections_pval(df(), input$p, log2(input$lfc))}
   }) 
   
   dep2 <- reactive({
-    if (input$comp_type == "1 Round of comparisons")
+    if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
       return(NULL)
     #Check for Comparisons
     validate(need(comp2() != "", "You need to select some 2nd round comparisons, or import a comparisons file. Use the Comp. template to assist you. ")
@@ -1430,6 +1900,11 @@ server <- shinyServer(function(input, output, session) {
   df_long_input <- reactive({
     norm_long <-get_df_long(norm())
   })
+  
+  df_long_input2 <- reactive({
+    norm_long2 <-get_df_long(norm2())
+  })
+  
   
   
   #SAINTexpress Processing
@@ -1587,7 +2062,7 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$significantBox2 <- renderInfoBox({
-      if (input$comp_type == "2 Rounds of comparisons")
+      if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE)
       {
         num_total <- dep2() %>%
           nrow()
@@ -1634,7 +2109,7 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$significantBox3 <- renderInfoBox({
-      if (input$comp_type == "2 Rounds of comparisons")
+      if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE)
       {
         num_total <- dep() %>%
           nrow()
@@ -1850,9 +2325,9 @@ server <- shinyServer(function(input, output, session) {
     })
     
     data_dep2 <- reactive({
-      if (input$comp_type == "1 Round of comparisons")
+      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
         return(NULL)
-      if (input$comp_type == "Use SAINTexpress")
+      if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress")
         return(NULL)
       get_results(dep2()) %>% filter(significant) %>% select(-significant) 
     })
@@ -1862,24 +2337,29 @@ server <- shinyServer(function(input, output, session) {
     })
     
     data_results2<- reactive({
-      if (input$comp_type == "1 Round of comparisons")
+      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
         return(NULL)
-      if (input$comp_type == "Use SAINTexpress")
+      if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress")
         return(NULL)
       data.frame(data_dep2())
     })
     
     data_results3<- reactive({
-      if (input$comp_type == "1 Round of comparisons")
-        return(NULL)
-      if (input$comp_type == "Use SAINTexpress")
-        return(NULL)
-      data_results2() [data_results2()$name %in% data_results1()$name, ]
+#      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
+#        return(NULL)
+#      if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress")
+#        return(NULL)
+      if (input$comp_type == "2 Rounds of comparisons"){
+        data_results2() [data_results2()$name %in% data_results1()$name, ]
+      }
+      else{
+        data_results1() [data_results1()$name %in% data_results2()$name, ]
+      }
     })
     
     #Unfiltered BFDR results
     data_results4<- reactive({
-      if (input$comp_type == "1 Round of comparisons" | input$comp_type == "2 Rounds of comparisons")
+      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons" | input$comp_type == "2 Rounds of comparisons")
         return(NULL)
       data<-get_results(dep())
       saint_data<-data.frame(saintlist()[[2]])
@@ -1896,12 +2376,14 @@ server <- shinyServer(function(input, output, session) {
     
     
     data_results<- reactive({
-      if (input$comp_type == "1 Round of comparisons")
+      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
       {data<-data_results1()}
-      if (input$comp_type == "2 Rounds of comparisons"){
+      if (input$data_mode == FALSE && input$comp_type == "2 Rounds of comparisons"){
         data<-data_results3()}
-      if (input$comp_type == "Use SAINTexpress"){
+      if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress"){
         data<-data_results5()}
+      if (input$data_mode == TRUE){
+        data<-data_results3()}
       return(data)
     })
     
@@ -1942,17 +2424,112 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #Abundance Heatmap
     heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        plot_heatmap(dep(),
-                     input$pres,
-                     kmeans = TRUE,
-                     input$k,
-                     input$limit)
+        if(input$abund_choice == "imputed"){
+        abund_matrix<-imp_data()
+        if(input$signif_choice==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+        protein_no<-abund_matrix %>% nrow()
+        if (protein_no>input$size){protein_no<-input$size}
+        abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+        abund_matrix<-abund_matrix[1:protein_no,]
+        abund_matrix<-as.matrix(abund_matrix)
+        switch_no<-1
+        }
+        
+        if(input$abund_choice == "normalised"){
+          abund_matrix<-norm_data()
+          if(input$signif_choice==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size){protein_no<-input$size}
+          #abund_matrix[is.na(abund_matrix)] = 0
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix,na.rm=TRUE), decreasing = T), ]
+          abund_matrix[abund_matrix==0]<-NA
+          abund_matrix<-abund_matrix[1:protein_no,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-2
+                  }
+        
+        if(input$signif_choice==TRUE){sign_txt<-"significant proteins only"}else{sign_txt<-"all proteins"}
+        ht_title<-paste(input$data_type, "<br>", protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
+        
+        ht<-plot_complex_heatmap(abund_matrix,
+                                 #                     input$pres,
+                                 #                     kmeans = TRUE,
+                                 kmeans=1,
+                                 ht_title,
+                                 colour_functions_input()[[1]],
+                                 colour_functions_input()[[2]],
+                                 switch = switch_no,
+                                 font_size=8,
+                                 cluster_cols=FALSE,
+                                 comp_list=comp()
+        )
       })
     })
     
-    volcano_input <- reactive({
+    heatmap_input2 <- reactive({
+      withProgress(message = 'Plotting', value = 0.66, {
+        if(input$abund_choice2 == "imputed"){
+          abund_matrix<-imp_data2()
+          if(input$signif_choice2==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size2){protein_no<-input$size2}
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+          abund_matrix<-abund_matrix[1:protein_no,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-1
+        }
+        
+        if(input$abund_choice2 == "normalised"){
+          abund_matrix<-norm_data2()
+          if(input$signif_choice2==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size2){protein_no<-input$size2}
+          #abund_matrix[is.na(abund_matrix)] = 0
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix,na.rm=TRUE), decreasing = T), ]
+          abund_matrix[abund_matrix==0]<-NA
+          abund_matrix<-abund_matrix[1:protein_no,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-2
+        }
+        
+        if(input$signif_choice2==TRUE){sign_txt<-"significant proteins only"}else{sign_txt<-"all proteins"}
+        ht_title<-paste(input$data_type2, "<br>", protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
+        
+        ht<-plot_complex_heatmap(abund_matrix,
+                                 #                     input$pres,
+                                 #                     kmeans = TRUE,
+                                 kmeans=1,
+                                 ht_title,
+                                 colour_functions_input()[[1]],
+                                 colour_functions_input()[[2]],
+                                 switch = switch_no,
+                                 font_size=8,
+                                 cluster_cols=FALSE,
+                                 comp_list=comp()
+        )
+      })
+    })
+    
+    
+    #data annotations for abundance table
+    data_defn_abundance <- reactive({
+      abund_table_matrix<-heatmap_input()[[2]]
+      abund_table <- data.frame(name = row.names(abund_table_matrix), abund_table_matrix)
+      abund_table_merge <- merge(data_defn(), abund_table, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+      abund_table_merge[match(abund_table$name, abund_table_merge$name),]
+    })
+    
+    data_defn_abundance2 <- reactive({
+      abund_table_matrix<-heatmap_input2()[[2]]
+      abund_table <- data.frame(name = row.names(abund_table_matrix), abund_table_matrix)
+      abund_table_merge <- merge(data_defn2(), abund_table, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+      abund_table_merge[match(abund_table$name, abund_table_merge$name),]
+    })
+
+     volcano_input <- reactive({
       if(!is.null(input$volcano_cntrst)) {
         plot_volcano(dep(),
                      input$volcano_cntrst,
@@ -1972,11 +2549,30 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #Significance Plot
+    signif_plot_input <- reactive({
+      if(input$pval_use == FALSE){
+        signif_count(df(), max_cutoff = input$max_cutoff)
+      }else{signif_count_pval(df(), max_cutoff = input$max_cutoff)}
+    })
+    
+    signif_plot_input2 <- reactive({
+      if(input$pval_use == FALSE){
+        signif_count(df2(), input$max_cutoff2)
+      }else{signif_count_pval(df2(), input$max_cutoff2)}
+    })
+    
     
     norm_input <- reactive({
       plot_normalization(filt(),
                          norm())
     })
+    
+    norm_input2 <- reactive({
+      plot_normalization(filt2(),
+                         norm2())
+    })
+    
     
     missval_input <- reactive({
       plot_missval(norm())
@@ -1991,8 +2587,17 @@ server <- shinyServer(function(input, output, session) {
                       df())
     })
     
+    imputation_input2 <- reactive({
+      plot_imputation(norm2(),
+                      df2())
+    })
+
     numbers_input <- reactive({
       plot_numbers(norm())
+    })
+    
+    numbers_input2 <- reactive({
+      plot_numbers(norm2())
     })
     
     coverage_input <- reactive({
@@ -2002,17 +2607,26 @@ server <- shinyServer(function(input, output, session) {
     #PCA Input
     pca_input <- reactive({
       num_total <- dep() %>% nrow()
-      if(num_total >= 500){
-        plot_pca(dep(), x = 1, y = 2, point_size = 4)
+      if(num_total >= input$pca_num){
+        if(input$pca_split==FALSE){
+        plot_pca_txt(dep(), x = 1, y = 2, n=input$pca_num, point_size = 4)
+        }else{plot_pca_txt(dep(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num, point_size = 4)}
       }else{
-        plot_pca(dep(), x = 1, y = 2, n=num_total, point_size = 4)
+        plot_pca_txt(dep(), x = 1, y = 2, n=num_total, point_size = 4)
       }
     })
     
-    #    #PCA Input (Comp2)
-    #    pca_c2_input <- reactive({
-    #      plot_pca(dep2(), x = 1, y = 2, point_size = 4)
-    #    })
+    #PCA Input (Comp2)
+    pca_c2_input <- reactive({
+      num_total <- dep2() %>% nrow()
+      if(num_total >= input$pca_num2){
+        if(input$pca_split2==FALSE){
+          plot_pca_txt(dep2(), x = 1, y = 2, n=input$pca_num2, point_size = 4)
+        }else{plot_pca_txt(dep2(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num2, point_size = 4)}
+      }else{
+        plot_pca_txt(dep2(), x = 1, y = 2, n=num_total, point_size = 4)
+      }
+    })
     
     #Correlation Input
     cor_input <- reactive({
@@ -2051,7 +2665,7 @@ server <- shinyServer(function(input, output, session) {
     comp_heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-        if (input$comp_type == "1 Round of comparisons"){
+        if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons"){
           ht_title<-paste(input$data_type, "<br>", "FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap(data_results(),
@@ -2067,7 +2681,7 @@ server <- shinyServer(function(input, output, session) {
           )
         }
         
-        if (input$comp_type == "Use SAINTexpress"){
+        if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
@@ -2085,7 +2699,7 @@ server <- shinyServer(function(input, output, session) {
                                         saintlist=saintlist()[[2]])
         }
         
-        if (input$comp_type == "2 Rounds of comparisons"){
+        if (input$data_mode == FALSE && input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
@@ -2102,13 +2716,34 @@ server <- shinyServer(function(input, output, session) {
                                            data_results1=data_results1(),
                                            data_results2=data_results2())
         }
+        
+        if (input$data_mode == TRUE){
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          if(input$data_type2 == "FragPipe"){data_type2 <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type2<-input$data_type2}
+          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          
+          ht<- plot_complex_heatmap_2xcomp(data_results(),
+                                           #                     input$pres,
+                                           #                     kmeans = TRUE,
+                                           input$k1,
+                                           ht_title,
+                                           colour_functions_input()[[1]],
+                                           colour_functions_input()[[2]],
+                                           font_size=8,
+                                           cluster_cols=input$cluster_cols,
+                                           comp_list=comp(),
+                                           data_results1=data_results1(),
+                                           data_results2=data_results2())
+        }
+        
         return(ht)
       })
     })
     
     comp_heatmap_input_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "1 Round of comparisons"){
+        if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           ht_title<-paste(input$data_type, "<br>", "FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
@@ -2126,7 +2761,7 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$comp_type == "Use SAINTexpress"){
-          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          if(input$data_mode == FALSE && input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_BFDR(data_results(),
@@ -2143,7 +2778,7 @@ server <- shinyServer(function(input, output, session) {
                                          saintlist=saintlist()[[2]])
         }
         
-        if (input$comp_type == "2 Rounds of comparisons"){
+        if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
@@ -2160,15 +2795,37 @@ server <- shinyServer(function(input, output, session) {
                                            data_results1=data_results1(),
                                            data_results2=data_results2())
         }
+        
+        if (input$data_mode == TRUE){
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          if(input$data_type2 == "FragPipe"){data_type2 <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type2<-input$data_type2}
+          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          
+          ht<- plot_complex_heatmap_2xcomp(data_results(),
+                                           #                     input$pres,
+                                           #                     kmeans = TRUE,
+                                           input$k1,
+                                           ht_title,
+                                           colour_functions_input()[[1]],
+                                           colour_functions_input()[[2]],
+                                           font_size=6,
+                                           cluster_cols=input$cluster_cols,
+                                           comp_list=comp(),
+                                           data_results1=data_results1(),
+                                           data_results2=data_results2())
+        }
+        
         return(ht)
       })
     })
     
     comp_heatmap_input_c1 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "2 Rounds of comparisons"){
+        if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           ht<-plot_complex_heatmap_2xcomp(data_results1(),
                                           #                     input$pres,
                                           #                     kmeans = TRUE,
@@ -2185,7 +2842,8 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results1(),
                                         #                     input$pres,
@@ -2206,65 +2864,50 @@ server <- shinyServer(function(input, output, session) {
     
     comp_heatmap_input_c1_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "2 Rounds of comparisons"){
+        if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
-          plot_complex_heatmap_2xcomp(data_results1(),
-                                      #                     input$pres,
-                                      #                     kmeans = TRUE,
-                                      input$k1_c1,
-                                      ht_title,
-                                      colour_functions_input()[[1]],
-                                      colour_functions_input()[[2]],
-                                      font_size=6,
-                                      cluster_cols=input$cluster_cols,
-                                      comp_list=comp(),
-                                      data_results1=data_results1(),
-                                      data_results2=data_results2())
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          ht<-plot_complex_heatmap_2xcomp(data_results1(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c1,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=6,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
         }
         
         if (input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
-          plot_complex_heatmap_BFDR(data_results1(),
-                                    #                     input$pres,
-                                    #                     kmeans = TRUE,
-                                    input$k1_c1,
-                                    ht_title,
-                                    colour_functions_input()[[1]],
-                                    colour_functions_input()[[2]],
-                                    font_size=6,
-                                    cluster_cols=input$cluster_cols,
-                                    comp_list=comp(),
-                                    data_results1=data_results1(),
-                                    saintlist=saintlist()[[2]])
+          ht<-plot_complex_heatmap_BFDR(data_results1(),
+                                        #                     input$pres,
+                                        #                     kmeans = TRUE,
+                                        input$k1_c1,
+                                        ht_title,
+                                        colour_functions_input()[[1]],
+                                        colour_functions_input()[[2]],
+                                        font_size=6,
+                                        cluster_cols=input$cluster_cols,
+                                        comp_list=comp(),
+                                        data_results1=data_results1(),
+                                        saintlist=saintlist()[[2]])
         }
       })
     })
     
     comp_heatmap_input_c2 <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "2 Rounds of comparisons"){
-          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
-          
-          ht<-plot_complex_heatmap_2xcomp(data_results2(),
-                                          #                     input$pres,
-                                          #                     kmeans = TRUE,
-                                          input$k1_c2,
-                                          ht_title,
-                                          colour_functions_input()[[1]],
-                                          colour_functions_input()[[2]],
-                                          font_size=8,
-                                          cluster_cols=input$cluster_cols,
-                                          comp_list=comp2(),
-                                          data_results1=data_results1(),
-                                          data_results2=data_results2())
-        }
-        
         if (input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste(input$data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+          ht_title<-paste(data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
@@ -2279,13 +2922,34 @@ server <- shinyServer(function(input, output, session) {
                                         data_results1=data_results1(),
                                         saintlist=saintlist()[[2]])
         }
+        else{
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          if(input$data_mode == FALSE){
+            if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
+            }else{if(input$data_type2 == "FragPipe"){data_type <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type<-input$data_type2}}
+          ht_title<-paste(data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          
+          ht<-plot_complex_heatmap_2xcomp(data_results2(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c2,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=8,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp2(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
+        }
         return(ht)
       })
     })
     
     comp_heatmap_input_c2_pdf <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
-        if (input$comp_type == "2 Rounds of comparisons"){
+        
+        if (input$data_mode == FALSE && input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           ht_title<-paste(input$data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
@@ -2303,7 +2967,7 @@ server <- shinyServer(function(input, output, session) {
                                           data_results2=data_results2())
         }
         
-        if (input$comp_type == "Use SAINTexpress"){
+        if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress"){
           ht_title<-paste(input$data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
@@ -2319,6 +2983,25 @@ server <- shinyServer(function(input, output, session) {
                                         data_results1=data_results1(),
                                         saintlist=saintlist()[[2]])
         }
+        
+        if (input$data_mode == TRUE){
+          if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
+          ht_title<-paste(input$data_type2, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          
+          ht<-plot_complex_heatmap_2xcomp(data_results2(),
+                                          #                     input$pres,
+                                          #                     kmeans = TRUE,
+                                          input$k1_c2,
+                                          ht_title,
+                                          colour_functions_input()[[1]],
+                                          colour_functions_input()[[2]],
+                                          font_size=6,
+                                          cluster_cols=input$cluster_cols,
+                                          comp_list=comp2(),
+                                          data_results1=data_results1(),
+                                          data_results2=data_results2())
+        }
+        
         return(ht)
       })
     })
@@ -2343,6 +3026,17 @@ server <- shinyServer(function(input, output, session) {
         ven_all<-list(plot_venn, venn_list, ven)
         
       }
+      if (input$data_mode == TRUE){
+        
+        comparison_1 <- data_results1()$name
+        comparison_2 <- data_results2()$name
+        ven <- venndetail(list(Dataset1 = comparison_1, Dataset2 = comparison_2))
+        plot_venn<-plot(ven)
+        venn_list<-result(ven)
+        ven_all<-list(plot_venn, venn_list, ven)
+        
+      }
+      
       return(ven_all)  
     })
     
@@ -2361,7 +3055,7 @@ server <- shinyServer(function(input, output, session) {
         comp_heatmap_input()[[1]],
         comp_heatmap_input()[[2]],
         input$k1
-#        colour_functions_input()[[1]]
+        #        colour_functions_input()[[1]]
       )
       data.frame(cludf)
     })
@@ -2374,7 +3068,7 @@ server <- shinyServer(function(input, output, session) {
           please alter the Kmeans number")
         )
         
-        if (input$comp_type == "2 Rounds of comparisons"){
+        if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           ht<-plot_heatmap_clusters_2xcomp(comp_heatmap_input()[[1]],
                                            comp_heatmap_input()[[2]],
                                            comp_heatmap_input()[[3]],
@@ -2390,7 +3084,7 @@ server <- shinyServer(function(input, output, session) {
           )
         }
         
-        if (input$comp_type == "1 Round of comparisons"){
+        if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons"){
           ht<-plot_heatmap_clusters(comp_heatmap_input()[[1]],
                                     comp_heatmap_input()[[2]],
                                     comp_heatmap_input()[[3]],
@@ -2406,7 +3100,7 @@ server <- shinyServer(function(input, output, session) {
           )
         }
         
-        if (input$comp_type == "Use SAINTexpress"){
+        if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress"){
           ht<-plot_heatmap_clusters_2xBFDR(comp_heatmap_input()[[1]],
                                            comp_heatmap_input()[[2]],
                                            comp_heatmap_input()[[3]],
@@ -2429,7 +3123,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Enhanced Volcano Input 1
     enhanced_volcano_1_input <- reactive({
-      if (input$comp_type == "2 Rounds of comparisons"){
+      if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
       }else{lfc<-input$lfc
@@ -2454,7 +3148,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Enhanced Volcano Input 2
     enhanced_volcano_2_input <- reactive({
-      if (input$comp_type == "2 Rounds of comparisons"){
+      if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
       }else{lfc<-input$lfc
@@ -2594,8 +3288,10 @@ server <- shinyServer(function(input, output, session) {
     
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
-      #data_results4()
-      data_results()
+      data_results() #should be default
+      #pca_input()[[2]]
+      #heatmap_input()[[2]]
+      #norm_data()
       #data() #to test data input
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
@@ -2633,6 +3329,16 @@ server <- shinyServer(function(input, output, session) {
       #norm_data()
     })
     
+    #Abundance Table
+    output$table_abund <- DT::renderDataTable({
+      data_defn_abundance()
+    })
+    
+    output$table_abund2 <- DT::renderDataTable({
+      data_defn_abundance2()
+    })
+    
+    
     #Saint Outputs
     output$tablesaint_output1 <- DT::renderDataTable({
       saint_output()[[1]]
@@ -2663,8 +3369,13 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$heatmap <- renderPlot({
-      heatmap_input()
+      heatmap_input()[[1]]
     })
+    
+    output$heatmap2 <- renderPlot({
+      heatmap_input2()[[1]]
+    })
+    
     
     output$volcano <- renderPlot({
       volcano_input()
@@ -2674,10 +3385,23 @@ server <- shinyServer(function(input, output, session) {
       volcano_c2_input()
     })
     
+    #signif plot output
+    output$signif_plot <- renderPlot({
+    signif_plot_input()
+    })
+    
+    output$signif_plot2 <- renderPlot({
+      signif_plot_input2()
+    })
     
     output$norm <- renderPlot({
       norm_input()
     })
+    
+    output$norm2 <- renderPlot({
+      norm_input2()
+    })
+    
     
     output$missval <- renderPlot({
       missval_input()
@@ -2691,23 +3415,31 @@ server <- shinyServer(function(input, output, session) {
       imputation_input()
     })
     
+    output$imputation2 <- renderPlot({
+      imputation_input2()
+    })
+
     output$numbers <- renderPlot({
       numbers_input()
     })
     
+    output$numbers2 <- renderPlot({
+      numbers_input2()
+    })
+
     output$coverage <- renderPlot({
       coverage_input()
     })
     
     #PCA output
     output$pca <- renderPlot({
-      pca_input()
+      pca_input()[[1]]
     })
     
-    #    #PCA output (Comp2)
-    #    output$pca_c2 <- renderPlot({
-    #      pca_c2_input()
-    #    })
+    #PCA output (Comp2)
+    output$pca_c2 <- renderPlot({
+      pca_c2_input()[[1]]
+    })
     
     
     #Correlation output
@@ -2784,8 +3516,8 @@ server <- shinyServer(function(input, output, session) {
     output$downloadreport <- renderUI({
       if(!is.null(dep())){
         #Check for single protein clusters
-#        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
- #       )
+        #        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
+        #       )
         
         if(input$report_type=="with Box Plots"){
           box<-box_plot_report_input()
@@ -2804,9 +3536,22 @@ server <- shinyServer(function(input, output, session) {
     ####Observe####
     observe({
       output$plot <- renderUI({
-        plotOutput("heatmap", height = (100 * as.numeric(input$size)))
+        ht_height<-((input$size*12)+270)
+        if (ht_height < 420){ht_height<-ht_height+80}
+        plotOutput("heatmap", height = ht_height)
+        #plotOutput("heatmap", height = (100 * as.numeric(input$size)))
       })
     })
+    
+    observe({
+      output$plot2 <- renderUI({
+        ht_height<-((input$size2*12)+270)
+        if (ht_height < 420){ht_height<-ht_height+80}
+        plotOutput("heatmap2", height = ht_height)
+        #plotOutput("heatmap", height = (100 * as.numeric(input$size)))
+      })
+    })
+    
     
     observe({
       output$plot_comp <- renderUI({
@@ -2824,7 +3569,7 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_comp_c2 <- renderUI({
-        if (input$comp_type == "2 Rounds of comparisons"){
+        if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           plotOutput("comp_heatmap_c2", height = ((dep_num_c2()*12)+270))
         }
         else if (input$comp_type == "Use SAINTexpress"){
@@ -2886,7 +3631,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe CC
     observeEvent(input$analyze_CC,{
-
+      
       #Plot output
       output$GOCC_plot <- renderPlot({
         GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
@@ -2910,7 +3655,7 @@ server <- shinyServer(function(input, output, session) {
         filename = function() { paste("Cellular_Component_Map_level_",input$gocc_level, ".pdf", sep = "") },
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
-          GOCCtitle<-paste("Cellualr Component up to level ", input$gocc_level, sep="")
+          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
           print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
           dev.off()
         }
@@ -2929,7 +3674,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe BP
     observeEvent(input$analyze_BP,{
-
+      
       #Plot output
       output$GOBP_plot <- renderPlot({
         GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
@@ -2988,7 +3733,7 @@ server <- shinyServer(function(input, output, session) {
              #select(-significant),
              "full_dataset" = get_df_wide(dep()),
              "Cluster_list" = cludf_check_input()
-             )
+      )
     }
     )
     
@@ -3002,6 +3747,31 @@ server <- shinyServer(function(input, output, session) {
                     sep ="\t") 
       }
     )
+    
+    #Abundance table
+    output$downloadabundancetable <- downloadHandler(
+      filename = function() { paste("Top_", input$size, "_Abundant_Proteins_", input$abund_choice, ".txt", sep = "") },
+      content = function(file) {
+        write.table(data_defn_abundance(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    #Abundance table2
+    output$downloadabundancetable2 <- downloadHandler(
+      filename = function() { paste("Top_", input$size, "_Abundant_Proteins_dataset2", input$abund_choice, ".txt", sep = "") },
+      content = function(file) {
+        write.table(data_defn_abundance2(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
     
     #Cluster table
     output$downloadclustertable <- downloadHandler(
@@ -3145,6 +3915,16 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadHeatmap2 <- downloadHandler(
+      filename = 'Heatmap_dataset2.pdf',
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(heatmap_input2())
+        dev.off()
+      }
+    )
+    
+    
     output$downloadVolcano <- downloadHandler(
       filename = function() {
         paste0("Volcano_", input$volcano_cntrst, ".pdf")
@@ -3156,6 +3936,39 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadVolcano_c2 <- downloadHandler(
+      filename = function() {
+        paste0("Volcano_", input$volcano_cntrst_c2, ".pdf")
+      },
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(volcano_c2_input())
+        dev.off()
+      }
+    )
+    
+    
+    output$downloadsignif_plot <- downloadHandler(
+      if (input$pval_use == FALSE){pval_txt<-"padj"}else{pval_txt<-"pVal"},
+      filename = function() {paste0("Signif_plot_", pval_txt, ".pdf")},
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(signif_plot_input())
+        dev.off()
+      }
+    )
+    
+    output$downloadsignif_plot2 <- downloadHandler(
+      if (input$pval_use == FALSE){pval_txt<-"padj"}else{pval_txt<-"pVal"},
+      filename = function() {paste0("Signif_plot2_", pval_txt, ".pdf")},
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(signif_plot_input2())
+        dev.off()
+      }
+    )
+    
+    
     output$downloadNorm <- downloadHandler(
       filename = "normalization.pdf",
       content = function(file) {
@@ -3164,6 +3977,16 @@ server <- shinyServer(function(input, output, session) {
         dev.off()
       }
     )
+    
+    output$downloadNorm2 <- downloadHandler(
+      filename = "normalization (dataset 2).pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(norm_input2())
+        dev.off()
+      }
+    )
+    
     
     output$downloadMissval <- downloadHandler(
       filename = "missing_values_heatmap.pdf",
@@ -3192,25 +4015,58 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadImputation2 <- downloadHandler(
+      filename = "imputation (dataset 2).pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(imputation_input2())
+        dev.off()
+      }
+    )
+    
+    
     #PCA Plot Download
     output$downloadpca <- downloadHandler(
       filename = "PCA.pdf",
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
-        plot(pca_input())
+        plot(pca_input()[[1]])
         dev.off()
       }
     )
     
-    #    #PCA Plot Download (comp2)
-    #    output$downloadpca <- downloadHandler(
-    #      filename = "PCA (Comp2).pdf",
-    #      content = function(file) {
-    #        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
-    #        print(pca_c2_input())
-    #        dev.off()
-    #      }
-    #    )
+    output$downloadpca_c2 <- downloadHandler(
+      filename = "PCA2.pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        plot(pca_c2_input()[[1]])
+        dev.off()
+      }
+    )
+    
+    
+    #PCA table 1
+    output$downloadpca_txt <- downloadHandler(
+      filename = function() { paste("PCA1_values.txt", sep = "") },
+      content = function(file) {
+        write.table(pca_input()[[2]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
+    
+    output$downloadpca_c2_txt <- downloadHandler(
+      filename = function() { paste("PCA2_values.txt", sep = "") },
+      content = function(file) {
+        write.table(pca_c2_input()[[2]],
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+    )
     
     #Correlation Plot Download
     output$downloadcor <- downloadHandler(
@@ -3262,6 +4118,15 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadNumbers2 <- downloadHandler(
+      filename = "numbers (dataset 2).pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        print(numbers_input2())
+        dev.off()
+      }
+    )
+
     output$downloadCoverage <- downloadHandler(
       filename = "coverage.pdf",
       content = function(file) {
@@ -3395,10 +4260,16 @@ server <- shinyServer(function(input, output, session) {
           clust_height<-(dep_num()/8)+4
           # Set up parameters to pass to Rmd document
           params <- list(data = data,
+                         data2 = data2,
                          expdesign = expdesign,
+                         expdesign2 = expdesign2,
+                         data_mode = input$data_mode,
                          data_type = input$data_type,
                          exp = input$exp,
                          lfq_type = input$lfq_type,
+                         data_type2 = input$data_type2,
+                         exp2 = input$exp2,
+                         lfq_type2 = input$lfq_type2,
                          thr = input$thr,
                          pval_use = input$pval_use,
                          p = input$p,
@@ -3414,15 +4285,25 @@ server <- shinyServer(function(input, output, session) {
                          imputation = input$imputation,
                          shift = input$shift,
                          width = input$width,
-                         missval_input = missval_input,
+                         #missval_input = missval_input,
                          # p_hist_input = p_hist_input,
                          pca_input = pca_input,
+                         pca_c2_input = pca_c2_input,
                          norm_input = norm_input,
-                         numbers_input = numbers_input, 
-                         coverage_input = coverage_input,
+                         norm_input2 = norm_input2,
+                         numbers_input = numbers_input,
+                         numbers_input2 = numbers_input2, 
+                         #coverage_input = coverage_input,
                          cor_input = cor_input,
+                         cor_c2_input = cor_c2_input,
                          cond_input = cond_input,
+                         cond_c2_input = cond_c2_input,
                          imputation_input = imputation_input,
+                         imputation_input2 = imputation_input2,
+                         signif_plot_input = signif_plot_input,
+                         signif_plot_input2 = signif_plot_input2,
+                         heatmap_input = heatmap_input,
+                         heatmap_input2 = heatmap_input2,
                          comp_heatmap_input = comp_heatmap_input,
                          comp_heatmap_input_c1 = comp_heatmap_input_c1,
                          comp_heatmap_input_c2 = comp_heatmap_input_c2,
@@ -3433,6 +4314,7 @@ server <- shinyServer(function(input, output, session) {
                          data_results = data_results,
                          p_adj_enh1 = input$p_adj_enh1,
                          dep = dep,
+                         dep2 = dep2,
                          dep_num = dep_num,
                          dep_num_c1 = dep_num_c1,
                          dep_num_c2 = dep_num_c2,

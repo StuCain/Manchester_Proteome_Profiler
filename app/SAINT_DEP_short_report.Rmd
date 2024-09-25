@@ -1,10 +1,16 @@
 ---
 params:
   data: NA
+  data2: NA
   expdesign: NA
+  expdesign2: NA
+  data_mode: NA
   data_type: NA
   exp: NA
   lfq_type: NA
+  data_type2: NA
+  exp2: NA
+  lfq_type2: NA
   thr: NA
   pval_use: NA
   p: NA
@@ -19,26 +25,38 @@ params:
   comp: NA
   comp2: NA
   imputation: NA
+  imputation2: NA
   shift: NA
   width: NA
   tested_contrasts: NA
   numbers_input: NA
-  coverage_input: NA
+  numbers_input2: NA
+#  coverage_input: NA
   pca_input: NA
+  pca_c2_input: NA
   cor_input: NA
+  cor_c2_input: NA
   cond_input: NA
+  cond_c2_input: NA
   imputation_input: NA
+  imputation_input2: NA
   norm_input: = NA
-  missval_input: NA
+  norm_input2: = NA
+#  missval_input: NA
   detect_input: NA
   density_input: NA
 #  p_hist_input: NA
+  heatmap_input: NA
+  heatmap_input2: NA
+  signif_plot_input: NA
+  signif_plot_input2: NA
   comp_heatmap_input: NA
   comp_heatmap_input_c1: NA
   comp_heatmap_input_c2: NA
   venn_input: NA
   cluster_heatmap_input: NA
   dep: NA
+  dep2: NA
   dep_num: NA
   dep_num_c1: NA
   dep_num_c2: NA
@@ -86,29 +104,43 @@ if (params$data_type == "FragPipe"){if (params$exp == "LFQ"){file_input<-"combin
 if (params$data_type == "MaxQuant"){int_type<-"LFQ intensities"}
 if (params$data_type == "Proteome Discoverer"){int_type<-"protein abundances"}
 if (params$data_type == "FragPipe"){if (params$lfq_type == "MaxLFQ intensities") {int_type<-"Intensities"} else {int_type<-"Intensities"}}
+if (params$data_mode == TRUE){
+if (params$data_type2 == "MaxQuant"){file_input2<-"proteinGroups.txt file from MaxQuant"}
+if (params$data_type2 == "Proteome Discoverer"){file_input2<-"protein abundances export from Proteome Discoverer"}
+if (params$data_type2 == "FragPipe"){if (params$exp2 == "LFQ"){file_input2<-"combined_protein.tsv file from FragPipe"}else {file_input2<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
+if (params$data_type2 == "MaxQuant"){int_type2<-"LFQ intensities"}
+if (params$data_type2 == "Proteome Discoverer"){int_type2<-"protein abundances"}
+if (params$data_type2 == "FragPipe"){if (params$lfq_type2 == "MaxLFQ intensities") {int_type2<-"Intensities"} else {int_type2<-"Intensities"}}
+}
 
 if (params$pval_use == FALSE){pval_type <- " an _adjusted p-value_ of "} else {pval_type <- " a _p-value_ of "}
 
 if (params$pval_use == FALSE){pval_type_2 <- "adjusted p-value"} else {pval_type_2 <- "p-value"}
 
-if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons with analysed. The second comparison had", pval_type , params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
+if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons were analysed. The second comparison had", pval_type , params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
 if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{7} processing was used to allow identification of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
+if (params$data_mode == TRUE){second_round_txt<-paste("For this analysis two datasets were analysed. The second dataset was processed using ", params$data_type2, " using the ",file_input2, " The second dataset comparison used ", pval_type , params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both dataset comparison lists ",sep="")}
 
 if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
 
 
 clust1_table<-as.data.frame(params$cluster_heatmap_input()[[13]])
 clust1_table<-clust1_table[, 1:3]
+if(params$k1>1){
 clust2_table<-as.data.frame(params$cluster_heatmap_input()[[14]])
-clust2_table<-clust2_table[, 1:3]
+clust2_table<-clust2_table[, 1:3]}
+if(params$k1>2){
 clust3_table<-as.data.frame(params$cluster_heatmap_input()[[15]])
-clust3_table<-clust3_table[, 1:3]
+clust3_table<-clust3_table[, 1:3]}
+if(params$k1>3){
 clust4_table<-as.data.frame(params$cluster_heatmap_input()[[16]])
-clust4_table<-clust4_table[, 1:3]
+clust4_table<-clust4_table[, 1:3]}
+if(params$k1>4){
 clust5_table<-as.data.frame(params$cluster_heatmap_input()[[17]])
-clust5_table<-clust5_table[, 1:3]
+clust5_table<-clust5_table[, 1:3]}
+if(params$k1>5){
 clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
-clust6_table<-clust6_table[, 1:3]
+clust6_table<-clust6_table[, 1:3]}
 
 #Imputation Text
 if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
@@ -128,13 +160,15 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.2.2
+Version:0.2.6
 
 ## Method details
  
 Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. `r second_round_txt`
+The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. 
+
+`r second_round_txt`
 
 To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
  
@@ -155,7 +189,7 @@ num_signif_bfdr<-1
 num_signif <-as.numeric(params$dep_num())
 
 
-if (params$comp_type == "2 Rounds of comparisons"){
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){
 num_signif_c1 <-as.numeric(params$dep_num_c1())
 num_signif_c2 <-as.numeric(params$dep_num_c2())
 }else{num_signif_c1<-num_signif
@@ -165,9 +199,17 @@ num_signif_c1 <-as.numeric(params$dep_num_c1())
 num_signif_bfdr <-as.numeric(params$dep_num_bfdr())
 }
 
+abund_heatmap_no<-nrow(params$heatmap_input()[[2]])
+abund_heatmap_col<-ncol(params$heatmap_input()[[2]])
+if (params$data_mode == TRUE){
+abund_heatmap2_no<-nrow(params$heatmap_input2()[[2]])
+abund_heatmap2_col<-ncol(params$heatmap_input2()[[2]])
+}else{abund_heatmap2_no<-0
+abund_heatmap2_col<-0}
+
 comp1<-paste(as.character(params$comp()),collapse=' : ')
 comp2<-paste(as.character(params$comp2()),collapse=' : ')
-if (params$comp_type == "2 Rounds of comparisons"){comp_data<-as.character(params$comp2())}else{comp_data<-as.character(params$comp())}
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){comp_data<-as.character(params$comp2())}else{comp_data<-as.character(params$comp())}
 comp_no<-length(comp_data)
 if (params$comp_type == "2 Rounds of comparisons"){comp_data_c1<-as.character(params$comp())}else{comp_data_c1<-as.character(params$comp())}
 comp_no_c1<-length(comp_data_c1)
@@ -176,18 +218,25 @@ if (params$comp_type == "2 Rounds of comparisons"){comp_data_c2<-as.character(pa
 comp_no_c2<-length(comp_data_c2)
 
 #For comparisons text
-if (params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
 * Tested second round of pairwise comparisons = ", comp2)}else{comp_data_text<-paste0 ("* Tested pairwise comparisons = ", comp1)}
 
 if (params$comp_type == "2 Rounds of comparisons"){results_text<-paste0 ("After two sets of pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons. There were \\textbf{", num_signif,"} protein that overlapped the two sets of comparisons that were then used in the downstream analysis." )}else{results_text<-paste0 ("After pairwise comparisons were performed \\textbf{",num_signif, "} proteins differ significantly between samples.")}
+if (params$data_mode == TRUE){results_text<-paste0 ("After pairwise comparisons from two datasets were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons from the first dataset, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons from the second dataset. There were \\textbf{", num_signif,"} protein that overlapped the two sets of comparisons from the two datasets that were then used in the downstream analysis." )}
 
 if (params$comp_type == "Use SAINTexpress"){results_text<-paste0 ("After SAINTexpress processing an initial protein list was generated from proteins that had a Bayesian false-discovery rate (BFDR) of <= \\textbf{", params$bfdr, "}, in at least \\textbf{", params$bfdr_freq, "} of the experimental conditions were performed. This generated a list of  \\textbf{",num_signif_bfdr, "} proteins. After pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly between samples. There were \\textbf{", num_signif,"} proteins that overlapped the SAINTexpress analysis and pairwise comparisons that were then used in the downstream analysis." )}
 
 #For Parameters Summary 
-if (params$data_type == "FragPipe"){lfq_int_text<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text<-""}
-if (params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cut-off 2 >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
+if (params$data_mode == TRUE){result_output2<-paste0 ("The 2nd dataset result output from ", params$data_type2,  " contains \\textbf{", nrow(params$data2()),"} proteins groups of which \\textbf{", nrow(params$dep2()), "} proteins were reproducibly quantified.")}else {result_output2<-""}
+if (params$data_type == "FragPipe"){exp_text<-paste0 ("* FragPipe Data Type = \\textbf{", params$exp, "}")}else{exp_text<-""}
+if (params$data_type == "FragPipe" && params$exp == "LFQ"){lfq_int_text<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text<-""}
+if (params$data_mode == TRUE){input_data_type2<-paste0 ("* Input Data File Type (Dataset 2)= \\textbf{", params$data_type2, "}")}else {input_data_type2<-""}
+if (params$data_mode == TRUE && params$data_type2 == "FragPipe"){exp_text2<-paste0 ("* FragPipe Data Type (Dataset 2) = \\textbf{", params$exp2, "}")}else{exp_text2<-""}
+if (params$data_mode == TRUE && params$data_type2 == "FragPipe" && params$exp2 == "LFQ"){lfq_int_text2<-paste0 ("* Intensity Type = \\textbf{", params$lfq_type, "}")}else{lfq_int_text2<-""}
+if (params$data_mode == FALSE){comp_type_text<- paste0 ("* Comparison Type= \\textbf{", params$comp_type, "}")}else{comp_type_text<-"* Comparison Type= \\textbf{Two Datasets}"}
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){lfc2_text<-paste0 ("* Fold change cut-off 2 >= \\textbf{", params$lfc2, "}")}else{lfc2_text<-""}
 if (params$pval_use == FALSE){p_text<-paste0 ("* Adjusted _p-value_ cut-off <= \\textbf{", params$p, "}")} else {p_text<-paste0 ("* _p-value_ cut-off <= \\textbf{", params$p, "}")}
-if (params$comp_type == "2 Rounds of comparisons"){if (params$pval_use == FALSE){p2_text<-paste0 ("* Adjusted _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){if (params$pval_use == FALSE){p2_text<-paste0 ("* Adjusted _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")
 } else {p2_text<-paste0 ("* _p-value_ cut-off 2 <= \\textbf{", params$p2, "}")
 }}else{p2_text<-""}
 if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress BFDR cut-off <= \\textbf{", params$bfdr, "}")}else{bfdr_text<-""}
@@ -199,12 +248,17 @@ if (params$comp_type == "Use SAINTexpress"){bfdr_freq_text<-paste0 ("* SAINTexpr
 ## Results
 
 The result output from `r params$data_type`  contains \textbf{`r nrow(params$data())`} proteins groups of which \textbf{`r nrow(params$dep())`} proteins were reproducibly quantified. \linebreak
+`r result_output2`
 `r results_text`
 
 ## Summary of parameters used:
-* Input Data Type= \textbf{`r params$data_type`}
+* Input Data File Type= \textbf{`r params$data_type`}
+`r exp_text`
 `r lfq_int_text`
-* Comparison Type= \textbf{`r params$comp_type`}
+`r input_data_type2`
+`r exp_text2`
+`r lfq_int_text2`
+`r comp_type_text`
 `r comp_data_text`
 * Fold change cut-off >= \textbf{`r params$lfc`}
 `r p_text`
@@ -222,36 +276,18 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 
 ```{r exp_design, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::kable(params$expdesign())
-print(comp_no)
+if(params$data_mode == TRUE){exp_text<-"## Experimental Template (Dataset 2)"}else exp_text<-""
 ```
 
 
 \pagebreak
 
-## Exploratory Analysis (QC Plots)
+`r exp_text`
 
-### Principle Component Analysis (PCA) plot
-
-
-```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
-print(params$pca_input())
+```{r exp_design2, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){knitr::kable(params$expdesign2())}
 ```
-\pagebreak
 
-### Sample Correlation matrix
-
-```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
-print(params$cor_input())
-```
-\pagebreak
-
-### Frequency Plot
-
-```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
-if(comp_no_c1>1){
-print(params$cond_input())
-}
-```
 \pagebreak
 
 ### Proteomics Experiment Summary
@@ -260,52 +296,134 @@ Protein quantified per sample (after pre-processing).
 
 ```{r numbers, echo=FALSE, warning=FALSE, results='hide', message=FALSE }
 print(params$numbers_input())
+if(params$data_mode == TRUE){number_txt<-"Protein quantified per sample (Dataset 2)."}else{number_txt<-""}
 ```
-\pagebreak
 
-Protein overlap in all samples.
+`r number_txt`
 
-
-```{r coverage, echo=FALSE, warning=FALSE}
-print(params$coverage_input())
-if (params$rendered_by_shiny)
-shiny::setProgress(0.20)  # set progress to 20%
-
+```{r numbers2, echo=FALSE, warning=FALSE, results='hide', message=FALSE }
+if(params$data_mode == TRUE){print(params$numbers_input2())}
 ```
+
 \pagebreak
 
 ## Normalization Plot
 
-
 ```{r norm, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
 print(params$norm_input())
+if(params$data_mode == TRUE){norm_txt<-"## Normalization Plot (Dataset 2)"}else{norm_txt<-""}
 ```
+\pagebreak
+
+`r norm_txt`
+
+```{r norm2, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
+if(params$data_mode == TRUE){print(params$norm_input2())}
+```
+
+
 \pagebreak
 
 ## Imputation Plot
 
-
 ```{r imputation_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
 print(params$imputation_input())
+if(params$data_mode == TRUE){imp_txt<-"## Imputation Plot (Dataset 2)"}else{imp_txt<-""}
 ```
 \pagebreak
 
-## Missing Value handling
+`r imp_txt`
 
-### Missing value heatmap
-A heatmap for proteins with missing value in each dataset. Each row represent a protein with missing value in one or more replicate. Each replicate is clustered based on presence of missing values in the sample. 
+```{r imputation_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){print(params$imputation_input2())}
+```
+\pagebreak
+
+## Abundance Heatmap Plot
+
+```{r abundance_heatmap_plot, echo=FALSE, fig.height=(abund_heatmap_no/8)+4, fig.width=(abund_heatmap_col/3)+3, message=FALSE, warning=FALSE}
+print(params$heatmap_input()[[1]])
+```
+\pagebreak
+
+```{r abundance_heatmap2_plot, echo=FALSE, fig.height=(abund_heatmap2_no/8)+4, fig.width=(abund_heatmap2_col/3)+3, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){print(params$heatmap_input2()[[1]])}
+```
+\pagebreak
+
+## Significance Count Plot
+
+```{r signif_count_plot, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+print(params$signif_plot_input())
+if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){sign_text<-"### Significance Count Plot (Comp 2)"}else sign_text<-""
+```
+\pagebreak
+
+`r sign_text`
+
+```{r signif_count_plot2, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+{print(params$signif_plot_input2())}
+```
+\pagebreak
 
 
-```{r missing_value_heatmap, echo=FALSE, message=FALSE, results='hide',warning=FALSE, fig.keep='first', tidy=TRUE}
-print(params$missval_input())
+## Exploratory Analysis (QC Plots)
 
-if (params$rendered_by_shiny)
-shiny::setProgress(0.40)  # set progress to 40%
+### Principle Component Analysis (PCA) plot
+
+```{r pca_plot, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+print(params$pca_input()[[1]])
+if(params$data_mode == TRUE){pca_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else pca_text<-""
+```
+
+\pagebreak
+
+`r pca_text`
+
+```{r pca_plot2, echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+if(params$data_mode == TRUE){print(params$pca_c2_input()[[1]])}
+```
+
+
+
+### Sample Correlation matrix
+
+```{r correlation_heatmap, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
+print(params$cor_input())
+if(params$data_mode == TRUE){cor_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else cor_text<-""
+```
+\pagebreak
+
+`r pca_text`
+
+```{r correlation_heatmap2, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE, fig.keep='first', out.height='100%', tidy=T}
+if(params$data_mode == TRUE){print(params$cor_c2_input())}
+```
+\pagebreak
+
+### Frequency Plot
+
+```{r frequency_plot, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+freq_text<-""
+if(comp_no_c1>1 && comp_no_c1<5){
+print(params$cond_input())
+if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
+}
+```
+\pagebreak
+
+`r freq_text`
+
+```{r frequency_plot2, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, out.width='100%', tidy=T}
+if(params$data_mode == TRUE && comp_no_c2>1 && comp_no_c2<5){
+print(params$cond_c2_input())
+if(params$data_mode == TRUE){freq_text<-"### Frequency Plot (Dataset 2)"}else freq_text<-""  
+}
 ```
 \pagebreak
 
 ```{r heatmap_c2_text, echo=FALSE, warning=FALSE, results='hide'}
-if (params$comp_type == "2 Rounds of comparisons"){ht_c2_text<-"## Differential Expression Analysis (Results Plots) 
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){ht_c2_text<-"## Differential Expression Analysis (Results Plots) 
 ### Comparison Heatmaps
 The Heatmaps indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the first set of comparisons (Comp1) and the second set of comparisons (Comp2). Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.\\
 Shown directly below is a Venn diagram showing the overlap between the protein lists from the 1st and 2nd Rounds of comparisons.
@@ -321,7 +439,7 @@ Shown directly below is a Venn diagram showing the overlap between the protein l
 `r ht_c2_text`
 
 ```{r ven, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='hide', tidy=TRUE}
-if (params$comp_type == "2 Rounds of comparisons"|params$comp_type == "Use SAINTexpress"){
+if (params$data_mode == TRUE|params$comp_type == "2 Rounds of comparisons"|params$comp_type == "Use SAINTexpress"){
 plot(params$venn_input()[[3]])
 }
 ```
@@ -338,7 +456,9 @@ if (params$comp_type == "Use SAINTexpress"){
 print(params$comp_heatmap_input_c1()[[1]])
 }
 
-
+if (params$data_mode == TRUE){
+print(params$comp_heatmap_input_c1()[[1]])
+}
 if (params$rendered_by_shiny)
 shiny::setProgress(0.50)  # set progress to 50%
 ```
@@ -346,6 +466,9 @@ shiny::setProgress(0.50)  # set progress to 50%
 \pagebreak
 ```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+4, fig.width=(comp_no_c2/1.5)+3, fig.keep='last', warning=FALSE, results='hide'}
 if (params$comp_type == "2 Rounds of comparisons"){
+print(params$comp_heatmap_input_c2()[[1]])
+}
+if (params$data_mode == TRUE){
 print(params$comp_heatmap_input_c2()[[1]])
 }
 
@@ -376,6 +499,10 @@ The Heatmap indicates the log2 fold change (log2FC) values of each of the signif
 if (params$comp_type == "Use SAINTexpress"){ht_text<-"## Differential Expression Analysis (Results Plots)
 ### Combined Heatmap
 The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the comparison list that also overlap with the list of proteins which passed the SAINTexpress BFDR and BFDR_Freq thresholds. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) which are indicated above the Heatmap, and also the number of times the protein has passed the SAINTexpress BFDR and BFDR_Freq cut-off thresholds. The Sig. Freq and BFDR_Freq maximum is equal to the number of comparisons.
+"}
+if (params$data_mode == TRUE){ht_text<-"## Differential Expression Analysis (Results Plots) 
+### Combined Heatmap
+The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the Dataset 1, using a list which has the overlapping proteins that were significantly expressed for both Dataset 1 and Dataset 2. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) for each dataset which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
 "}
 
 ```

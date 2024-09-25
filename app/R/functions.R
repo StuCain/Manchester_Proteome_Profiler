@@ -4,21 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.1
-
-#library(DEP)
-#library(SummarizedExperiment)
-#library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
-## readr, purr, tibble, stringr, forcats
-#library(ComplexHeatmap)
-#library(circlize)
-#library(data.table)
-#library(clusterProfiler)
-#library(enrichplot)
-#library(scales)
-#library(gridtext)
-#library(EnhancedVolcano)
-#library("RColorBrewer")
+Version = 3.6
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -137,31 +123,208 @@ add_rejections_pval<-function (diff, alpha = 0.05, lfc = 1)
   return(diff)
 }
 
+####Significance Count Functions####
+#Using p.adj
+signif_count <- function( df, max_cutoff=20 ) {
+  sig_count_0.05<-vector(mode="numeric")
+  sig_count_0.1<-vector(mode="numeric")
+  sig_count_0.5<-vector(mode="numeric")
+  
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections(df, 0.05, log2(i))
+    sig_count_0.05[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections(df, 0.1, log2(i))
+    sig_count_0.1[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections(df, 0.5, log2(i))
+    sig_count_0.5[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  
+  fc_val<-1:max_cutoff
+  sig_plot_data <-data.frame(fc_val,sig_count_0.05, sig_count_0.1, sig_count_0.5)
+  sig_plot_graph<- sig_plot_data %>% gather(key = p.adj, value = value, sig_count_0.05:sig_count_0.5)
+  sig_plot<-ggplot(sig_plot_graph, aes(x = fc_val, y = value, group = p.adj, colour = p.adj)) +
+    labs(title = "Significance Count Plot", 
+         x = "Fold Change Cut-off", 
+         y = "Number of Significant Proteins" 
+    ) + 
+    theme_DEP1()+
+    geom_line() +
+    geom_point()+
+    scale_color_discrete (name = "p.adj cut-off", labels = c("0.05", "0.1", "0.5"))
+  
+  return(sig_plot)
+}
+
+#Using p.adj
+signif_count_pval <- function( df, max_cutoff=20 ) {
+  sig_count_0.05<-vector(mode="numeric")
+  sig_count_0.1<-vector(mode="numeric")
+  sig_count_0.5<-vector(mode="numeric")
+  
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections_pval(df, 0.05, log2(i))
+    sig_count_0.05[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections_pval(df, 0.1, log2(i))
+    sig_count_0.1[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  for (i in 1:max_cutoff) {
+    dep_i<-add_rejections_pval(df, 0.5, log2(i))
+    sig_count_0.5[i]<-dep_i %>%
+      .[SummarizedExperiment::rowData(.)$significant, ] %>%
+      nrow()
+  }
+  
+  fc_val<-1:max_cutoff
+  sig_plot_data <-data.frame(fc_val,sig_count_0.05, sig_count_0.1, sig_count_0.5)
+  sig_plot_graph<- sig_plot_data %>% gather(key = p.adj, value = value, sig_count_0.05:sig_count_0.5)
+  sig_plot<-ggplot(sig_plot_graph, aes(x = fc_val, y = value, group = p.adj, colour = p.adj)) +
+    labs(title = "Significance Count Plot", 
+         x = "Fold Change Cut-off", 
+         y = "Number of Significant Proteins" 
+    ) + 
+    theme_DEP1()+
+    geom_line() +
+    geom_point()+
+    scale_color_discrete (name = "p.Val cut-off", labels = c("0.05", "0.1", "0.5"))
+  
+  return(sig_plot)
+}
+
+
+####PCA with txt output####
+plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"), 
+                        label = FALSE, n = 500, point_size = 4, label_size = 3, plot = TRUE) 
+{
+  if (is.integer(x)) 
+    x <- as.numeric(x)
+  if (is.integer(y)) 
+    y <- as.numeric(y)
+  if (is.integer(n)) 
+    n <- as.numeric(n)
+  if (is.integer(point_size)) 
+    point_size <- as.numeric(point_size)
+  if (is.integer(label_size)) 
+    label_size <- as.numeric(label_size)
+  assertthat::assert_that(inherits(dep, "SummarizedExperiment"), 
+                          is.numeric(x), length(x) == 1, is.numeric(y), length(y) == 
+                            1, is.numeric(n), length(n) == 1, is.character(indicate), 
+                          is.logical(label), is.numeric(point_size), length(point_size) == 
+                            1, is.numeric(label_size), length(label_size) == 
+                            1, is.logical(plot), length(plot) == 1)
+  if (x > ncol(dep) | y > ncol(dep)) {
+    stop(paste0("'x' and/or 'y' arguments are not valid\n", 
+                "Run plot_pca() with 'x' and 'y' <= ", ncol(dep), 
+                "."), call. = FALSE)
+  }
+  if (n > nrow(dep)) {
+    stop(paste0("'n' argument is not valid.\n", "Run plot_pca() with 'n' <= ", 
+                nrow(dep), "."), call. = FALSE)
+  }
+  columns <- colnames(colData(dep))
+  if (!is.null(indicate)) {
+    if (length(indicate) > 3) {
+      stop("Too many features in 'indicate'\n        Run plot_pca() with a maximum of 3 indicate features")
+    }
+    if (any(!indicate %in% columns)) {
+      stop(paste0("'", paste0(indicate, collapse = "' and/or '"), 
+                  "' column(s) is/are not present in ", deparse(substitute(dep)), 
+                  ".\nValid columns are: '", paste(columns, collapse = "', '"), 
+                  "'."), call. = FALSE)
+    }
+  }
+  var <- apply(assay(dep), 1, sd)
+  df <- assay(dep)[order(var, decreasing = TRUE)[seq_len(n)], 
+  ]
+  pca <- prcomp(t(df), scale = FALSE)
+  pca_df <- pca$x %>% data.frame() %>% rownames_to_column() %>% 
+    left_join(., data.frame(colData(dep)), by = c(rowname = "ID"))
+  percent <- round(100 * pca$sdev^2/sum(pca$sdev^2), 1)
+  for (feat in indicate) {
+    pca_df[[feat]] <- as.factor(pca_df[[feat]])
+  }
+  p <- ggplot(pca_df, aes(get(paste0("PC", x)), get(paste0("PC", y)))) + 
+    labs(title = paste0("PCA plot - top ", n, " variable proteins"), 
+         x = paste0("PC", x, ": ", percent[x], "%"), 
+         y = paste0("PC", y, ": ", percent[y], "%")) + 
+    coord_fixed() + theme_DEP1()
+  if (length(indicate) == 0) {
+    p <- p + geom_point(size = point_size)
+  }
+  if (length(indicate) == 1) {
+    p <- p + geom_point(aes(col = pca_df[[indicate[1]]]), 
+        size = point_size) + labs(col = indicate[1])
+  }
+  if (length(indicate) == 2) {
+    p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
+      shape = pca_df[[indicate[2]]]), size = point_size) + 
+      labs(col = indicate[1], shape = indicate[2])
+  }
+  if (length(indicate) == 3) {
+    p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
+        shape = pca_df[[indicate[2]]]), size = point_size) + 
+      facet_wrap(~pca_df[[indicate[3]]]) +
+    labs(col = indicate[1], shape = indicate[2])
+  }
+  if (label) {
+    p <- p + geom_text(aes(label = rowname), size = label_size)
+  }
+  if (plot) {
+    pca_out<-list(p, pca_df)
+    return(pca_out)
+  }
+  else {
+    df <- pca_df %>% select(rowname, paste0("PC", c(x, y)), 
+                            match(indicate, colnames(pca_df)))
+    colnames(df)[1] <- "sample"
+    pca_out<-list(df, pca_df)
+    return(pca_out)
+  }
+}
 
 ####Complex Heatmap function####
 plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list) {
   set.seed(123)
-  FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
-  #Change column names
-  for ( col in 1:ncol(FC_data)){
-    colnames(FC_data)[col] <-  sub("_ratio", "", colnames(FC_data)[col])
+  if (switch==3){
+    FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
+    #Change column names
+    for ( col in 1:ncol(FC_data)){
+      colnames(FC_data)[col] <-  sub("_ratio", "", colnames(FC_data)[col])
+    }
+    FC_matrix <- FC_data %>% remove_rownames %>% column_to_rownames(var="name")
   }
-  FC_matrix <- FC_data %>% remove_rownames %>% column_to_rownames(var="name")
   
- 
+  if (switch==1){imp_matrix<-data_results}
+  if (switch==2){norm_matrix<-data_results}
   
-  #Set up label data
-  if (switch == 1){
-    label = "Imputed_Int_Sig"
-  }
-  if (switch == 2){
-    label = "Orig_Int_Sig"
-  }
-  if (switch == 3) {
-    label = "Contrast"
-  } 
   
-
+  #  #Set up label data
+  #  if (switch == 1){
+  #    label = "Imputed_Int_Sig"
+  #  }
+  #  if (switch == 2){
+  #    label = "Orig_Int_Sig"
+  #  }
+  #  if (switch == 3) {
+  #    label = "Contrast"
+  #  } 
+  
+  
   ####Set up Heatmaps####
   #Choose which set ofdata to use (Intensities or Log2FC)
   if (switch == 3) {
@@ -170,28 +333,39 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
     my_mat<-FC_matrix
     my_mat <- as.matrix(my_mat)
     if (ncol(my_mat)>1){my_mat<-my_mat[,comp_list]}
-    CS = colMeans(FC_matrix) #creates a mean of each column
+    #CS = colMeans(FC_matrix) #creates a mean of each column
     col_fun = col_fun
     kmeans<-kmeans
   } 
   if (switch == 1) {
-    my_mat <- as.matrix(imp_matrix_filt)
-    #my_mat <- log2(my_mat)
+    my_mat <- as.matrix(imp_matrix)
+    #my_mat<- my_mat[ order(rowMeans(my_mat), decreasing = T), ]
+    #my_mat<-my_mat[1:100,]
+    #my_mat_a <- log2(my_mat)
     CSr = rowMeans(my_mat)
-    my_mat <- my_mat - CSr
+    CSrmax<-max(CSr)
+    CSrmin<-min(CSr)
+    col_fun = colorRamp2(c(CSrmax+1, CSrmin-1), c("blue", "yellow"))
+    col_fun(seq(CSrmax+1, CSrmin-1))
+    
+    #my_mat <- my_mat - CSr
     CSi = colMeans(my_mat)
-    col_fun = col_int
+    col_fun = col_fun
     kmeans<-kmeans
   }
   
   if (switch == 2) {
-    my_mat <- as.matrix(norm_matrix_filt)
+    my_mat <- as.matrix(norm_matrix)
     #my_mat <- log2(my_mat)
     CSr = rowMeans(my_mat,na.rm=TRUE)
-    my_mat <- my_mat - CSr
-    my_mat[is.na(my_mat)] = 0
-    CSi = colMeans(my_mat)
-    col_fun = col_int
+    CSrmax<-max(CSr)
+    CSrmin<-min(CSr)
+    col_fun = colorRamp2(c(CSrmax+1, CSrmin-1), c("blue", "yellow"))
+    col_fun(seq(CSrmax+1, CSrmin-1))
+    #my_mat <- my_mat - CSr
+    #my_mat[is.na(my_mat)] = 0
+    CSi = colMeans(my_mat,na.rm=TRUE)
+    col_fun = col_fun
     kmeans<-kmeans
   }
   
@@ -200,7 +374,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   
   
   ####Generate Annotated Heatmap####
-
+  
   CS= colMeans(my_mat) #creates a mean of each column
   
   #Set up Heatmap annotations
@@ -226,7 +400,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
         height = unit(2, "cm"),
         gp = gpar(fill = mypal[c(1:8)])
       ),
-      Int_mean = CS,
+      Int_mean = CSi,
       col = list(Int_mean = col_fun),
       gp = gpar(col = "black"),
       show_legend=FALSE
@@ -236,62 +410,58 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   
   #Right Annotation
   #For RA
-  dfdata_sig<-data_results[, c(1,grep("_significant",colnames(data_results)))]
-  dfdata_sig2 <- dfdata_sig%>% mutate(sigcount = rowSums(dfdata_sig[-1], na.rm = TRUE))
-  #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
-  sc3max<- max(dfdata_sig2$sigcount)
-  
-  ra = rowAnnotation("Sig.
+  if(switch==3){
+    dfdata_sig<-data_results[, c(1,grep("_significant",colnames(data_results)))]
+    dfdata_sig2 <- dfdata_sig%>% mutate(sigcount = rowSums(dfdata_sig[-1], na.rm = TRUE))
+    #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
+    sc3max<- max(dfdata_sig2$sigcount)
+    
+    ra = rowAnnotation("Sig.
 Freq" = anno_barplot(
   dfdata_sig2$sigcount,
   ylim = c(0 , sc3max),
   gp = gpar(fill = mypal[1], fontsize = 8)))
-  
+  }else{
+    ra = rowAnnotation("Log2Int" = anno_points(
+      CSr,
+      ylim = c(CSrmin,CSrmax),
+      gp = gpar(col = mypal[1], fontsize = 8),
+      width = unit(2, "cm")
+    ))
+  }
   
   
   #Set up left annotation to match kmeans number
-  if (kmeans == 1) {
-    la = rowAnnotation(foo = anno_block(
-      gp = gpar(fill = mypal[c(1:8)]),
-      labels = c("Cluster 1"),
-      labels_gp = gpar(col = "white", fontsize = font_size+4)
-    ))
-  } else{
-    if (kmeans == 2) {
+  if(switch==3){
+    if (kmeans == 1) {
       la = rowAnnotation(foo = anno_block(
         gp = gpar(fill = mypal[c(1:8)]),
-        labels = c("Cluster 1", "Cluster 2"),
+        labels = c("Cluster 1"),
         labels_gp = gpar(col = "white", fontsize = font_size+4)
       ))
     } else{
-      if (kmeans == 3) {
+      if (kmeans == 2) {
         la = rowAnnotation(foo = anno_block(
           gp = gpar(fill = mypal[c(1:8)]),
-          labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
+          labels = c("Cluster 1", "Cluster 2"),
           labels_gp = gpar(col = "white", fontsize = font_size+4)
         ))
       } else{
-        if (kmeans == 4) {
+        if (kmeans == 3) {
           la = rowAnnotation(foo = anno_block(
             gp = gpar(fill = mypal[c(1:8)]),
-            labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
+            labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
             labels_gp = gpar(col = "white", fontsize = font_size+4)
           ))
         } else{
-          if (kmeans == 5) {
+          if (kmeans == 4) {
             la = rowAnnotation(foo = anno_block(
               gp = gpar(fill = mypal[c(1:8)]),
-              labels = c(
-                "Cluster 1",
-                "Cluster 2",
-                "Cluster 3",
-                "Cluster 4",
-                "Cluster 5"
-              ),
+              labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
               labels_gp = gpar(col = "white", fontsize = font_size+4)
             ))
           } else{
-            if (kmeans == 6) {
+            if (kmeans == 5) {
               la = rowAnnotation(foo = anno_block(
                 gp = gpar(fill = mypal[c(1:8)]),
                 labels = c(
@@ -299,54 +469,94 @@ Freq" = anno_barplot(
                   "Cluster 2",
                   "Cluster 3",
                   "Cluster 4",
-                  "Cluster 5",
-                  "Cluster 6"
+                  "Cluster 5"
                 ),
                 labels_gp = gpar(col = "white", fontsize = font_size+4)
               ))
             } else{
-              if (kmeans > 6) {
-                la = rowAnnotation(" " = anno_empty(
-                  border = FALSE,
-                  zoom = FALSE,
-                  width = unit(0.01, "cm")
+              if (kmeans == 6) {
+                la = rowAnnotation(foo = anno_block(
+                  gp = gpar(fill = mypal[c(1:8)]),
+                  labels = c(
+                    "Cluster 1",
+                    "Cluster 2",
+                    "Cluster 3",
+                    "Cluster 4",
+                    "Cluster 5",
+                    "Cluster 6"
+                  ),
+                  labels_gp = gpar(col = "white", fontsize = font_size+4)
                 ))
+              } else{
+                if (kmeans > 6) {
+                  la = rowAnnotation(" " = anno_empty(
+                    border = FALSE,
+                    zoom = FALSE,
+                    width = unit(0.01, "cm")
+                  ))
+                }
               }
             }
           }
         }
       }
     }
+  }else{                  la = rowAnnotation(" " = anno_empty(
+    border = FALSE,
+    zoom = FALSE,
+    width = unit(0.01, "cm")
+  ))
   }
   #ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(",LFQ_GL_Count, " Proteins)", "<br>",kmeans," Clusters ",label , sep="")
-  
-  ht = Heatmap(my_mat,
-               name = htname,
-               cluster_rows = TRUE, 
-               cluster_columns = cluster_cols,
-               column_dend_side = "bottom",
-               top_annotation = ha,
-               left_annotation = la,
-               right_annotation = ra,
-               #bottom_annotation = ba,
-               row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
-               cluster_row_slices = FALSE,
-               #column_km = 5, column_km_repeats = 2000, # kmeans clustering
-               col = col_fun,
-               #column_split = column_split,
-               border = TRUE,
-               row_names_gp = gpar(fontsize = font_size),
-               column_names_gp = gpar(fontsize = font_size+2),
-               column_title = gt_render (ht_title))
+  if(switch==3){
+    ht = Heatmap(my_mat,
+                 name = htname,
+                 cluster_rows = TRUE, 
+                 cluster_columns = cluster_cols,
+                 column_dend_side = "bottom",
+                 top_annotation = ha,
+                 left_annotation = la,
+                 right_annotation = ra,
+                 #bottom_annotation = ba,
+                 row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
+                 cluster_row_slices = FALSE,
+                 col = col_fun,
+                 #column_split = column_split,
+                 border = TRUE,
+                 row_names_gp = gpar(fontsize = font_size),
+                 column_names_gp = gpar(fontsize = font_size+2),
+                 column_title = gt_render (ht_title))
+  }else{
+    
+    
+    ht = Heatmap(my_mat,
+                 name = htname,
+                 cluster_rows = FALSE, 
+                 cluster_columns = cluster_cols,
+                 column_dend_side = "bottom",
+                 top_annotation = ha,
+                 left_annotation = la,
+                 right_annotation = ra,
+                 ##bottom_annotation = ba,
+                 #row_km = kmeans, row_km_repeats = 2000, # kmeans clustering
+                 #cluster_row_slices = FALSE,
+                 col = col_fun,
+                 na_col = "grey",
+                 #column_split = column_split,
+                 border = TRUE,
+                 row_names_gp = gpar(fontsize = font_size),
+                 column_names_gp = gpar(fontsize = font_size+2),
+                 column_title = gt_render (ht_title))
+  }
   #ht = draw(ht)
-  
-  compht<-list(ht, my_mat, dfdata_sig2)
+  if(switch==3){
+    compht<-list(ht, my_mat, dfdata_sig2)}else{compht<-list(ht, my_mat)}
   
   return(compht)
   
 }
 
-
+####2 Round ComplexHeatmap####
 plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, data_results2) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
@@ -475,7 +685,7 @@ Freq2" = anno_barplot(
   gp = gpar(fill = mypal[3], fontsize = 6), 
 ))
   
-
+  
   
   
   #Set up left annotation to match kmeans number
@@ -577,7 +787,7 @@ Freq2" = anno_barplot(
   
 }
 
-#BFDR Heatmap
+####BFDR Heatmap####
 plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, saintlist) {
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
@@ -917,7 +1127,7 @@ plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.
   if(comp_length>1){
     co = column_order(ht)
     my_mat<-my_mat[,co]
-    }
+  }
   
   #Split into the Clusters
   
@@ -983,7 +1193,7 @@ plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.
   #check
   clu_df
   
-
+  
   #Create filtered lists
   Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
   Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
@@ -2929,7 +3139,7 @@ get_entrezlist <- function(clu_df, species="Human"){
       "Cluster 5",
       "Cluster 6"
     )
-return(entrezlist)
+  return(entrezlist)
 }
 
 ####Cellualr Compartment####
@@ -2946,7 +3156,7 @@ plot_GO_CC <- function(entrezlist, species="Human"){
     readable = T
   )
   #GOCCtitle<-paste("Cellular Component ",sep="")
-
+  
   #GOCC_dotplot<- dotplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle)
   
   #GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
@@ -2971,7 +3181,7 @@ plot_GO_MF <- function(entrezlist, species="Human"){
     readable = T
   )
   #GOMFtitle<-paste("Molecular Function ", sep="")
-
+  
   #GOMF_dotplot<- dotplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle)
   
   #GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
@@ -2987,7 +3197,7 @@ plot_GO_MF <- function(entrezlist, species="Human"){
 
 plot_GO_BP <- function(entrezlist, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
-
+  
   GOBP <- compareCluster(
     geneClusters = entrezlist,
     fun = "enrichGO",
@@ -3031,7 +3241,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   dfc4 <- Cluster4$GeneID
   dfc5 <- Cluster5$GeneID
   dfc6 <- Cluster6$GeneID
-
+  
   clusterID <- paste("dfc", cluster_no,  sep = "")
   clusterID <- eval(parse(text = clusterID))#converts text to variable
   protein_list <- clusterID
@@ -3044,7 +3254,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   orig_melt_filt = setDT(orig_melt)[rowname %chin% protein_list]
   
   if(cluster_no > 0){
-  origtitle<-paste("Original values ", " Cluster ", cluster_no,sep="")
+    origtitle<-paste("Original values ", " Cluster ", cluster_no,sep="")
   }else{origtitle<-paste("Original values", sep="")}
   
   orig<-ggplot(orig_melt_filt, aes(Condition, val))+

@@ -48,6 +48,10 @@ RUN tlmgr install bookmark
 #Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
 RUN sudo rm /srv/shiny-server/index.html
+RUN Rscript -e 'install.packages("shinyWidgets", dependencies=TRUE)'
+RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-threading')"
+#Multi-threading has to be disabled on preprocessCore in QFeatures package
+RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"
 
 # Make the ShinyApp available at port 80
 EXPOSE 80
