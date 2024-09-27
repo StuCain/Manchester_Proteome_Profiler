@@ -1,23 +1,35 @@
 # Manchester Proteome Profiler
 Manchester Proteome Profiler is a web application which is easy to use and allows users to upload grouped protein intensity data from MaxQuant, FragPipe or Proteome Discoverer. Following filtering, normalisation and imputation of missing values, Manchester Proteome Profiler uses a number of R packages to perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. The suite also performs correlation and Principal Component Analysis (PCA) on the sample runs to evaluate replicate quality. Complex Heatmaps can be interactively generated from chosen condition comparisons, fold change and p.adj values. K means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis. Enhanced Volcano plots and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
 
-
 <img
   src="app/www/Introduction.png"
   alt="Alt text"
   title="Optional title"
   style="display: inline-block; margin: 0 auto; max-width: 100px">
+
+:toc:
+:toc-placement: preamble
   
+
 ## Table of Contents
-- [Files Needed](#files-needed)
-- [Instructions](#Quick-Instructions)
-  * [Using SAINTexpress results](#using-saintexpress-results)
-  * [Using LFQ_Analysist list](#using-lfq-analysist-list)
-- [Table of Contents (Optional)](#table-of-contents--optional-)
+1. [Quick Instructions](#quick-instructions)
+2. [Some paragraph](#paragraph1)
+    1. [Sub paragraph](#subparagraph1)
+3. [Installation](#installation)
 
 
-Quick Instructions
-==================
+# Quick Instructions
+#### 1. Load data (Pick Data File type first)
+#### 2. Save Exp. Template
+#### 3. Modify Exp. Template (Use a spreadsheet editor)
+#### 4. Load modified Exp. Template
+#### 5. Pick Comparisons or Generate comparison file from Comp. template and upload
+#### 6. Press "Analyse"
+------------
+
+# Instructions
+## Sidebar Menu
+
 
 Sidebar Menu
 ------------
@@ -170,3 +182,68 @@ The box plots can be saved as a pdf file and resized using the adjacent "PDF Wid
 ### Gene Ontology plots
 The Gene Ontology plots are generated from the proteins listed in each cluster of the complex Heatmap, and uses the clusterProfiler package. Each cluster is used to calculate enriched functional profiles using enrichGO, which are then aggregated to generate a single plot. All three GO domains can be tested, "Molecular Function", "Cellular Component" and "Biological Process" and the enrichment results are displayed as a "Dot plot" and a "Network plot". The "GO level" input box can be used to show either more global GO terms (lower number) or more granular GO terms (higher number).
 Both plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons and a table of Go enrichment result data can be downloaded.
+
+## Installation
+Once all the prerequisites are installed, follow steps below to build and run the server locally.
+
+You can build it natively:
+
+``` sh
+# Clone the repository
+git clone https://github.com/StuCain/Manchester_Proteome_Profiler
+
+# Move to the folder
+cd Manchester_Proteome_Profiler
+
+# Inside R console or R studio
+> install.packages("renv")
+> install.packages("BiocManager")
+> renv::install("shiny")
+> renv::install("shinydashboard")
+> renv::install("shinyWidgets")
+> renv::install("tidyverse")
+> renv::install("circlize")
+> renv::install("data.table")
+> renv::install("scales")
+> renv::install("gridtext")
+> renv::install("waiter")
+> renv::install("shinythemes")
+> renv::install("RColorBrewer")
+> renv::install("readxl")
+> renv::install("rmarkdown")
+> renv::install("tinytex")
+> renv::install("bioc::DEP")
+> renv::install("bioc::SummarizedExperiment")
+> renv::install("bioc::ComplexHeatmap")
+> renv::install("bioc::clusterProfiler")
+> renv::install("bioc::enrichplot")
+> renv::install("bioc::QFeatures")
+> renv::install("bioc::EnhancedVolcano")
+> renv::install("bioc::HDO.db")
+> renv::install("bioc::org.Hs.eg.db")
+> renv::install("bioc::org.Mm.eg.db")
+> renv::install("bioc::VennDetail")
+
+# Execute
+> library("shiny")
+> runApp()
+```
+
+Or run it through Docker:
+
+``` sh
+# Clone the repository
+git clone https://github.com/StuCain/Manchester_Proteome_Profiler
+# Move to the folder
+cd Manchester_Proteome_Profiler
+
+# Build Manchester_Proteome_Profiler (Any name after -t)
+docker buildx build -f Dockerfile.local -t Manchester_Proteome_Profiler  --output=type=docker --platform=linux/amd64 .
+
+# Run FragPipe-Analyst
+docker run -it --platform=linux/amd64 -d -p 80:80 Manchester_Proteome_Profiler
+
+# Open local interface
+http://localhost:80/fragpipe-analyst/
+```
+
