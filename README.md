@@ -6,9 +6,6 @@ Manchester Proteome Profiler is a web application which is easy to use and allow
   alt="Alt text"
   title="Optional title"
   style="display: inline-block; margin: 0 auto; max-width: 100px">
-
-:toc:
-:toc-placement: preamble
   
 
 ## Table of Contents
@@ -30,9 +27,6 @@ Manchester Proteome Profiler is a web application which is easy to use and allow
 # Instructions
 ## Sidebar Menu
 
-
-Sidebar Menu
-------------
 
 ### Choose data type
 
