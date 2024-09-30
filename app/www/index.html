@@ -112,8 +112,8 @@
 			</div>
 			<div class="text">
 				<h3>Set Fold-change and p-adj. cut off values</h3>
-				<p>Fold-change cut off values will be converted to log2Fold-Change. For an identified protein to be included in the significant list the fold change must be >= the the chosen value in one of the chosen comparisons. </p>
-				<p>p-adj vale cut-off. For an identified protein to be included in the significant list the p-adj value must be <= the chosen value in one of the chosen comparisons. p-adj values should normally be used for selecting cut-off values, however the cut-off values can be changed to using non-adjusted p.Val by selecting the "Use p.Val" box.</p>
+				<p>Fold-change cut off values will be converted to log2Fold-Change when used to calculate the number of significant proteins. </p>
+				<p>For an identified protein to be included in the significant list the pairwise log2Fold-Change value must be >= to log2 of the chosen fold change value and the p.adj value must be <= to the chosen p.adj value for at least one of the chosen comparisons. p-adj values should normally be used for selecting cut-off values, however the cut-off values can be changed to using non-adjusted p.Val by selecting the "Use p.Val" box.</p>
 				<p>Fold-change and p-adj values for the 2 round of comparisons or the second dataset can be specified in the second set of boxes  </p>
 			</div>
 		</div>
@@ -175,6 +175,17 @@
 				<p>A standard Volcano plot can be displayed for each of the comparisons, which selected using the Contrast drop box. This contains points for all the filtered proteins, with the significant proteins indicated. Text size can be changed, or removed. If the Adjusted p values is selected p.adj values will be used instead of p.val. If two rounds of comparisons are shown the second set of comparisons is shown in a separate tab. All volcano plots can be saved as pdf files and resized using the "PDF Width" and "PDF Height" buttons.</p>
 			</div>
 		</div>
+		
+				<div class="flex-container">
+			<div class="image">
+				<img src="sign_count.jpg" width=200px>
+			</div>
+			<div class="text">
+				<h3><FONT COLOR="#000000">Significance Count Plot</h3>
+				<p>The Significance Count Plot shows the number of significant proteins for each fold change value up to the "Maxiumum Cut-of value" chosen in the box above. For an identified protein to be included in the significant list the pairwise log2Fold-Change value must be >= to log2 of the tested fold change value and the p.adj value must be <= to the tested p.adj value for at least one of the chosen comparisons.  The significant protein count is calculated for three different p.adj values (0.05, 0.1 and 0.5). If the "Use p.Val" box is ticked, the calculation switches to three different p values instead. The Significant Count plot can be saved as a pdf file and resized using the "PDF Width" and "PDF Height" buttons.</p>
+			</div>
+		</div>
+
 
 		<h3><FONT COLOR="#2297E6">Correlation Plots</h3>
 		<div class="flex-container">
@@ -222,8 +233,8 @@
 				<img src="norm.jpg" width=200px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Normalization</h3>
-					<p>The data is background corrected and normalized by variance stabilizing transformation (vsn). The distribution of the protein intensities is indicated for each sample before and after normalisation</p>
+				<h3><FONT COLOR="#000000">Normalisation</h3>
+					<p>The data is background corrected and normalised by variance stabilizing transformation (vsn). The distribution of the protein intensities is indicated for each sample before and after normalisation. The normalisation method can be switched to quantile normalisation using the radio button on the "Normalisation options" drop down menu on he sidebar.</p>
 			</div>
 		</div>
 			
@@ -296,8 +307,8 @@
 			</div>
 			<div class="text">
 				<h3><FONT COLOR="#000000">Gene Ontology plots</h3>
-				<p>Box plots showing the log2 intensity values for each condition for all the proteins from chosen cluster are shown. The intensity values can be switched between imputed values or normalised only values, and the chosen cluster number can be changed. These plots can be used to asses the effect of imputation on the data and to identify which values were missing. It can also be used to evaluate the quality of each the replicates to observe if any set of replicates were consistent outliers.</p>
-				<p>The box plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons.</p>
+				<p>The Gene Ontology plots are generated from the proteins listed in each cluster of the complex Heatmap, and uses the clusterProfiler package. Each cluster is used to calculate enriched functional profiles using enrichGO, which are then aggregated to generate a single plot. All three GO domains can be tested, "Molecular Function", "Cellular Component" and "Biological Process" and the enrichment results are displayed as a "Dot plot" and a "Network plot". The "GO level" input box can be used to show either more global GO terms (lower number) or more granular GO terms (higher number).</p>
+				<p>Both plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons and a table of Go enrichment result data can be downloaded.</p>
 			</div>
 						<div class="image">
 				<img src="cell_comp_map.jpg" width=300px>

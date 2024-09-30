@@ -33,7 +33,7 @@ library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
 
-Version = "0.8.1-beta"
+Version = "0.8.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -952,16 +952,16 @@ ui <- fluidPage(
                                                       downloadButton('download_BP_all', 'Download BP Data', class = "btn-warning")
                                                       
                                                     ),
-                                           ),
-                                           tabPanel(title = "App Variables",
-                                                    fluidRow(
-                                                      helpText("Save settings to reproduce results in future sessions"),
-                                                    ),
-                                                    fluidRow(
-                                                      DT::dataTableOutput("table4"), #Setting Table
-                                                      downloadButton('downloadsettings', 'Save Settings', class="btn btn-primary")
-                                                    )
                                            )
+#                                           tabPanel(title = "App Variables",
+#                                                    fluidRow(
+#                                                      helpText("Save settings to reproduce results in future sessions"),
+#                                                    ),
+#                                                    fluidRow(
+#                                                      DT::dataTableOutput("table4"), #Setting Table
+#                                                      downloadButton('downloadsettings', 'Save Settings', class="btn btn-primary")
+#                                                    )
+#                                          )
                                            
                                     )
                              )
