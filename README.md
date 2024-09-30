@@ -10,7 +10,7 @@ Manchester Proteome Profiler is a web application which is easy to use and allow
 
 ## Table of Contents
 1. [Quick Instructions](#quick-instructions)
-2. [Instructions](instructions)
+2. [Instructions](#instructions)
 3. [Installation](#installation)
 
 
