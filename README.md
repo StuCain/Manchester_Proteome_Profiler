@@ -32,6 +32,12 @@ You can load either the proteinGroups.txt output from MaxQuant, the Abundance da
 Use the browse button to upload data file, the input box will change depending on the Data File type selected.
 ### Load Experimental Design template
 The Experimental template matches the column titles from your data file to the sample conditions of your data. It consists of five columns (label, condition, replicate, condition_type and bait_id). The **label column** must match the column titles, the **condition column** can be any (short) description, **it should not start with a number, e.g. use "drug_4h" not "4h_drug" **(use only _ or . special characters). The **replicate column** just contains a replicate number (see example below). The last two columns are needed for SAINTexpress analysis. SAINTexpress processing allows identification of proteins that were enriched compared with the control samples. The **bait_id column** must contain either "T" for tested samples or "C" for control samples. If are different experimental conditions which have different matching controls, the matching samples for each of the conditions should be labelled in the **condition_type column**. The condition_type can be labelled with any label, e.g. "1", "2" and "3" of "24hr", "48hr" or "72hr". **If SAINTexpress analysis is not needed these columns can be left unaltered**
+<img
+  src="app/www/exp_template.jpg"
+  width="600"
+  alt="Alt text"
+  title="Optional title"
+  style="display: inline-block; margin: 0 auto; max-width: 40px">
 ### Generate Experimental template
 To simplify the process a template for the experimental design file can be generated using the "Save Exp. Template" button. Upload the data file first, this will then allow the label column to be automatically filled in from the column titles of the intensity columns. The replicate column is also filled in with the last character, (usually the replicate number). The **condition_type** and **bait_id** are also filled in, however the "T" will needed to changed to a "C" for the control samples for SAINTexpress analysis to be performed. If SAINTexpress analysis is not needed, these columns may be left as they are. Use a spreadsheet editor to modify the Exp. Template, make sure you you save it in the same format (tab-separated txt. file).
 
