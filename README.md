@@ -10,8 +10,7 @@ Manchester Proteome Profiler is a web application which is easy to use and allow
 
 ## Table of Contents
 1. [Quick Instructions](#quick-instructions)
-2. [Some paragraph](#paragraph1)
-    1. [Sub paragraph](#subparagraph1)
+2. [Instructions](instructions)
 3. [Installation](#installation)
 
 
@@ -26,11 +25,6 @@ Manchester Proteome Profiler is a web application which is easy to use and allow
 
 # Instructions
 ## Sidebar Menu
-
-
-### Choose data type
-
-You can load either the proteinGroups.txt out put from MaxQuant or the Abundance data from Proteome Discovery
 
 ### Choose data type
 You can load either the proteinGroups.txt output from MaxQuant, the Abundance data from Proteome Discovery, or the combined_protein.tsv (LFQ) or protein group matrix.tsv (DIA) from FragPipe.
