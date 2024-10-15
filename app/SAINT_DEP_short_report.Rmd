@@ -123,24 +123,67 @@ if (params$data_mode == TRUE){second_round_txt<-paste("For this analysis two dat
 
 if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
 
+clust_height_1<-0
+clust_height_2<-0
+clust_height_3<-0
+clust_height_4<-0
+clust_height_5<-0
+clust_height_6<-0
+clust_height_7<-0
+clust_height_8<-0
+clust_height_9<-0
+clust_height_10<-0
 
-clust1_table<-as.data.frame(params$cluster_heatmap_input()[[13]])
+  
+clust1_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[1]])
 clust1_table<-clust1_table[, 1:3]
+clust_height_1<-(as.numeric(params$cluster_heatmap_input()[[2]][[1]])/8)+4
+
 if(params$k1>1){
-clust2_table<-as.data.frame(params$cluster_heatmap_input()[[14]])
-clust2_table<-clust2_table[, 1:3]}
+clust2_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[2]])
+clust2_table<-clust2_table[, 1:3]
+clust_height_2<-(as.numeric(params$cluster_heatmap_input()[[2]][[2]])/8)+4}
+
 if(params$k1>2){
-clust3_table<-as.data.frame(params$cluster_heatmap_input()[[15]])
-clust3_table<-clust3_table[, 1:3]}
+clust3_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[3]])
+clust3_table<-clust3_table[, 1:3]
+clust_height_3<-(as.numeric(params$cluster_heatmap_input()[[2]][[3]])/8)+4}
+
 if(params$k1>3){
-clust4_table<-as.data.frame(params$cluster_heatmap_input()[[16]])
-clust4_table<-clust4_table[, 1:3]}
+clust4_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[4]])
+clust4_table<-clust4_table[, 1:3]
+clust_height_4<-(as.numeric(params$cluster_heatmap_input()[[2]][[4]])/8)+4}
+
 if(params$k1>4){
-clust5_table<-as.data.frame(params$cluster_heatmap_input()[[17]])
-clust5_table<-clust5_table[, 1:3]}
+clust5_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[5]])
+clust5_table<-clust5_table[, 1:3]
+clust_height_5<-(as.numeric(params$cluster_heatmap_input()[[2]][[5]])/8)+4}
+
 if(params$k1>5){
-clust6_table<-as.data.frame(params$cluster_heatmap_input()[[18]])
-clust6_table<-clust6_table[, 1:3]}
+clust6_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[6]])
+clust6_table<-clust6_table[, 1:3]
+clust_height_6<-(as.numeric(params$cluster_heatmap_input()[[2]][[6]])/8)+4}
+
+if(params$k1>6){
+clust7_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[7]])
+clust7_table<-clust7_table[, 1:3]
+clust_height_7<-(as.numeric(params$cluster_heatmap_input()[[2]][[7]])/8)+4}
+
+if(params$k1>7){
+clust8_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[8]])
+clust8_table<-clust8_table[, 1:3]
+clust_height_8<-(as.numeric(params$cluster_heatmap_input()[[2]][[8]])/8)+4}
+
+if(params$k1>8){
+clust9_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[9]])
+clust9_table<-clust9_table[, 1:3]
+clust_height_9<-(as.numeric(params$cluster_heatmap_input()[[2]][[9]])/8)+4}
+
+if(params$k1>9){
+clust10_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[10]])
+clust10_table<-clust10_table[, 1:3]
+clust_height_10<-(as.numeric(params$cluster_heatmap_input()[[2]][[10]])/8)+4}
+
 
 #Imputation Text
 if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
@@ -160,7 +203,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.3.0
+Version:0.3.2
 
 ## Method details
  
@@ -522,13 +565,13 @@ shiny::setProgress(0.60)  # set progress to 60%
 
 ### Cluster Heatmaps
 
-```{r heatmap_cluster1, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[7])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster1, echo=FALSE, fig.height=clust_height_1, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 if(params$k1>0){
-  print(params$cluster_heatmap_input()[[1]])
+  print(params$cluster_heatmap_input()[[1]][[1]])
  
   
-  cluster1<-as.character (params$cluster_heatmap_input()[[13]]) 
-  print(params$cluster_heatmap_input()[[13]])
+#  cluster1<-as.character (params$cluster_heatmap_input()[[13]]) 
+#  print(params$cluster_heatmap_input()[[13]])
 }
 if (params$rendered_by_shiny)
 shiny::setProgress(0.80)  # set progress to 80%
@@ -543,10 +586,10 @@ knitr::kable(clust1_table)
 
 \pagebreak
 
-```{r heatmap_cluster2, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[8])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster2, echo=FALSE, fig.height=clust_height_2, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 
 if(params$k1>1){
-  print(params$cluster_heatmap_input()[[2]])
+  print(params$cluster_heatmap_input()[[1]][[2]])
 }
 ```
 \pagebreak
@@ -562,10 +605,10 @@ knitr::kable(clust2_table)
 
 \pagebreak
 
-```{r heatmap_cluster3, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[9])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster3, echo=FALSE, fig.height=clust_height_3, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 
 if(params$k1>2){
-  print(params$cluster_heatmap_input()[[3]])
+  print(params$cluster_heatmap_input()[[1]][[3]])
 }
 ```
 \pagebreak
@@ -581,10 +624,10 @@ knitr::kable(clust3_table)
 
 \pagebreak
 
-```{r heatmap_cluster4, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[10])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster4, echo=FALSE, fig.height=clust_height_4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 
 if(params$k1>3){
-  print(params$cluster_heatmap_input()[[4]])
+  print(params$cluster_heatmap_input()[[1]][[4]])
 }
 ```
 \pagebreak
@@ -600,9 +643,9 @@ knitr::kable(clust4_table)
 
 \pagebreak
 
-```{r heatmap_cluster5, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[11])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster5, echo=FALSE, fig.height=clust_height_5, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 if(params$k1>4){
-  print(params$cluster_heatmap_input()[[5]])
+  print(params$cluster_heatmap_input()[[1]][[5]])
 }
 ```
 \pagebreak
@@ -617,9 +660,9 @@ knitr::kable(clust5_table)
 
 \pagebreak
 
-```{r heatmap_cluster6, echo=FALSE, fig.height=(as.numeric(params$cluster_heatmap_input()[12])/8)+4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster6, echo=FALSE, fig.height=clust_height_6, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
 if(params$k1>5){
-  print(params$cluster_heatmap_input()[[6]])
+  print(params$cluster_heatmap_input()[[1]][[6]])
 }
 
 ```
@@ -632,10 +675,78 @@ print("Cluster 6")
 knitr::kable(clust6_table)
 }
 ```
-
-
-
 \pagebreak
+
+```{r heatmap_cluster7, echo=FALSE, fig.height=clust_height_7, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+if(params$k1>6){
+  print(params$cluster_heatmap_input()[[1]][[7]])
+}
+
+```
+\pagebreak
+
+```{r c7_table, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$k1>6){
+print("Cluster 7")
+
+knitr::kable(clust7_table)
+}
+```
+\pagebreak
+
+```{r heatmap_cluster8, echo=FALSE, fig.height=clust_height_8, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+if(params$k1>7){
+  print(params$cluster_heatmap_input()[[1]][[8]])
+}
+
+```
+\pagebreak
+
+```{r c8_table, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$k1>7){
+print("Cluster 8")
+
+knitr::kable(clust8_table)
+}
+```
+\pagebreak
+
+```{r heatmap_cluster9, echo=FALSE, fig.height=clust_height_9, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+if(params$k1>8){
+  print(params$cluster_heatmap_input()[[1]][[9]])
+}
+
+```
+\pagebreak
+
+```{r c9_table, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$k1>8){
+print("Cluster 9")
+
+knitr::kable(clust9_table)
+}
+
+```
+\pagebreak
+
+```{r heatmap_cluster10, echo=FALSE, fig.height=clust_height_10, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+if(params$k1>9){
+  print(params$cluster_heatmap_input()[[1]][[10]])
+}
+
+```
+\pagebreak
+
+```{r c10_table, echo=FALSE, message=FALSE, warning=FALSE}
+if(params$k1>9){
+print("Cluster 10")
+
+knitr::kable(clust10_table)
+}
+
+```
+\pagebreak
+
 ### Enhanced Volcano Plots
 ```{r enh_volcano, echo=FALSE, fig.height=9, fig.width=7, warning=FALSE, comment=NA}
       if (params$comp_type == "2 Rounds of comparisons"){
@@ -649,7 +760,7 @@ knitr::kable(clust6_table)
 
 for(i in comp){
   enh_vol<-plot_enhanced_volcano (params$data_results(),
-                               params$cluster_heatmap_input()[[19]],
+                               params$cluster_heatmap_input()[[4]],
                                comp_pick = i,
                                FC=lfc,
                                pVal=p,

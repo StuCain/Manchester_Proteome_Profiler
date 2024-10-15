@@ -32,7 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
-Version = "0.8.3-beta"
+Version = "0.9.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -584,7 +584,7 @@ ui <- fluidPage(
                                       #Kmeans Cluster box
                                       box(numericInput("k1",
                                                        "Kmeans clusters",
-                                                       min = 1, max = 6, value = 4),
+                                                       min = 1, max = 10, value = 4),
                                           checkboxInput("cluster_cols",
                                                         "Cluster columns",
                                                         value = TRUE),
@@ -690,7 +690,7 @@ ui <- fluidPage(
                                                                #Kmeans Cluster box
                                                                box(numericInput("k1_c1",
                                                                                 "Kmeans clusters",
-                                                                                min = 1, max = 6, value = 4),
+                                                                                min = 1, max = 10, value = 4),
                                                                    width = 3),
                                                              ),
                                                              #Heatmap in variable box
@@ -713,7 +713,7 @@ ui <- fluidPage(
                                                                #Kmeans Cluster box
                                                                box(numericInput("k1_c2",
                                                                                 "Kmeans clusters",
-                                                                                min = 1, max = 6, value = 4),
+                                                                                min = 1, max = 10, value = 4),
                                                                    width = 3),
                                                              ),
                                                              #Heatmap in variable box
@@ -740,7 +740,7 @@ ui <- fluidPage(
                                                              fluidRow(
                                                                box(numericInput("cluster_no",
                                                                                 "Cluster No.",
-                                                                                min = 1, max = 6, value = 1),
+                                                                                min = 1, max = 10, value = 1),
                                                                    width = 4),
                                                              ),
                                                              fluidRow(
@@ -812,7 +812,7 @@ ui <- fluidPage(
                                                     fluidRow(
                                                       box(numericInput("cluster_no_box",
                                                                        "Cluster No.",
-                                                                       min = 1, max = 6, value = 1),
+                                                                       min = 1, max = 10, value = 1),
                                                           width = 3),
                                                       box(radioButtons("pres_box",
                                                                        "Data Type",
@@ -3309,7 +3309,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Output of table on Cluster tab
     output$table3 <- DT::renderDataTable({
-      cluster_heatmap_input()[[input$cluster_no+12]]
+      cluster_heatmap_input()[[3]][[input$cluster_no]]
     }, options = list(pageLength = 25, scrollX = T),
     )
     
@@ -3498,7 +3498,7 @@ server <- shinyServer(function(input, output, session) {
     
     #cluster heatmap output
     output$cluster_heatmap <- renderPlot({
-      cluster_heatmap_input()[[input$cluster_no]]
+      cluster_heatmap_input()[[1]][[input$cluster_no]]
     })
     
     #Box Plots
@@ -3585,7 +3585,7 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_clust <- renderUI({
-        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[input$cluster_no+6]]*12)+270)
+        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[input$cluster_no]]*12)+270)
       })
     })
     
@@ -3782,7 +3782,7 @@ server <- shinyServer(function(input, output, session) {
     output$downloadclustertable <- downloadHandler(
       filename = function() { paste("Cluster ", input$cluster_no, ".txt", sep = "") },
       content = function(file) {
-        write.table(cluster_heatmap_input()[[input$cluster_no+12]],
+        write.table(cluster_heatmap_input()[[3]][[input$cluster_no]],
                     file,
                     col.names = TRUE,
                     row.names = FALSE,
@@ -4184,7 +4184,7 @@ server <- shinyServer(function(input, output, session) {
       },
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight_htc, width = input$pdfwidth_htc)
-        print(cluster_heatmap_input()[[input$cluster_no]])
+        print(cluster_heatmap_input()[[1]][[input$cluster_no]])
         dev.off()
       }
     )

@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 3.6
+Version = 4.1
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -130,26 +130,26 @@ signif_count <- function( df, max_cutoff=20 ) {
   sig_count_0.1<-vector(mode="numeric")
   sig_count_0.5<-vector(mode="numeric")
   
-  for (i in 1:max_cutoff) {
+  for (i in 1:20) {
     dep_i<-add_rejections(df, 0.05, log2(i))
     sig_count_0.05[i]<-dep_i %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
   }
-  for (i in 1:max_cutoff) {
+  for (i in 1:20) {
     dep_i<-add_rejections(df, 0.1, log2(i))
     sig_count_0.1[i]<-dep_i %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
   }
-  for (i in 1:max_cutoff) {
+  for (i in 1:20) {
     dep_i<-add_rejections(df, 0.5, log2(i))
     sig_count_0.5[i]<-dep_i %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
   }
   
-  fc_val<-1:max_cutoff
+  fc_val<-1:20
   sig_plot_data <-data.frame(fc_val,sig_count_0.05, sig_count_0.1, sig_count_0.5)
   sig_plot_graph<- sig_plot_data %>% gather(key = p.adj, value = value, sig_count_0.05:sig_count_0.5)
   sig_plot<-ggplot(sig_plot_graph, aes(x = fc_val, y = value, group = p.adj, colour = p.adj)) +
@@ -171,26 +171,26 @@ signif_count_pval <- function( df, max_cutoff=20 ) {
   sig_count_0.1<-vector(mode="numeric")
   sig_count_0.5<-vector(mode="numeric")
   
-  for (i in 1:max_cutoff) {
+  for (i in 1:20) {
     dep_i<-add_rejections_pval(df, 0.05, log2(i))
     sig_count_0.05[i]<-dep_i %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
   }
-  for (i in 1:max_cutoff) {
+  for (i in 1:20) {
     dep_i<-add_rejections_pval(df, 0.1, log2(i))
     sig_count_0.1[i]<-dep_i %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
   }
-  for (i in 1:max_cutoff) {
+  for (i in 1:20) {
     dep_i<-add_rejections_pval(df, 0.5, log2(i))
     sig_count_0.5[i]<-dep_i %>%
       .[SummarizedExperiment::rowData(.)$significant, ] %>%
       nrow()
   }
   
-  fc_val<-1:max_cutoff
+  fc_val<-1:20
   sig_plot_data <-data.frame(fc_val,sig_count_0.05, sig_count_0.1, sig_count_0.5)
   sig_plot_graph<- sig_plot_data %>% gather(key = p.adj, value = value, sig_count_0.05:sig_count_0.5)
   sig_plot<-ggplot(sig_plot_graph, aes(x = fc_val, y = value, group = p.adj, colour = p.adj)) +
@@ -268,18 +268,18 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
   }
   if (length(indicate) == 1) {
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]]), 
-        size = point_size) + labs(col = indicate[1])
+                        size = point_size) + labs(col = indicate[1])
   }
   if (length(indicate) == 2) {
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
-      shape = pca_df[[indicate[2]]]), size = point_size) + 
+                            shape = pca_df[[indicate[2]]]), size = point_size) + 
       labs(col = indicate[1], shape = indicate[2])
   }
   if (length(indicate) == 3) {
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
-        shape = pca_df[[indicate[2]]]), size = point_size) + 
+                            shape = pca_df[[indicate[2]]]), size = point_size) + 
       facet_wrap(~pca_df[[indicate[3]]]) +
-    labs(col = indicate[1], shape = indicate[2])
+      labs(col = indicate[1], shape = indicate[2])
   }
   if (label) {
     p <- p + geom_text(aes(label = rowname), size = label_size)
@@ -299,6 +299,9 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
 
 ####Complex Heatmap function####
 plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list) {
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+  
   set.seed(123)
   if (switch==3){
     FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
@@ -311,18 +314,6 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
   
   if (switch==1){imp_matrix<-data_results}
   if (switch==2){norm_matrix<-data_results}
-  
-  
-  #  #Set up label data
-  #  if (switch == 1){
-  #    label = "Imputed_Int_Sig"
-  #  }
-  #  if (switch == 2){
-  #    label = "Orig_Int_Sig"
-  #  }
-  #  if (switch == 3) {
-  #    label = "Contrast"
-  #  } 
   
   
   ####Set up Heatmaps####
@@ -384,7 +375,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
         my_mat,
         type = "violin",
         height = unit(2, "cm"),
-        gp = gpar(fill = mypal[c(1:8)])
+        gp = gpar(fill = mypal[c(1:16)])
       ),
       FC_mean = CS,
       col = list(FC_mean = col_fun),
@@ -398,7 +389,7 @@ plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal,
         my_mat,
         type = "violin",
         height = unit(2, "cm"),
-        gp = gpar(fill = mypal[c(1:8)])
+        gp = gpar(fill = mypal[c(1:16)])
       ),
       Int_mean = CSi,
       col = list(Int_mean = col_fun),
@@ -433,80 +424,32 @@ Freq" = anno_barplot(
   
   #Set up left annotation to match kmeans number
   if(switch==3){
-    if (kmeans == 1) {
+    label_txt<-vector()
+    for (i in 1:kmeans) {
+      label_txt[i]<-paste0("Cluster ", i)
+    }
+    if (kmeans <= 16) {
       la = rowAnnotation(foo = anno_block(
-        gp = gpar(fill = mypal[c(1:8)]),
-        labels = c("Cluster 1"),
+        gp = gpar(fill = mypal[c(1:16)]),
+        labels = label_txt,
         labels_gp = gpar(col = "white", fontsize = font_size+4)
       ))
     } else{
-      if (kmeans == 2) {
-        la = rowAnnotation(foo = anno_block(
-          gp = gpar(fill = mypal[c(1:8)]),
-          labels = c("Cluster 1", "Cluster 2"),
-          labels_gp = gpar(col = "white", fontsize = font_size+4)
+      if (kmeans > 16) {
+        la = rowAnnotation(" " = anno_empty(
+          border = FALSE,
+          zoom = FALSE,
+          width = unit(0.01, "cm")
         ))
-      } else{
-        if (kmeans == 3) {
-          la = rowAnnotation(foo = anno_block(
-            gp = gpar(fill = mypal[c(1:8)]),
-            labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
-            labels_gp = gpar(col = "white", fontsize = font_size+4)
-          ))
-        } else{
-          if (kmeans == 4) {
-            la = rowAnnotation(foo = anno_block(
-              gp = gpar(fill = mypal[c(1:8)]),
-              labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
-              labels_gp = gpar(col = "white", fontsize = font_size+4)
-            ))
-          } else{
-            if (kmeans == 5) {
-              la = rowAnnotation(foo = anno_block(
-                gp = gpar(fill = mypal[c(1:8)]),
-                labels = c(
-                  "Cluster 1",
-                  "Cluster 2",
-                  "Cluster 3",
-                  "Cluster 4",
-                  "Cluster 5"
-                ),
-                labels_gp = gpar(col = "white", fontsize = font_size+4)
-              ))
-            } else{
-              if (kmeans == 6) {
-                la = rowAnnotation(foo = anno_block(
-                  gp = gpar(fill = mypal[c(1:8)]),
-                  labels = c(
-                    "Cluster 1",
-                    "Cluster 2",
-                    "Cluster 3",
-                    "Cluster 4",
-                    "Cluster 5",
-                    "Cluster 6"
-                  ),
-                  labels_gp = gpar(col = "white", fontsize = font_size+4)
-                ))
-              } else{
-                if (kmeans > 6) {
-                  la = rowAnnotation(" " = anno_empty(
-                    border = FALSE,
-                    zoom = FALSE,
-                    width = unit(0.01, "cm")
-                  ))
-                }
-              }
-            }
-          }
-        }
       }
     }
-  }else{                  la = rowAnnotation(" " = anno_empty(
+  }else{la = rowAnnotation(" " = anno_empty(
     border = FALSE,
     zoom = FALSE,
     width = unit(0.01, "cm")
   ))
   }
+  
   #ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(",LFQ_GL_Count, " Proteins)", "<br>",kmeans," Clusters ",label , sep="")
   if(switch==3){
     ht = Heatmap(my_mat,
@@ -558,6 +501,9 @@ Freq" = anno_barplot(
 
 ####2 Round ComplexHeatmap####
 plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, data_results2) {
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+  
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
   #Change column names
@@ -628,7 +574,7 @@ plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun,
         my_mat,
         type = "violin",
         height = unit(2, "cm"),
-        gp = gpar(fill = mypal[c(1:8)])
+        gp = gpar(fill = mypal[c(1:16)])
       ),
       FC_mean = CS,
       col = list(FC_mean = col_fun),
@@ -642,7 +588,7 @@ plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun,
         my_mat,
         type = "violin",
         height = unit(2, "cm"),
-        gp = gpar(fill = mypal[c(1:8)])
+        gp = gpar(fill = mypal[c(1:16)])
       ),
       Int_mean = CS,
       col = list(Int_mean = col_fun),
@@ -688,76 +634,32 @@ Freq2" = anno_barplot(
   
   
   
-  #Set up left annotation to match kmeans number
-  if (kmeans == 1) {
-    la = rowAnnotation(foo = anno_block(
-      gp = gpar(fill = mypal[c(1:8)]),
-      labels = c("Cluster 1"),
-      labels_gp = gpar(col = "white", fontsize = font_size+4)
-    ))
-  } else{
-    if (kmeans == 2) {
+  if(switch==3){
+    label_txt<-vector()
+    for (i in 1:kmeans) {
+      label_txt[i]<-paste0("Cluster ", i)
+    }
+    if (kmeans <= 16) {
       la = rowAnnotation(foo = anno_block(
-        gp = gpar(fill = mypal[c(1:8)]),
-        labels = c("Cluster 1", "Cluster 2"),
+        gp = gpar(fill = mypal[c(1:16)]),
+        labels = label_txt,
         labels_gp = gpar(col = "white", fontsize = font_size+4)
       ))
     } else{
-      if (kmeans == 3) {
-        la = rowAnnotation(foo = anno_block(
-          gp = gpar(fill = mypal[c(1:8)]),
-          labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
-          labels_gp = gpar(col = "white", fontsize = font_size+4)
+      if (kmeans > 16) {
+        la = rowAnnotation(" " = anno_empty(
+          border = FALSE,
+          zoom = FALSE,
+          width = unit(0.01, "cm")
         ))
-      } else{
-        if (kmeans == 4) {
-          la = rowAnnotation(foo = anno_block(
-            gp = gpar(fill = mypal[c(1:8)]),
-            labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
-            labels_gp = gpar(col = "white", fontsize = font_size+4)
-          ))
-        } else{
-          if (kmeans == 5) {
-            la = rowAnnotation(foo = anno_block(
-              gp = gpar(fill = mypal[c(1:8)]),
-              labels = c(
-                "Cluster 1",
-                "Cluster 2",
-                "Cluster 3",
-                "Cluster 4",
-                "Cluster 5"
-              ),
-              labels_gp = gpar(col = "white", fontsize = font_size+4)
-            ))
-          } else{
-            if (kmeans == 6) {
-              la = rowAnnotation(foo = anno_block(
-                gp = gpar(fill = mypal[c(1:8)]),
-                labels = c(
-                  "Cluster 1",
-                  "Cluster 2",
-                  "Cluster 3",
-                  "Cluster 4",
-                  "Cluster 5",
-                  "Cluster 6"
-                ),
-                labels_gp = gpar(col = "white", fontsize = font_size+4)
-              ))
-            } else{
-              if (kmeans > 6) {
-                la = rowAnnotation(" " = anno_empty(
-                  border = FALSE,
-                  zoom = FALSE,
-                  width = unit(0.01, "cm")
-                ))
-              }
-            }
-          }
-        }
       }
     }
+  }else{la = rowAnnotation(" " = anno_empty(
+    border = FALSE,
+    zoom = FALSE,
+    width = unit(0.01, "cm")
+  ))
   }
-  #ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(",LFQ_GL_Count, " Proteins)", "<br>",kmeans," Clusters ",label , sep="")
   
   ht = Heatmap(my_mat,
                name = htname,
@@ -789,6 +691,9 @@ Freq2" = anno_barplot(
 
 ####BFDR Heatmap####
 plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list, data_results1, saintlist) {
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+  
   set.seed(123)
   FC_data <- data_results[, c(1,grep("_ratio",colnames(data_results)))]
   #Change column names
@@ -859,7 +764,7 @@ plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, m
         my_mat,
         type = "violin",
         height = unit(2, "cm"),
-        gp = gpar(fill = mypal[c(1:8)])
+        gp = gpar(fill = mypal[c(1:16)])
       ),
       FC_mean = CS,
       col = list(FC_mean = col_fun),
@@ -873,7 +778,7 @@ plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, m
         my_mat,
         type = "violin",
         height = unit(2, "cm"),
-        gp = gpar(fill = mypal[c(1:8)])
+        gp = gpar(fill = mypal[c(1:16)])
       ),
       Int_mean = CS,
       col = list(Int_mean = col_fun),
@@ -919,76 +824,32 @@ Freq" = anno_barplot(
   
   
   
-  #Set up left annotation to match kmeans number
-  if (kmeans == 1) {
-    la = rowAnnotation(foo = anno_block(
-      gp = gpar(fill = mypal[c(1:8)]),
-      labels = c("Cluster 1"),
-      labels_gp = gpar(col = "white", fontsize = font_size+4)
-    ))
-  } else{
-    if (kmeans == 2) {
+  if(switch==3){
+    label_txt<-vector()
+    for (i in 1:kmeans) {
+      label_txt[i]<-paste0("Cluster ", i)
+    }
+    if (kmeans <= 16) {
       la = rowAnnotation(foo = anno_block(
-        gp = gpar(fill = mypal[c(1:8)]),
-        labels = c("Cluster 1", "Cluster 2"),
+        gp = gpar(fill = mypal[c(1:16)]),
+        labels = label_txt,
         labels_gp = gpar(col = "white", fontsize = font_size+4)
       ))
     } else{
-      if (kmeans == 3) {
-        la = rowAnnotation(foo = anno_block(
-          gp = gpar(fill = mypal[c(1:8)]),
-          labels = c("Cluster 1", "Cluster 2" , "Cluster 3"),
-          labels_gp = gpar(col = "white", fontsize = font_size+4)
+      if (kmeans > 16) {
+        la = rowAnnotation(" " = anno_empty(
+          border = FALSE,
+          zoom = FALSE,
+          width = unit(0.01, "cm")
         ))
-      } else{
-        if (kmeans == 4) {
-          la = rowAnnotation(foo = anno_block(
-            gp = gpar(fill = mypal[c(1:8)]),
-            labels = c("Cluster 1", "Cluster 2" , "Cluster 3", "Cluster 4"),
-            labels_gp = gpar(col = "white", fontsize = font_size+4)
-          ))
-        } else{
-          if (kmeans == 5) {
-            la = rowAnnotation(foo = anno_block(
-              gp = gpar(fill = mypal[c(1:8)]),
-              labels = c(
-                "Cluster 1",
-                "Cluster 2",
-                "Cluster 3",
-                "Cluster 4",
-                "Cluster 5"
-              ),
-              labels_gp = gpar(col = "white", fontsize = font_size+4)
-            ))
-          } else{
-            if (kmeans == 6) {
-              la = rowAnnotation(foo = anno_block(
-                gp = gpar(fill = mypal[c(1:8)]),
-                labels = c(
-                  "Cluster 1",
-                  "Cluster 2",
-                  "Cluster 3",
-                  "Cluster 4",
-                  "Cluster 5",
-                  "Cluster 6"
-                ),
-                labels_gp = gpar(col = "white", fontsize = font_size+4)
-              ))
-            } else{
-              if (kmeans > 6) {
-                la = rowAnnotation(" " = anno_empty(
-                  border = FALSE,
-                  zoom = FALSE,
-                  width = unit(0.01, "cm")
-                ))
-              }
-            }
-          }
-        }
       }
     }
+  }else{la = rowAnnotation(" " = anno_empty(
+    border = FALSE,
+    zoom = FALSE,
+    width = unit(0.01, "cm")
+  ))
   }
-  #ht_title<-paste("FC=", FC, " pVal=", pVal, "<br>", "(",LFQ_GL_Count, " Proteins)", "<br>",kmeans," Clusters ",label , sep="")
   
   ht = Heatmap(my_mat,
                name = htname,
@@ -1102,25 +963,10 @@ cluster_check <- function(ht, my_mat, kmeans){
 
 ####Heatmap Clusters Function####
 plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.05, col_fun, mypal, switch=3, font_size=6, data_unique_defn){
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+  
   set.seed(123)
-  #Set up label data
-  if (switch == 1){
-    label = "Imputed_Int_Sig"
-  }
-  if (switch == 2){
-    label = "Orig_Int_Sig"
-  }
-  if (switch == 3) {
-    label = "Contrast"
-  } 
-  
-  ht_C1<-"No Heatmap"
-  ht_C2<-"No Heatmap"
-  ht_C3<-"No Heatmap"
-  ht_C4<-"No Heatmap"
-  ht_C5<-"No Heatmap"
-  ht_C6<-"No Heatmap"
-  
   comp_length<-ncol(my_mat)
   
   #Reorder columns to match clustering
@@ -1193,348 +1039,107 @@ plot_heatmap_clusters <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.
   #check
   clu_df
   
+  #Generate Lists
+  Cluster_list<- vector(mode='list', length=kmeans)
+  C_Count_list<- vector(mode='list', length=kmeans)
+  my_mat_list <- vector(mode='list', length=kmeans)
+  ha_list<- vector(mode='list', length=kmeans)
+  la_list<- vector(mode='list', length=kmeans)
+  ra_list<- vector(mode='list', length=kmeans)
+  ht_list<- vector(mode='list', length=kmeans)
+  CS_list<- vector(mode='list', length=kmeans)
+  ClusterFC_list<- vector(mode='list', length=kmeans)
+  saint_count_list<- vector(mode='list', length=kmeans)
   
   #Create filtered lists
-  Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
-  Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
-  Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
-  Cluster4 =clu_df[clu_df$Cluster == "cluster4", ]
-  Cluster5 =clu_df[clu_df$Cluster == "cluster5", ]
-  Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
-  
-  #Count each cluster
-  C1_Count<-nrow(Cluster1)
-  C2_Count<-nrow(Cluster2)
-  C3_Count<-nrow(Cluster3)
-  C4_Count<-nrow(Cluster4)
-  C5_Count<-nrow(Cluster5)
-  C6_Count<-nrow(Cluster6)
+  for (i in 1:kmeans){
+    cluster_no<-paste0("cluster", i)
+    Cluster_list[[i]] =clu_df[clu_df$Cluster == cluster_no, ]
+    C_Count_list[[i]]<-nrow( Cluster_list[[i]])
+  }
   
   #Generate separate cluster matrices
   if(comp_length==1){
-    if (switch ==3){
-      my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
-      
-      my_mat_c1 <- my_mat_r [rownames(my_mat_r) %in% Cluster1$GeneID, ]
-      my_mat_c2 <- my_mat_r [rownames(my_mat_r) %in% Cluster2$GeneID, ]
-      my_mat_c3 <- my_mat_r [rownames(my_mat_r) %in% Cluster3$GeneID, ]
-      my_mat_c4 <- my_mat_r [rownames(my_mat_r) %in% Cluster4$GeneID, ]
-      my_mat_c5 <- my_mat_r [rownames(my_mat_r) %in% Cluster5$GeneID, ]
-      my_mat_c6 <- my_mat_r [rownames(my_mat_r) %in% Cluster6$GeneID, ]
-      my_mat_c1 <- data.frame(name = row.names(my_mat_c1), my_mat_c1)
-      my_mat_c2 <- data.frame(name = row.names(my_mat_c2), my_mat_c2)
-      my_mat_c3 <- data.frame(name = row.names(my_mat_c3), my_mat_c3)
-      my_mat_c4 <- data.frame(name = row.names(my_mat_c4), my_mat_c4)
-      my_mat_c5 <- data.frame(name = row.names(my_mat_c5), my_mat_c5)
-      my_mat_c6 <- data.frame(name = row.names(my_mat_c6), my_mat_c6)
-      my_mat_c1 <- my_mat_c1[,-3]
-      my_mat_c2 <- my_mat_c2[,-3]
-      my_mat_c3 <- my_mat_c3[,-3]
-      my_mat_c4 <- my_mat_c4[,-3]
-      my_mat_c5 <- my_mat_c5[,-3]
-      my_mat_c6 <- my_mat_c6[,-3]
-      
-      if (kmeans>0){my_mat_c1 <- my_mat_c1 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>1){my_mat_c2 <- my_mat_c2 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>2){my_mat_c3 <- my_mat_c3 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>3){my_mat_c4 <- my_mat_c4 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>4){my_mat_c5 <- my_mat_c5 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>5){my_mat_c6 <- my_mat_c6 %>% remove_rownames %>% column_to_rownames(var="name")}
-      
-    }else{
-      my_mat_c1 <- my_mat [rownames(my_mat) %in% Cluster1$GeneID, ]
-      my_mat_c2 <- my_mat [rownames(my_mat) %in% Cluster2$GeneID, ]
-      my_mat_c3 <- my_mat [rownames(my_mat) %in% Cluster3$GeneID, ]
-      my_mat_c4 <- my_mat [rownames(my_mat) %in% Cluster4$GeneID, ]
-      my_mat_c5 <- my_mat [rownames(my_mat) %in% Cluster5$GeneID, ]
-      my_mat_c6 <- my_mat [rownames(my_mat) %in% Cluster6$GeneID, ]
-    }
+    my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
     
+    for (i in 1:kmeans){
+      my_mat_list[[i]] <- my_mat_r [rownames(my_mat_r) %in% Cluster_list[[i]]$GeneID, ]
+      my_mat_list[[i]] <- data.frame(name = row.names(my_mat_list[[i]]), my_mat_list[[i]])
+      my_mat_list[[i]] <- my_mat_list[[i]][,-3]
+      my_mat_list[[i]] <- my_mat_list[[i]] %>% remove_rownames %>% column_to_rownames(var="name")
+    }
   }
   
   
   if(comp_length>1){
-    my_mat_c1 <- my_mat [rownames(my_mat) %in% Cluster1$GeneID, ]
-    my_mat_c2 <- my_mat [rownames(my_mat) %in% Cluster2$GeneID, ]
-    my_mat_c3 <- my_mat [rownames(my_mat) %in% Cluster3$GeneID, ]
-    my_mat_c4 <- my_mat [rownames(my_mat) %in% Cluster4$GeneID, ]
-    my_mat_c5 <- my_mat [rownames(my_mat) %in% Cluster5$GeneID, ]
-    my_mat_c6 <- my_mat [rownames(my_mat) %in% Cluster6$GeneID, ]
+    for (i in 1:kmeans){
+      my_mat_list[[i]] <- my_mat [rownames(my_mat) %in% Cluster_list[[i]]$GeneID, ]
+    }
   }
   
-  CS1= colMeans(my_mat_c1)
-  CS2= colMeans(my_mat_c2)
-  CS3= colMeans(my_mat_c3)
-  CS4= colMeans(my_mat_c4)
-  CS5= colMeans(my_mat_c5)
-  CS6= colMeans(my_mat_c6)
+  for (i in 1:kmeans){
+    CS_list[[i]]= colMeans(my_mat_list[[i]])
+  }
   
   #Generate Cluster txt files
-  Cluster1FC <- data.frame(name = row.names(my_mat_c1), my_mat_c1)
-  Cluster2FC <- data.frame(name = row.names(my_mat_c2), my_mat_c2)
-  Cluster3FC <- data.frame(name = row.names(my_mat_c3), my_mat_c3)
-  Cluster4FC <- data.frame(name = row.names(my_mat_c4), my_mat_c4)
-  Cluster5FC <- data.frame(name = row.names(my_mat_c5), my_mat_c5)
-  Cluster6FC <- data.frame(name = row.names(my_mat_c6), my_mat_c6)
-  
-  if (kmeans>0){Cluster1FC <- merge(data_unique_defn, Cluster1FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>1){Cluster2FC <- merge(data_unique_defn, Cluster2FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>2){Cluster3FC <- merge(data_unique_defn, Cluster3FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>3){Cluster4FC <- merge(data_unique_defn, Cluster4FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>4){Cluster5FC <- merge(data_unique_defn, Cluster5FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>5){Cluster6FC <- merge(data_unique_defn, Cluster6FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
+  for (i in 1:kmeans){
+    ClusterFC_list[[i]] <- data.frame(name = row.names(my_mat_list[[i]]), my_mat_list[[i]])
+    ClusterFC_list[[i]] <- merge(data_unique_defn, ClusterFC_list[[i]], by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+  }
   
   
-  # Converts each cluster into a list of values
-  dfc1 <- Cluster1$GeneID 
-  dfc2 <- Cluster2$GeneID
-  dfc3 <- Cluster3$GeneID
-  dfc4 <- Cluster4$GeneID
-  dfc5 <- Cluster5$GeneID
-  dfc6 <- Cluster6$GeneID
+  #Calculate Right annotations
+  #saint_count3 <- dfdata_sig2
+  sc3max<- max(dfdata_sig2$sigcount)
+  
+  for (i in 1:kmeans){
+    saint_count_list[[i]] <-  dfdata_sig2 %>% filter( dfdata_sig2$name %in% Cluster_list[[i]]$GeneID ) 
+  }
   
   
   ####Generate Separate Cluster Heatmaps####
   #Generate Annotations
   #Top heatmap annotation
-  if (switch == 3) {
-    if (kmeans > 0) {
-      ha1 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c1,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS1,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 1) {
-      ha2 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c2,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS2,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 2) {
-      ha3 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c3,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS3,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 3) {
-      ha4 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c4,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS4,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 4) {
-      ha5 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c5,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS5,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 5) {
-      ha6 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c6,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS6,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
+  for (i in 1:kmeans){
+    ha_list[[i]] = HeatmapAnnotation(
+      log2FC = anno_density(
+        my_mat_list[[i]],
+        type = "violin",
+        height = unit(3, "cm"),
+        gp = gpar(fill = mypal[c(1:16)])
+      ),
+      FC_mean = CS_list[[i]],
+      col = list(FC_mean = col_fun),
+      gp = gpar(col = "black"),
+      show_legend = FALSE
+    )
     htname = "log2FC"
-  } else{
-    if (kmeans > 0) {
-      ha1 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c1,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS1,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 1) {
-      ha2 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c2,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS2,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 2) {
-      ha3 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c3,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS3,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 3) {
-      ha4 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c4,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS4,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 4) {
-      ha5 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c5,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS5,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 5) {
-      ha6 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c6,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS6,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    htname = "Log2 Int."
   }
   
+  #Left heatmap annotation
+  for (i in 1:kmeans){
+    la_list[[i]] = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[i]),
+                                                  labels = paste0("Cluster ", i), 
+                                                  labels_gp = gpar(col = "white", fontsize = font_size+4)))
+  }
   
-  la1 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[1]),
-                                       labels = c("Cluster 1"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la2 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[2]),
-                                       labels = c("Cluster 2"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la3 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[3]),
-                                       labels = c("Cluster 3"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la4 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[4]),
-                                       labels = c("Cluster 4"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la5 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[5]),
-                                       labels = c("Cluster 5"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la6 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[6]),
-                                       labels = c("Cluster 6"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
+  #Right heatmap annotation
+  for (i in 1:kmeans){
+    ra_list[[i]]=rowAnnotation("Sig.
+Freq" = anno_barplot(saint_count_list[[i]]$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
+  }
   
-  #ba = HeatmapAnnotation(foo2 = anno_block(gp = gpar(fill = 5:7),
-  #                                         labels = c("2kPa vs 25kPa", "2kPa vs 8kPa", "8kPa vs 25kPa"),
-  #                                         labels_gp = gpar(col = "white", fontsize = 10)))
-  #
-  
-  #Calculate Right annotations
-  #if (switch==FALSE) {
-  saint_count3 <- dfdata_sig2
-  sc3max<- max(dfdata_sig2$sigcount)
-  saint_count_cl1 <- saint_count3 %>% filter(saint_count3$name %in% Cluster1$GeneID )
-  saint_count_cl2 <- saint_count3 %>% filter(saint_count3$name %in% Cluster2$GeneID )
-  saint_count_cl3 <- saint_count3 %>% filter(saint_count3$name %in% Cluster3$GeneID )
-  saint_count_cl4 <- saint_count3 %>% filter(saint_count3$name %in% Cluster4$GeneID )
-  saint_count_cl5 <- saint_count3 %>% filter(saint_count3$name %in% Cluster5$GeneID )
-  saint_count_cl6 <- saint_count3 %>% filter(saint_count3$name %in% Cluster6$GeneID )
-  #
-  #}
-  
-  #if (switch==FALSE) {
-  ra1=rowAnnotation("Sig.
-Freq" = anno_barplot(saint_count_cl1$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
-  ra2=rowAnnotation("Sig.
-Freq" = anno_barplot(saint_count_cl2$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
-  ra3=rowAnnotation("Sig.
-Freq" = anno_barplot(saint_count_cl3$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
-  ra4=rowAnnotation("Sig.
-Freq" = anno_barplot(saint_count_cl4$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
-  ra5=rowAnnotation("Sig.
-Freq" = anno_barplot(saint_count_cl5$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
-  ra6=rowAnnotation("Sig.
-Freq" = anno_barplot(saint_count_cl6$sigcount, ylim = c( 0 , sc3max ), gp = gpar(fill = mypal[1], fontsize=8)))
-  
-  
-  if (kmeans > 0) {
-    ht_C1 = Heatmap(
-      my_mat_c1,
+  for (i in 1:kmeans){
+    ht_list[[i]] = Heatmap(
+      my_mat_list[[i]],
       name = htname,
       cluster_rows = TRUE,
       cluster_columns = FALSE,
       #column_split = column_split,
-      top_annotation = ha1,
-      left_annotation = la1,
+      top_annotation = ha_list[[i]],
+      left_annotation = la_list[[i]],
       #bottom_annotation = ba,
-      right_annotation = ra1,
+      right_annotation = ra_list[[i]],
       #row_km = 3, row_km_repeats = 2000, # kmeans clustering
       col = col_fun,
       #border_gp = gpar(col = "black", lty = 2),
@@ -1542,153 +1147,21 @@ Freq" = anno_barplot(saint_count_cl6$sigcount, ylim = c( 0 , sc3max ), gp = gpar
       #rect_gp = gpar(col = "white", lwd = 1),
       row_names_gp = gpar(fontsize = font_size),
       column_names_gp = gpar(fontsize = font_size+2),
-      column_title = (
-        paste(
-          label,
-          " Cluster 1",
-          " (",
-          C1_Count,
-          ")",
-          sep = ""
-        )
-      )
+      column_title = (paste("Cluster ",i, " (", C_Count_list[[i]], ")", sep =""))
     )
   }
-  if (kmeans > 1) {
-    ht_C2 = Heatmap(
-      my_mat_c2,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha2,
-      left_annotation = la2,
-      #bottom_annotation = ba,
-      right_annotation = ra2,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = font_size),
-      column_names_gp = gpar(fontsize = font_size+2),
-      column_title = (paste("Cluster 2", " (", C2_Count, ")", sep =
-                              ""))
-    )
-  }
-  if (kmeans > 2) {
-    ht_C3 = Heatmap(
-      my_mat_c3,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha3,
-      left_annotation = la3,
-      #bottom_annotation = ba,
-      right_annotation = ra3,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = font_size),
-      column_names_gp = gpar(fontsize = font_size+2),
-      column_title = (paste("Cluster 3", " (", C3_Count, ")", sep =
-                              ""))
-    )
-  }
-  if (kmeans > 3) {
-    ht_C4 = Heatmap(
-      my_mat_c4,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha4,
-      left_annotation = la4,
-      #bottom_annotation = ba,
-      right_annotation = ra4,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = font_size),
-      column_names_gp = gpar(fontsize = font_size+2),
-      column_title = (paste("Cluster 4", " (", C4_Count, ")", sep = ""))
-    )
-  }
-  if (kmeans > 4) {
-    ht_C5 = Heatmap(
-      my_mat_c5,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha5,
-      left_annotation = la5,
-      #bottom_annotation = ba,
-      right_annotation = ra5,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = font_size),
-      column_names_gp = gpar(fontsize = font_size+2),
-      column_title = (paste("Cluster 5", " (", C5_Count, ")", sep = ""))
-    )
-  } 
-  if (kmeans > 5) {
-    ht_C6 = Heatmap(
-      my_mat_c6,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha6,
-      left_annotation = la6,
-      #bottom_annotation = ba,
-      right_annotation = ra6,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = font_size),
-      column_names_gp = gpar(fontsize = font_size+2),
-      column_title = (paste("Cluster 6", " (", C6_Count, ")", sep = ""))
-    )
-  } 
   
+  comphtclust<-list(ht_list, C_Count_list, ClusterFC_list, clu_df)
   
-  comphtclust<-list(ht_C1, ht_C2, ht_C3, ht_C4, ht_C5, ht_C6, C1_Count, C2_Count, C3_Count, C4_Count, C5_Count, C6_Count, 
-                    Cluster1FC, Cluster2FC, Cluster3FC, Cluster4FC, Cluster5FC, Cluster6FC, clu_df)
   return(comphtclust)
 }
 
 
 plot_heatmap_clusters_2xcomp <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.05, col_fun, mypal, switch=3, font_size=6, data_unique_defn){
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+  
   set.seed(123)
-  #Set up label data
-  if (switch == 1){
-    label = "Imputed_Int_Sig"
-  }
-  if (switch == 2){
-    label = "Orig_Int_Sig"
-  }
-  if (switch == 3) {
-    label = "Contrast"
-  } 
-  
-  ht_C1<-"No Heatmap"
-  ht_C2<-"No Heatmap"
-  ht_C3<-"No Heatmap"
-  ht_C4<-"No Heatmap"
-  ht_C5<-"No Heatmap"
-  ht_C6<-"No Heatmap"
-  
   comp_length<-ncol(my_mat)
   
   #Reorder columns to match clustering
@@ -1761,569 +1234,133 @@ plot_heatmap_clusters_2xcomp <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, 
   #check
   clu_df
   
+  #Generate Lists
+  Cluster_list<- vector(mode='list', length=kmeans)
+  C_Count_list<- vector(mode='list', length=kmeans)
+  my_mat_list <- vector(mode='list', length=kmeans)
+  ha_list<- vector(mode='list', length=kmeans)
+  la_list<- vector(mode='list', length=kmeans)
+  ra_list<- vector(mode='list', length=kmeans)
+  ht_list<- vector(mode='list', length=kmeans)
+  CS_list<- vector(mode='list', length=kmeans)
+  ClusterFC_list<- vector(mode='list', length=kmeans)
+  saint_count_list<- vector(mode='list', length=kmeans)
   
   #Create filtered lists
-  Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
-  Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
-  Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
-  Cluster4 =clu_df[clu_df$Cluster == "cluster4", ]
-  Cluster5 =clu_df[clu_df$Cluster == "cluster5", ]
-  Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
-  
-  #Count each cluster
-  C1_Count<-nrow(Cluster1)
-  C2_Count<-nrow(Cluster2)
-  C3_Count<-nrow(Cluster3)
-  C4_Count<-nrow(Cluster4)
-  C5_Count<-nrow(Cluster5)
-  C6_Count<-nrow(Cluster6)
+  for (i in 1:kmeans){
+    cluster_no<-paste0("cluster", i)
+    Cluster_list[[i]] =clu_df[clu_df$Cluster == cluster_no, ]
+    C_Count_list[[i]]<-nrow( Cluster_list[[i]])
+  }
   
   #Generate separate cluster matrices
   if(comp_length==1){
-    if (switch ==3){
-      my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
-      
-      my_mat_c1 <- my_mat_r [rownames(my_mat_r) %in% Cluster1$GeneID, ]
-      my_mat_c2 <- my_mat_r [rownames(my_mat_r) %in% Cluster2$GeneID, ]
-      my_mat_c3 <- my_mat_r [rownames(my_mat_r) %in% Cluster3$GeneID, ]
-      my_mat_c4 <- my_mat_r [rownames(my_mat_r) %in% Cluster4$GeneID, ]
-      my_mat_c5 <- my_mat_r [rownames(my_mat_r) %in% Cluster5$GeneID, ]
-      my_mat_c6 <- my_mat_r [rownames(my_mat_r) %in% Cluster6$GeneID, ]
-      my_mat_c1 <- data.frame(name = row.names(my_mat_c1), my_mat_c1)
-      my_mat_c2 <- data.frame(name = row.names(my_mat_c2), my_mat_c2)
-      my_mat_c3 <- data.frame(name = row.names(my_mat_c3), my_mat_c3)
-      my_mat_c4 <- data.frame(name = row.names(my_mat_c4), my_mat_c4)
-      my_mat_c5 <- data.frame(name = row.names(my_mat_c5), my_mat_c5)
-      my_mat_c6 <- data.frame(name = row.names(my_mat_c6), my_mat_c6)
-      my_mat_c1 <- my_mat_c1[,-3]
-      my_mat_c2 <- my_mat_c2[,-3]
-      my_mat_c3 <- my_mat_c3[,-3]
-      my_mat_c4 <- my_mat_c4[,-3]
-      my_mat_c5 <- my_mat_c5[,-3]
-      my_mat_c6 <- my_mat_c6[,-3]
-      
-      if (kmeans>0){my_mat_c1 <- my_mat_c1 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>1){my_mat_c2 <- my_mat_c2 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>2){my_mat_c3 <- my_mat_c3 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>3){my_mat_c4 <- my_mat_c4 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>4){my_mat_c5 <- my_mat_c5 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>5){my_mat_c6 <- my_mat_c6 %>% remove_rownames %>% column_to_rownames(var="name")}
-      
-    }else{
-      my_mat_c1 <- my_mat [rownames(my_mat) %in% Cluster1$GeneID, ]
-      my_mat_c2 <- my_mat [rownames(my_mat) %in% Cluster2$GeneID, ]
-      my_mat_c3 <- my_mat [rownames(my_mat) %in% Cluster3$GeneID, ]
-      my_mat_c4 <- my_mat [rownames(my_mat) %in% Cluster4$GeneID, ]
-      my_mat_c5 <- my_mat [rownames(my_mat) %in% Cluster5$GeneID, ]
-      my_mat_c6 <- my_mat [rownames(my_mat) %in% Cluster6$GeneID, ]
-    }
+    my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
     
+    for (i in 1:kmeans){
+      my_mat_list[[i]] <- my_mat_r [rownames(my_mat_r) %in% Cluster_list[[i]]$GeneID, ]
+      my_mat_list[[i]] <- data.frame(name = row.names(my_mat_list[[i]]), my_mat_list[[i]])
+      my_mat_list[[i]] <- my_mat_list[[i]][,-3]
+      my_mat_list[[i]] <- my_mat_list[[i]] %>% remove_rownames %>% column_to_rownames(var="name")
+    }
   }
   
   
   if(comp_length>1){
-    my_mat_c1 <- my_mat [rownames(my_mat) %in% Cluster1$GeneID, ]
-    my_mat_c2 <- my_mat [rownames(my_mat) %in% Cluster2$GeneID, ]
-    my_mat_c3 <- my_mat [rownames(my_mat) %in% Cluster3$GeneID, ]
-    my_mat_c4 <- my_mat [rownames(my_mat) %in% Cluster4$GeneID, ]
-    my_mat_c5 <- my_mat [rownames(my_mat) %in% Cluster5$GeneID, ]
-    my_mat_c6 <- my_mat [rownames(my_mat) %in% Cluster6$GeneID, ]
+    for (i in 1:kmeans){
+      my_mat_list[[i]] <- my_mat [rownames(my_mat) %in% Cluster_list[[i]]$GeneID, ]
+    }
   }
   
-  CS1= colMeans(my_mat_c1)
-  CS2= colMeans(my_mat_c2)
-  CS3= colMeans(my_mat_c3)
-  CS4= colMeans(my_mat_c4)
-  CS5= colMeans(my_mat_c5)
-  CS6= colMeans(my_mat_c6)
+  for (i in 1:kmeans){
+    CS_list[[i]]= colMeans(my_mat_list[[i]])
+  }
   
   #Generate Cluster txt files
-  Cluster1FC <- data.frame(name = row.names(my_mat_c1), my_mat_c1)
-  Cluster2FC <- data.frame(name = row.names(my_mat_c2), my_mat_c2)
-  Cluster3FC <- data.frame(name = row.names(my_mat_c3), my_mat_c3)
-  Cluster4FC <- data.frame(name = row.names(my_mat_c4), my_mat_c4)
-  Cluster5FC <- data.frame(name = row.names(my_mat_c5), my_mat_c5)
-  Cluster6FC <- data.frame(name = row.names(my_mat_c6), my_mat_c6)
-  
-  if (kmeans>0){Cluster1FC <- merge(data_unique_defn, Cluster1FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>1){Cluster2FC <- merge(data_unique_defn, Cluster2FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>2){Cluster3FC <- merge(data_unique_defn, Cluster3FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>3){Cluster4FC <- merge(data_unique_defn, Cluster4FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>4){Cluster5FC <- merge(data_unique_defn, Cluster5FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>5){Cluster6FC <- merge(data_unique_defn, Cluster6FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
+  for (i in 1:kmeans){
+    ClusterFC_list[[i]] <- data.frame(name = row.names(my_mat_list[[i]]), my_mat_list[[i]])
+    ClusterFC_list[[i]] <- merge(data_unique_defn, ClusterFC_list[[i]], by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+  }
   
   
-  # Converts each cluster into a list of values
-  dfc1 <- Cluster1$GeneID 
-  dfc2 <- Cluster2$GeneID
-  dfc3 <- Cluster3$GeneID
-  dfc4 <- Cluster4$GeneID
-  dfc5 <- Cluster5$GeneID
-  dfc6 <- Cluster6$GeneID
+  #Calculate Right annotations
+  #saint_count3 <- dfdata_sig2
+  sc3max_c1<- max(dfdata_sig2$sigcount_c1)
+  sc3max_c2<- max(dfdata_sig2$sigcount_c2)
   
+  for (i in 1:kmeans){
+    saint_count_list[[i]] <-  dfdata_sig2 %>% filter( dfdata_sig2$name %in% Cluster_list[[i]]$GeneID ) 
+  }
+  
+  #Right heatmap annotation
+  for (i in 1:kmeans){
+    ra_list[[i]] =  rowAnnotation("Sig.
+Freq1" = anno_barplot(saint_count_list[[i]]$sigcount_c1, ylim = c(0 , sc3max_c1), gp = gpar(fill = mypal[1], fontsize = 6))) +
+      rowAnnotation("Sig.
+Freq2" = anno_barplot(saint_count_list[[i]]$sigcount_c2,ylim = c(0 , sc3max_c2), gp = gpar(fill = mypal[3], fontsize = 6)))
+  }
   
   ####Generate Separate Cluster Heatmaps####
   #Generate Annotations
   #Top heatmap annotation
-  if (switch == 3) {
-    if (kmeans > 0) {
-      ha1 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c1,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS1,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 1) {
-      ha2 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c2,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS2,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 2) {
-      ha3 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c3,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS3,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 3) {
-      ha4 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c4,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS4,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 4) {
-      ha5 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c5,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS5,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 5) {
-      ha6 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c6,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS6,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
+  for (i in 1:kmeans){
+    ha_list[[i]] = HeatmapAnnotation(
+      log2FC = anno_density(
+        my_mat_list[[i]],
+        type = "violin",
+        height = unit(3, "cm"),
+        gp = gpar(fill = mypal[c(1:16)])
+      ),
+      FC_mean = CS_list[[i]],
+      col = list(FC_mean = col_fun),
+      gp = gpar(col = "black"),
+      show_legend = FALSE
+    )
     htname = "log2FC"
-  } else{
-    if (kmeans > 0) {
-      ha1 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c1,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS1,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 1) {
-      ha2 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c2,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS2,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 2) {
-      ha3 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c3,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS3,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 3) {
-      ha4 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c4,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS4,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 4) {
-      ha5 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c5,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS5,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 5) {
-      ha6 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c6,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS6,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    htname = "Log2 Int."
   }
   
-  
-  la1 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[1]),
-                                       labels = c("Cluster 1"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la2 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[2]),
-                                       labels = c("Cluster 2"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la3 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[3]),
-                                       labels = c("Cluster 3"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la4 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[4]),
-                                       labels = c("Cluster 4"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la5 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[5]),
-                                       labels = c("Cluster 5"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la6 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[6]),
-                                       labels = c("Cluster 6"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  
-  #ba = HeatmapAnnotation(foo2 = anno_block(gp = gpar(fill = 5:7),
-  #                                         labels = c("2kPa vs 25kPa", "2kPa vs 8kPa", "8kPa vs 25kPa"),
-  #                                         labels_gp = gpar(col = "white", fontsize = 10)))
-  #
-  
-  #Calculate Right annotations
-  #if (switch==FALSE) {
-  saint_count3 <- dfdata_sig2
-  sc3max_c1<- max(dfdata_sig2$sigcount_c1)
-  sc3max_c2<- max(dfdata_sig2$sigcount_c2)
-  saint_count_cl1 <- saint_count3 %>% filter(saint_count3$name %in% Cluster1$GeneID )
-  saint_count_cl2 <- saint_count3 %>% filter(saint_count3$name %in% Cluster2$GeneID )
-  saint_count_cl3 <- saint_count3 %>% filter(saint_count3$name %in% Cluster3$GeneID )
-  saint_count_cl4 <- saint_count3 %>% filter(saint_count3$name %in% Cluster4$GeneID )
-  saint_count_cl5 <- saint_count3 %>% filter(saint_count3$name %in% Cluster5$GeneID )
-  saint_count_cl6 <- saint_count3 %>% filter(saint_count3$name %in% Cluster6$GeneID )
-  #
-  #}
-  
-  ra1 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl1$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("Sig.
-Freq2" = anno_barplot(
-  saint_count_cl1$sigcount_c2,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra2 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl2$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("Sig.
-Freq2" = anno_barplot(
-  saint_count_cl2$sigcount_c2,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra3 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl3$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("Sig.
-Freq2" = anno_barplot(
-  saint_count_cl3$sigcount_c2,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra4 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl4$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("Sig.
-Freq2" = anno_barplot(
-  saint_count_cl4$sigcount_c2,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra5 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl5$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("Sig.
-Freq2" = anno_barplot(
-  saint_count_cl5$sigcount_c2,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  
-  ra6 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl6$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("Sig.
-Freq2" = anno_barplot(
-  saint_count_cl6$sigcount_c2,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  
-  
-  if (kmeans > 0) {
-    ht_C1 = Heatmap(
-      my_mat_c1,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha1,
-      left_annotation = la1,
-      #bottom_annotation = ba,
-      #right_annotation = ra1,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (
-        paste(
-          label,
-          " Cluster 1",
-          " (",
-          C1_Count,
-          ")",
-          sep = ""
-        )
-      )
-    )
-    ht_C1 = draw(ht_C1+ra1, auto_adjust = FALSE)
+  #Left heatmap annotation
+  for (i in 1:kmeans){
+    la_list[[i]] = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[i]),
+                                                  labels = paste0("Cluster ", i), 
+                                                  labels_gp = gpar(col = "white", fontsize = font_size+4)))
   }
-  if (kmeans > 1) {
-    ht_C2 = Heatmap(
-      my_mat_c2,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha2,
-      left_annotation = la2,
-      #bottom_annotation = ba,
-      #right_annotation = ra2,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 2", " (", C2_Count, ")", sep =
-                              ""))
-    )
-    ht_C2 = draw(ht_C2+ra2, auto_adjust = FALSE)
-  }
-  if (kmeans > 2) {
-    ht_C3 = Heatmap(
-      my_mat_c3,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha3,
-      left_annotation = la3,
-      #bottom_annotation = ba,
-      #right_annotation = ra3,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 3", " (", C3_Count, ")", sep =
-                              ""))
-    )
-    ht_C3 = draw(ht_C3+ra3, auto_adjust = FALSE)
-  }
-  if (kmeans > 3) {
-    ht_C4 = Heatmap(
-      my_mat_c4,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha4,
-      left_annotation = la4,
-      #bottom_annotation = ba,
-      #right_annotation = ra4,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 4", " (", C4_Count, ")", sep = ""))
-    )
-    ht_C4 = draw(ht_C4+ra4, auto_adjust = FALSE)
-  }
-  if (kmeans > 4) {
-    ht_C5 = Heatmap(
-      my_mat_c5,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha5,
-      left_annotation = la5,
-      #bottom_annotation = ba,
-      #right_annotation = ra5,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 5", " (", C5_Count, ")", sep = ""))
-    )
-    ht_C5 = draw(ht_C5+ra5, auto_adjust = FALSE)
-  } 
-  if (kmeans > 5) {
-    ht_C6 = Heatmap(
-      my_mat_c6,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha6,
-      left_annotation = la6,
-      #bottom_annotation = ba,
-      #right_annotation = ra6,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 6", " (", C6_Count, ")", sep = ""))
-    )
-    ht_C6 = draw(ht_C6+ra6, auto_adjust = FALSE)
-  } 
   
+  #Generate heatmaps
+  for (i in 1:kmeans){
+    ht_list[[i]] = Heatmap(
+      my_mat_list[[i]],
+      name = htname,
+      cluster_rows = TRUE,
+      cluster_columns = FALSE,
+      #column_split = column_split,
+      top_annotation = ha_list[[i]],
+      left_annotation = la_list[[i]],
+      #bottom_annotation = ba,
+      #right_annotation = ra_list[[i]],
+      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
+      col = col_fun,
+      #border_gp = gpar(col = "black", lty = 2),
+      border = TRUE,
+      #rect_gp = gpar(col = "white", lwd = 1),
+      row_names_gp = gpar(fontsize = font_size),
+      column_names_gp = gpar(fontsize = font_size+2),
+      column_title = (paste("Cluster ",i, " (", C_Count_list[[i]], ")", sep ="")))
+    
+    ht_list[[i]] = draw(ht_list[[i]]+ra_list[[i]], auto_adjust = FALSE)
+  }
   
-  comphtclust<-list(ht_C1, ht_C2, ht_C3, ht_C4, ht_C5, ht_C6, C1_Count, C2_Count, C3_Count, C4_Count, C5_Count, C6_Count, 
-                    Cluster1FC, Cluster2FC, Cluster3FC, Cluster4FC, Cluster5FC, Cluster6FC, clu_df)
+  comphtclust<-list(ht_list, C_Count_list, ClusterFC_list, clu_df)
+  
   return(comphtclust)
 }
 
 
 plot_heatmap_clusters_2xBFDR <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, pVal=0.05, col_fun, mypal, switch=3, font_size=6, data_unique_defn){
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+  
   set.seed(123)
-  #Set up label data
-  if (switch == 1){
-    label = "Imputed_Int_Sig"
-  }
-  if (switch == 2){
-    label = "Orig_Int_Sig"
-  }
-  if (switch == 3) {
-    label = "Contrast"
-  } 
-  
-  ht_C1<-"No Heatmap"
-  ht_C2<-"No Heatmap"
-  ht_C3<-"No Heatmap"
-  ht_C4<-"No Heatmap"
-  ht_C5<-"No Heatmap"
-  ht_C6<-"No Heatmap"
-  
   comp_length<-ncol(my_mat)
   
   #Reorder columns to match clustering
@@ -2396,559 +1433,146 @@ plot_heatmap_clusters_2xBFDR <- function(ht, my_mat, dfdata_sig2, kmeans, FC=2, 
   #check
   clu_df
   
+  #Generate Lists
+  Cluster_list<- vector(mode='list', length=kmeans)
+  C_Count_list<- vector(mode='list', length=kmeans)
+  my_mat_list <- vector(mode='list', length=kmeans)
+  ha_list<- vector(mode='list', length=kmeans)
+  la_list<- vector(mode='list', length=kmeans)
+  ra_list<- vector(mode='list', length=kmeans)
+  ht_list<- vector(mode='list', length=kmeans)
+  CS_list<- vector(mode='list', length=kmeans)
+  ClusterFC_list<- vector(mode='list', length=kmeans)
+  saint_count_list<- vector(mode='list', length=kmeans)
   
   #Create filtered lists
-  Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
-  Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
-  Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
-  Cluster4 =clu_df[clu_df$Cluster == "cluster4", ]
-  Cluster5 =clu_df[clu_df$Cluster == "cluster5", ]
-  Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
-  
-  #Count each cluster
-  C1_Count<-nrow(Cluster1)
-  C2_Count<-nrow(Cluster2)
-  C3_Count<-nrow(Cluster3)
-  C4_Count<-nrow(Cluster4)
-  C5_Count<-nrow(Cluster5)
-  C6_Count<-nrow(Cluster6)
+  for (i in 1:kmeans){
+    cluster_no<-paste0("cluster", i)
+    Cluster_list[[i]] =clu_df[clu_df$Cluster == cluster_no, ]
+    C_Count_list[[i]]<-nrow( Cluster_list[[i]])
+  }
   
   #Generate separate cluster matrices
   if(comp_length==1){
-    if (switch ==3){
-      my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
-      
-      my_mat_c1 <- my_mat_r [rownames(my_mat_r) %in% Cluster1$GeneID, ]
-      my_mat_c2 <- my_mat_r [rownames(my_mat_r) %in% Cluster2$GeneID, ]
-      my_mat_c3 <- my_mat_r [rownames(my_mat_r) %in% Cluster3$GeneID, ]
-      my_mat_c4 <- my_mat_r [rownames(my_mat_r) %in% Cluster4$GeneID, ]
-      my_mat_c5 <- my_mat_r [rownames(my_mat_r) %in% Cluster5$GeneID, ]
-      my_mat_c6 <- my_mat_r [rownames(my_mat_r) %in% Cluster6$GeneID, ]
-      my_mat_c1 <- data.frame(name = row.names(my_mat_c1), my_mat_c1)
-      my_mat_c2 <- data.frame(name = row.names(my_mat_c2), my_mat_c2)
-      my_mat_c3 <- data.frame(name = row.names(my_mat_c3), my_mat_c3)
-      my_mat_c4 <- data.frame(name = row.names(my_mat_c4), my_mat_c4)
-      my_mat_c5 <- data.frame(name = row.names(my_mat_c5), my_mat_c5)
-      my_mat_c6 <- data.frame(name = row.names(my_mat_c6), my_mat_c6)
-      my_mat_c1 <- my_mat_c1[,-3]
-      my_mat_c2 <- my_mat_c2[,-3]
-      my_mat_c3 <- my_mat_c3[,-3]
-      my_mat_c4 <- my_mat_c4[,-3]
-      my_mat_c5 <- my_mat_c5[,-3]
-      my_mat_c6 <- my_mat_c6[,-3]
-      
-      if (kmeans>0){my_mat_c1 <- my_mat_c1 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>1){my_mat_c2 <- my_mat_c2 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>2){my_mat_c3 <- my_mat_c3 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>3){my_mat_c4 <- my_mat_c4 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>4){my_mat_c5 <- my_mat_c5 %>% remove_rownames %>% column_to_rownames(var="name")}
-      if (kmeans>5){my_mat_c6 <- my_mat_c6 %>% remove_rownames %>% column_to_rownames(var="name")}
-      
-    }else{
-      my_mat_c1 <- my_mat [rownames(my_mat) %in% Cluster1$GeneID, ]
-      my_mat_c2 <- my_mat [rownames(my_mat) %in% Cluster2$GeneID, ]
-      my_mat_c3 <- my_mat [rownames(my_mat) %in% Cluster3$GeneID, ]
-      my_mat_c4 <- my_mat [rownames(my_mat) %in% Cluster4$GeneID, ]
-      my_mat_c5 <- my_mat [rownames(my_mat) %in% Cluster5$GeneID, ]
-      my_mat_c6 <- my_mat [rownames(my_mat) %in% Cluster6$GeneID, ]
-    }
+    my_mat_r <-cbind(my_mat, rep(my_mat[,1],1))
     
+    for (i in 1:kmeans){
+      my_mat_list[[i]] <- my_mat_r [rownames(my_mat_r) %in% Cluster_list[[i]]$GeneID, ]
+      my_mat_list[[i]] <- data.frame(name = row.names(my_mat_list[[i]]), my_mat_list[[i]])
+      my_mat_list[[i]] <- my_mat_list[[i]][,-3]
+      my_mat_list[[i]] <- my_mat_list[[i]] %>% remove_rownames %>% column_to_rownames(var="name")
+    }
   }
   
   
   if(comp_length>1){
-    my_mat_c1 <- my_mat [rownames(my_mat) %in% Cluster1$GeneID, ]
-    my_mat_c2 <- my_mat [rownames(my_mat) %in% Cluster2$GeneID, ]
-    my_mat_c3 <- my_mat [rownames(my_mat) %in% Cluster3$GeneID, ]
-    my_mat_c4 <- my_mat [rownames(my_mat) %in% Cluster4$GeneID, ]
-    my_mat_c5 <- my_mat [rownames(my_mat) %in% Cluster5$GeneID, ]
-    my_mat_c6 <- my_mat [rownames(my_mat) %in% Cluster6$GeneID, ]
+    for (i in 1:kmeans){
+      my_mat_list[[i]] <- my_mat [rownames(my_mat) %in% Cluster_list[[i]]$GeneID, ]
+    }
   }
   
-  CS1= colMeans(my_mat_c1)
-  CS2= colMeans(my_mat_c2)
-  CS3= colMeans(my_mat_c3)
-  CS4= colMeans(my_mat_c4)
-  CS5= colMeans(my_mat_c5)
-  CS6= colMeans(my_mat_c6)
+  for (i in 1:kmeans){
+    CS_list[[i]]= colMeans(my_mat_list[[i]])
+  }
   
   #Generate Cluster txt files
-  Cluster1FC <- data.frame(name = row.names(my_mat_c1), my_mat_c1)
-  Cluster2FC <- data.frame(name = row.names(my_mat_c2), my_mat_c2)
-  Cluster3FC <- data.frame(name = row.names(my_mat_c3), my_mat_c3)
-  Cluster4FC <- data.frame(name = row.names(my_mat_c4), my_mat_c4)
-  Cluster5FC <- data.frame(name = row.names(my_mat_c5), my_mat_c5)
-  Cluster6FC <- data.frame(name = row.names(my_mat_c6), my_mat_c6)
-  
-  if (kmeans>0){Cluster1FC <- merge(data_unique_defn, Cluster1FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>1){Cluster2FC <- merge(data_unique_defn, Cluster2FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>2){Cluster3FC <- merge(data_unique_defn, Cluster3FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>3){Cluster4FC <- merge(data_unique_defn, Cluster4FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>4){Cluster5FC <- merge(data_unique_defn, Cluster5FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  if (kmeans>5){Cluster6FC <- merge(data_unique_defn, Cluster6FC, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)}
-  
-  
-  # Converts each cluster into a list of values
-  dfc1 <- Cluster1$GeneID 
-  dfc2 <- Cluster2$GeneID
-  dfc3 <- Cluster3$GeneID
-  dfc4 <- Cluster4$GeneID
-  dfc5 <- Cluster5$GeneID
-  dfc6 <- Cluster6$GeneID
-  
+  for (i in 1:kmeans){
+    ClusterFC_list[[i]] <- data.frame(name = row.names(my_mat_list[[i]]), my_mat_list[[i]])
+    ClusterFC_list[[i]] <- merge(data_unique_defn, ClusterFC_list[[i]], by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
+  }
   
   ####Generate Separate Cluster Heatmaps####
   #Generate Annotations
-  #Top heatmap annotation
-  if (switch == 3) {
-    if (kmeans > 0) {
-      ha1 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c1,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS1,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 1) {
-      ha2 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c2,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS2,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 2) {
-      ha3 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c3,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS3,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 3) {
-      ha4 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c4,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS4,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 4) {
-      ha5 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c5,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS5,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 5) {
-      ha6 = HeatmapAnnotation(
-        log2FC = anno_density(
-          my_mat_c6,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        FC_mean = CS6,
-        col = list(FC_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    htname = "log2FC"
-  } else{
-    if (kmeans > 0) {
-      ha1 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c1,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS1,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 1) {
-      ha2 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c2,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS2,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 2) {
-      ha3 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c3,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS3,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 3) {
-      ha4 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c4,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS4,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 4) {
-      ha5 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c5,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS5,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    if (kmeans > 5) {
-      ha6 = HeatmapAnnotation(
-        log2Int = anno_density(
-          my_mat_c6,
-          type = "violin",
-          height = unit(3, "cm"),
-          gp = gpar(fill = mypal[c(1:8)])
-        ),
-        Int_mean = CS6,
-        col = list(Int_mean = col_fun),
-        gp = gpar(col = "black"),
-        show_legend = FALSE
-      )
-    }
-    htname = "Log2 Int."
-  }
-  
-  
-  la1 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[1]),
-                                       labels = c("Cluster 1"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la2 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[2]),
-                                       labels = c("Cluster 2"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la3 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[3]),
-                                       labels = c("Cluster 3"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la4 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[4]),
-                                       labels = c("Cluster 4"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la5 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[5]),
-                                       labels = c("Cluster 5"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  la6 = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[6]),
-                                       labels = c("Cluster 6"), 
-                                       labels_gp = gpar(col = "white", fontsize = font_size+4)))
-  
-  #ba = HeatmapAnnotation(foo2 = anno_block(gp = gpar(fill = 5:7),
-  #                                         labels = c("2kPa vs 25kPa", "2kPa vs 8kPa", "8kPa vs 25kPa"),
-  #                                         labels_gp = gpar(col = "white", fontsize = 10)))
-  #
   
   #Calculate Right annotations
-  #if (switch==FALSE) {
-  saint_count3 <- dfdata_sig2
+  #saint_count3 <- dfdata_sig2
   sc3max_c1<- max(dfdata_sig2$sigcount_c1)
   sc3max_c2<- max(dfdata_sig2$BFDR_Freq)
-  saint_count_cl1 <- saint_count3 %>% filter(saint_count3$name %in% Cluster1$GeneID )
-  saint_count_cl2 <- saint_count3 %>% filter(saint_count3$name %in% Cluster2$GeneID )
-  saint_count_cl3 <- saint_count3 %>% filter(saint_count3$name %in% Cluster3$GeneID )
-  saint_count_cl4 <- saint_count3 %>% filter(saint_count3$name %in% Cluster4$GeneID )
-  saint_count_cl5 <- saint_count3 %>% filter(saint_count3$name %in% Cluster5$GeneID )
-  saint_count_cl6 <- saint_count3 %>% filter(saint_count3$name %in% Cluster6$GeneID )
-  #
-  #}
   
-  ra1 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl1$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("BFDR
-Freq" = anno_barplot(
-  saint_count_cl1$BFDR_Freq,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra2 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl2$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("BFDR
-Freq" = anno_barplot(
-  saint_count_cl2$BFDR_Freq,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra3 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl3$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("BFDR
-Freq" = anno_barplot(
-  saint_count_cl3$BFDR_Freq,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra4 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl4$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("BFDR
-Freq" = anno_barplot(
-  saint_count_cl4$BFDR_Freq,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  ra5 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl5$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("BFDR
-Freq" = anno_barplot(
-  saint_count_cl5$BFDR_Freq,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  
-  ra6 =  rowAnnotation("Sig.
-Freq1" = anno_barplot(
-  saint_count_cl6$sigcount_c1,
-  ylim = c(0 , sc3max_c1),
-  gp = gpar(fill = mypal[1], fontsize = 6), 
-)) +
-    rowAnnotation("BFDR
-Freq" = anno_barplot(
-  saint_count_cl6$BFDR_Freq,
-  ylim = c(0 , sc3max_c2),
-  gp = gpar(fill = mypal[3], fontsize = 6), 
-))
-  
-  
-  if (kmeans > 0) {
-    ht_C1 = Heatmap(
-      my_mat_c1,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha1,
-      left_annotation = la1,
-      #bottom_annotation = ba,
-      #right_annotation = ra1,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (
-        paste(
-          label,
-          " Cluster 1",
-          " (",
-          C1_Count,
-          ")",
-          sep = ""
-        )
-      )
-    )
-    ht_C1 = draw(ht_C1+ra1, auto_adjust = FALSE)
+  for (i in 1:kmeans){
+    saint_count_list[[i]] <-  dfdata_sig2 %>% filter( dfdata_sig2$name %in% Cluster_list[[i]]$GeneID ) 
   }
-  if (kmeans > 1) {
-    ht_C2 = Heatmap(
-      my_mat_c2,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha2,
-      left_annotation = la2,
-      #bottom_annotation = ba,
-      #right_annotation = ra2,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 2", " (", C2_Count, ")", sep =
-                              ""))
-    )
-    ht_C2 = draw(ht_C2+ra2, auto_adjust = FALSE)
-  }
-  if (kmeans > 2) {
-    ht_C3 = Heatmap(
-      my_mat_c3,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha3,
-      left_annotation = la3,
-      #bottom_annotation = ba,
-      #right_annotation = ra3,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 3", " (", C3_Count, ")", sep =
-                              ""))
-    )
-    ht_C3 = draw(ht_C3+ra3, auto_adjust = FALSE)
-  }
-  if (kmeans > 3) {
-    ht_C4 = Heatmap(
-      my_mat_c4,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha4,
-      left_annotation = la4,
-      #bottom_annotation = ba,
-      #right_annotation = ra4,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 4", " (", C4_Count, ")", sep = ""))
-    )
-    ht_C4 = draw(ht_C4+ra4, auto_adjust = FALSE)
-  }
-  if (kmeans > 4) {
-    ht_C5 = Heatmap(
-      my_mat_c5,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha5,
-      left_annotation = la5,
-      #bottom_annotation = ba,
-      #right_annotation = ra5,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 5", " (", C5_Count, ")", sep = ""))
-    )
-    ht_C5 = draw(ht_C5+ra5, auto_adjust = FALSE)
-  } 
-  if (kmeans > 5) {
-    ht_C6 = Heatmap(
-      my_mat_c6,
-      name = htname,
-      cluster_rows = TRUE,
-      cluster_columns = FALSE,
-      #column_split = column_split,
-      top_annotation = ha6,
-      left_annotation = la6,
-      #bottom_annotation = ba,
-      #right_annotation = ra6,
-      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
-      col = col_fun,
-      #border_gp = gpar(col = "black", lty = 2),
-      border = TRUE,
-      #rect_gp = gpar(col = "white", lwd = 1),
-      row_names_gp = gpar(fontsize = 6),
-      column_names_gp = gpar(fontsize = 8),
-      column_title = (paste("Cluster 6", " (", C6_Count, ")", sep = ""))
-    )
-    ht_C6 = draw(ht_C6+ra6, auto_adjust = FALSE)
-  } 
   
+  #Right heatmap annotation
+  for (i in 1:kmeans){
+    ra_list[[i]] =  rowAnnotation("Sig.
+Freq1" = anno_barplot(saint_count_list[[i]]$sigcount_c1, ylim = c(0 , sc3max_c1), gp = gpar(fill = mypal[1], fontsize = 6))) +
+      rowAnnotation("BFDR
+Freq" = anno_barplot(saint_count_list[[i]]$BFDR_Freq,ylim = c(0 , sc3max_c2), gp = gpar(fill = mypal[3], fontsize = 6)))
+  }
   
-  comphtclust<-list(ht_C1, ht_C2, ht_C3, ht_C4, ht_C5, ht_C6, C1_Count, C2_Count, C3_Count, C4_Count, C5_Count, C6_Count, 
-                    Cluster1FC, Cluster2FC, Cluster3FC, Cluster4FC, Cluster5FC, Cluster6FC, clu_df)
+  #Top heatmap annotation
+  for (i in 1:kmeans){
+    ha_list[[i]] = HeatmapAnnotation(
+      log2FC = anno_density(
+        my_mat_list[[i]],
+        type = "violin",
+        height = unit(3, "cm"),
+        gp = gpar(fill = mypal[c(1:16)])
+      ),
+      FC_mean = CS_list[[i]],
+      col = list(FC_mean = col_fun),
+      gp = gpar(col = "black"),
+      show_legend = FALSE
+    )
+    htname = "log2FC"
+  }
+  
+  #Left heatmap annotation
+  for (i in 1:kmeans){
+    la_list[[i]] = rowAnnotation(foo = anno_block(gp = gpar(fill = mypal[i]),
+                                                  labels = paste0("Cluster ", i), 
+                                                  labels_gp = gpar(col = "white", fontsize = font_size+4)))
+  }
+  
+  #Generate heatmaps
+  for (i in 1:kmeans){
+    ht_list[[i]] = Heatmap(
+      my_mat_list[[i]],
+      name = htname,
+      cluster_rows = TRUE,
+      cluster_columns = FALSE,
+      #column_split = column_split,
+      top_annotation = ha_list[[i]],
+      left_annotation = la_list[[i]],
+      #bottom_annotation = ba,
+      #right_annotation = ra_list[[i]],
+      #row_km = 3, row_km_repeats = 2000, # kmeans clustering
+      col = col_fun,
+      #border_gp = gpar(col = "black", lty = 2),
+      border = TRUE,
+      #rect_gp = gpar(col = "white", lwd = 1),
+      row_names_gp = gpar(fontsize = font_size),
+      column_names_gp = gpar(fontsize = font_size+2),
+      column_title = (paste("Cluster ",i, " (", C_Count_list[[i]], ")", sep ="")))
+    
+    ht_list[[i]] = draw(ht_list[[i]]+ra_list[[i]], auto_adjust = FALSE)
+  }
+  
+  comphtclust<-list(ht_list, C_Count_list, ClusterFC_list, clu_df)
+  
   return(comphtclust)
+  
 }
 
 #####Enhanced Volcano Function####
 #choices ("p-adj sig.","p-Val sig.", "p-adj values")
 plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10){
-  
-  
+  mypal2<-adjustcolor(mypal, alpha.f = 0.5)
+  mypal<-c(mypal,mypal2)
+
   Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
   Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
   Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
   Cluster4 =clu_df[clu_df$Cluster == "cluster4", ]
   Cluster5 =clu_df[clu_df$Cluster == "cluster5", ]
   Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
+  Cluster7 =clu_df[clu_df$Cluster == "cluster7", ]
+  Cluster8 =clu_df[clu_df$Cluster == "cluster8", ]
+  Cluster9 =clu_df[clu_df$Cluster == "cluster9", ]
+  Cluster10 =clu_df[clu_df$Cluster == "cluster10", ]
+  
+  
   
   # Converts each cluster into a list of values
   dfc1 <- Cluster1$GeneID 
@@ -2957,6 +1581,11 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
   dfc4 <- Cluster4$GeneID
   dfc5 <- Cluster5$GeneID
   dfc6 <- Cluster6$GeneID
+  dfc7 <- Cluster7$GeneID
+  dfc8 <- Cluster8$GeneID
+  dfc9 <- Cluster9$GeneID
+  dfc10 <- Cluster10$GeneID
+  
   
   FC_data <- data_results[, c(1,grep(paste(comp_pick, sep = ""),colnames(data_results)))]
   colnames(FC_data) = gsub(paste(comp_pick,"_", sep = ""),"", colnames(FC_data))
@@ -2977,7 +1606,11 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
                                          ifelse(data_results$name %in% dfc4, mypal[4],
                                                 ifelse(data_results$name %in% dfc5, mypal[5],
                                                        ifelse(data_results$name %in% dfc6, mypal[6],
-                                                              "#8F8F8F"))))))
+                                                              ifelse(data_results$name %in% dfc7, mypal[7],
+                                                                     ifelse(data_results$name %in% dfc8, mypal[8],
+                                                                            ifelse(data_results$name %in% dfc9, mypal[9],
+                                                                                   ifelse(data_results$name %in% dfc10, mypal[10],
+                                                              "#8F8F8F"))))))))))
   
   keyvals.colour[is.na(keyvals.colour)] <- "#8F8F8F"
   names(keyvals.colour)[keyvals.colour == mypal[1]] <- 'Cluster1'
@@ -2986,6 +1619,10 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
   names(keyvals.colour)[keyvals.colour == mypal[4]] <- 'Cluster4'
   names(keyvals.colour)[keyvals.colour == mypal[5]] <- 'Cluster5'
   names(keyvals.colour)[keyvals.colour == mypal[6]] <- 'Cluster6'
+  names(keyvals.colour)[keyvals.colour == mypal[7]] <- 'Cluster7'
+  names(keyvals.colour)[keyvals.colour == mypal[8]] <- 'Cluster8'
+  names(keyvals.colour)[keyvals.colour == mypal[9]] <- 'Cluster9'
+  names(keyvals.colour)[keyvals.colour == mypal[10]] <- 'Cluster10'
   names(keyvals.colour)[keyvals.colour == '#8F8F8F'] <- 'NA'
   
   if (padj_check =="p-adj sig."){
@@ -3064,85 +1701,43 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
 ####Entrelist####
 get_entrezlist <- function(clu_df, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  clu_df_no<-length(unique(clu_df$Cluster))
+  clu_df_val<-unique(clu_df$Cluster)
+  Cluster_list<- vector(mode='list', length=clu_df_no)
+  entrezlist <- vector(mode='list', length=clu_df_no)
+  entrezlist_names <- vector()
   
-  Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
-  Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
-  Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
-  Cluster4 =clu_df[clu_df$Cluster == "cluster4", ]
-  Cluster5 =clu_df[clu_df$Cluster == "cluster5", ]
-  Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
-  
-  # Converts each cluster into a list of values
-  dfc1 <- Cluster1$GeneID 
-  dfc2 <- Cluster2$GeneID
-  dfc3 <- Cluster3$GeneID
-  dfc4 <- Cluster4$GeneID
-  dfc5 <- Cluster5$GeneID
-  dfc6 <- Cluster6$GeneID
+  for (i in 1:clu_df_no){
+    Cluster_list[[i]] =clu_df[clu_df$Cluster == clu_df_val[i], ]
+  } 
   
   
   ####To do gene Ontology analysis
   #Convert gene lists (from "SYMBOL", for example) into EntrezIDs.
   # Generate lists of EntrezIDs
-  idCluster1 <- c(bitr(
-    dfc1,
-    fromType = "SYMBOL",
-    toType = "ENTREZID",
-    OrgDb = species_db
-  ))
-  idCluster2 <- c(bitr(
-    dfc2,
-    fromType = "SYMBOL",
-    toType = "ENTREZID",
-    OrgDb = species_db
-  ))
-  idCluster3 <- c(bitr(
-    dfc3,
-    fromType = "SYMBOL",
-    toType = "ENTREZID",
-    OrgDb = species_db
-  ))
-  idCluster4 <- c(bitr(
-    dfc4,
-    fromType = "SYMBOL",
-    toType = "ENTREZID",
-    OrgDb = species_db
-  ))
-  idCluster5 <- c(bitr(
-    dfc5,
-    fromType = "SYMBOL",
-    toType = "ENTREZID",
-    OrgDb = species_db
-  ))
-  idCluster6 <- c(bitr(
-    dfc6,
-    fromType = "SYMBOL",
-    toType = "ENTREZID",
-    OrgDb = species_db
-  ))
   
-  # Assemble converted BaitID vectors into a list object
-  entrezlist <- list(
-    idCluster1$ENTREZID,
-    idCluster2$ENTREZID,
-    idCluster3$ENTREZID,
-    idCluster4$ENTREZID,
-    idCluster5$ENTREZID,
-    idCluster6$ENTREZID
-  )
-  names(entrezlist) <-
-    c(
-      "Cluster 1",
-      "Cluster 2",
-      "Cluster 3",
-      "Cluster 4",
-      "Cluster 5",
-      "Cluster 6"
-    )
+  for (i in 1:clu_df_no){
+    entrezlist[[i]] <- c(bitr(
+      Cluster_list[[i]]$GeneID,
+      fromType = "SYMBOL",
+      toType = "ENTREZID",
+      OrgDb = species_db
+    ))
+  }
+  
+  for (i in 1:clu_df_no){
+    entrezlist[[i]] <-entrezlist[[i]]$ENTREZID
+  } 
+  
+  for (i in 1:clu_df_no){
+    entrezlist_names[i]<-paste0("Cluster ", i)
+  } 
+  
+  names(entrezlist)<-c(entrezlist_names)
   return(entrezlist)
 }
 
-####Cellualr Compartment####
+####Cellular Compartment####
 
 plot_GO_CC <- function(entrezlist, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
@@ -3222,29 +1817,16 @@ plot_GO_BP <- function(entrezlist, species="Human"){
 
 #Box Plot Function
 plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice="default") {
+  clu_df_no<-length(unique(clu_df$Cluster))
+  clu_df_val<-unique(clu_df$Cluster)
+  Cluster_list<- vector(mode='list', length=clu_df_no)
   
   if(palette_choice=="default"){palette_choice<-"Dark2"}
   
-  Cluster0 =clu_df[clu_df$Cluster == "cluster0", ]
-  Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
-  Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
-  Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
-  Cluster4 =clu_df[clu_df$Cluster == "cluster4", ]
-  Cluster5 =clu_df[clu_df$Cluster == "cluster5", ]
-  Cluster6 =clu_df[clu_df$Cluster == "cluster6", ]
-  
-  # Converts each cluster into a list of values
-  dfc0 <- Cluster0$GeneID 
-  dfc1 <- Cluster1$GeneID 
-  dfc2 <- Cluster2$GeneID
-  dfc3 <- Cluster3$GeneID
-  dfc4 <- Cluster4$GeneID
-  dfc5 <- Cluster5$GeneID
-  dfc6 <- Cluster6$GeneID
-  
-  clusterID <- paste("dfc", cluster_no,  sep = "")
-  clusterID <- eval(parse(text = clusterID))#converts text to variable
-  protein_list <- clusterID
+  for (i in 1:clu_df_no){
+    Cluster_list[[i]] =clu_df[clu_df$Cluster == clu_df_val[i], ]
+    } 
+  protein_list <- Cluster_list[[cluster_no]]$GeneID
   
   #origdata2 <- normdata %>% remove_rownames %>% column_to_rownames(var="name")
   
