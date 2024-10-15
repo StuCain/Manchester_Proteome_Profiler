@@ -32,8 +32,7 @@ library(SummarizedExperiment)
 library(VennDetail)
 library(QFeatures)
 source("R/functions.R")
-
-Version = "0.8.2-beta"
+Version = "0.8.3-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1102,12 +1101,12 @@ server <- shinyServer(function(input, output, session) {
     menuItem("Normalisation options",
            radioButtons("nomalisation_choice",
                         "Normalisation Method",
-                        choices = c("vsn", "quantile"),
+                        choices = c("vsn", "quantile", "none"),
                         selected = "vsn"),
            if (input$data_mode == TRUE) {
              radioButtons("nomalisation_choice2",
                           "Normalisation Method Dataset 2)",
-                          choices = c("vsn", "quantile"),
+                          choices = c("vsn", "quantile", "none"),
                           selected = "vsn")
            }
            
@@ -1749,15 +1748,21 @@ server <- shinyServer(function(input, output, session) {
   })
   
   norm <- reactive({
-    if(input$nomalisation_choice=="quantile"){
-      QFeatures::normalize(filt(), method = "quantiles")}else
-      {normalize_vsn(filt())}
+    if (input$nomalisation_choice=="vsn")
+    {normalize_vsn(filt())}
+    else if(input$nomalisation_choice=="quantile"){
+      QFeatures::normalize(filt(), method = "quantiles")}
+    else if (input$nomalisation_choice=="none")
+      {norm<-filt()}
   })
   
   norm2 <- reactive({
-    if(input$nomalisation_choice2=="quantile"){
-      QFeatures::normalize(filt2(), method = "quantiles")}else
-      {normalize_vsn(filt2())}
+    if (input$nomalisation_choice2=="vsn")
+    {normalize_vsn(filt2())}
+    else if(input$nomalisation_choice2=="quantile"){
+      QFeatures::normalize(filt2(), method = "quantiles")}
+    else if (input$nomalisation_choice2=="none")
+      {norm<-filt2()}
   })
   
   #Get Normalized data
