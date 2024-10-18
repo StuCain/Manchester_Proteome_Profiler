@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
     libudunits2-dev \
     libproj-dev \
     libgdal-dev \
-    libglpk-dev \
-    libnetcdf-dev
+    libglpk-dev
+    
 
 
 #Needed for clusterProfiler
@@ -29,13 +29,14 @@ RUN Rscript -e 'install.packages(c("devtools", "tidyverse", "ggrepel", "httr", "
 "DT", "BiocManager", "shiny", "shinyalert", "shinydashboard", \
 "shinyjs", "svglite", "shinyBS", "shinyWidgets", "shinycssloaders", \
 "shiny.info", "circlize", "data.table", "scales", "gridtext", "waiter", "shinythemes", "RColorBrewer", "readxl", \
-"rmarkdown", "tinytex"), dependencies=TRUE)'
+"rmarkdown", "tinytex", "assertthat"), dependencies=TRUE)'
 
 #FROM bioconductor/bioconductor_docker
-RUN Rscript -e 'BiocManager::install(pkgs=c("DEP", "ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
+RUN Rscript -e 'BiocManager::install(pkgs=c("ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
 RUN R -e "BiocManager::install('clusterProfiler')"
 RUN R -e "BiocManager::install('org.Mm.eg.db')"
 RUN R -e "BiocManager::install('VennDetail')"
+RUN Rscript -e 'BiocManager::install(pkgs=c("limma", "MSnbase"), ask=F, dependencies=TRUE)'
 RUN apt-get install perl wget -y  
 #fetch TinyTeX installer and run it
 RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
@@ -48,7 +49,7 @@ RUN tlmgr install bookmark
 #Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
 RUN sudo rm /srv/shiny-server/index.html
-RUN Rscript -e 'install.packages("shinyWidgets", dependencies=TRUE)'
+RUN Rscript -e 'install.packages(c("shinyWidgets", "fdrtool"), dependencies=TRUE)'
 RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-threading')"
 #Multi-threading has to be disabled on preprocessCore in QFeatures package
 RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"

@@ -9,7 +9,7 @@
 #BiocManager::install(c("EnhancedVolcano", "enrichplot",  "clusterProfiler",
 #"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail", "QFeatures"))
 #BiocManager::install("org.Mm.eg.db")
-library(DEP)
+#library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
 library(shiny)
@@ -31,8 +31,12 @@ library(rmarkdown)
 library(SummarizedExperiment)
 library(VennDetail)
 library(QFeatures)
+library(limma)
+library(MSnbase)
+library(assertthat)
 source("R/functions.R")
-Version = "0.9.0-beta"
+source("R/functions_DEP.R")
+Version = "0.9.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1096,21 +1100,21 @@ server <- shinyServer(function(input, output, session) {
              downloadButton('downloadcomp_template', 'Save Comp. template', class="btn btn-primary")
     )
   })
-
+  
   output$normalisations <- renderMenu({
     menuItem("Normalisation options",
-           radioButtons("nomalisation_choice",
-                        "Normalisation Method",
-                        choices = c("vsn", "quantile", "none"),
-                        selected = "vsn"),
-           if (input$data_mode == TRUE) {
-             radioButtons("nomalisation_choice2",
-                          "Normalisation Method Dataset 2)",
+             radioButtons("nomalisation_choice",
+                          "Normalisation Method",
                           choices = c("vsn", "quantile", "none"),
-                          selected = "vsn")
-           }
-           
-  )
+                          selected = "vsn"),
+             if (input$data_mode == TRUE) {
+               radioButtons("nomalisation_choice2",
+                            "Normalisation Method Dataset 2)",
+                            choices = c("vsn", "quantile", "none"),
+                            selected = "vsn")
+             }
+             
+    )
   })
   
   #Hide/show Introduction Tab
@@ -1625,7 +1629,7 @@ server <- shinyServer(function(input, output, session) {
     data_unique_defn$Protein.names  <- sub('\\;.*', '', data_unique_defn$Protein.names)
     data_unique_defn<-as.data.frame(data_unique_defn)
   })
-
+  
   #Experimental design files input
   expdesign <- reactive({
     inFile <- input$file2
@@ -1753,7 +1757,7 @@ server <- shinyServer(function(input, output, session) {
     else if(input$nomalisation_choice=="quantile"){
       QFeatures::normalize(filt(), method = "quantiles")}
     else if (input$nomalisation_choice=="none")
-      {norm<-filt()}
+    {norm<-filt()}
   })
   
   norm2 <- reactive({
@@ -1762,7 +1766,7 @@ server <- shinyServer(function(input, output, session) {
     else if(input$nomalisation_choice2=="quantile"){
       QFeatures::normalize(filt2(), method = "quantiles")}
     else if (input$nomalisation_choice2=="none")
-      {norm<-filt2()}
+    {norm<-filt2()}
   })
   
   #Get Normalized data
@@ -1782,15 +1786,18 @@ server <- shinyServer(function(input, output, session) {
   imp <- reactive({
     set.seed(123)
     if (input$imputation == "man"){
-      DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm(), input$imputation)}
+      #      DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+      #        DEP::impute(norm(), input$imputation)}
+      impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+        impute(norm(), input$imputation)}
+    
   })
   
   imp2 <- reactive({
     set.seed(123)
     if (input$imputation == "man"){
-      DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm2(), input$imputation)}
+      impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+        impute(norm2(), input$imputation)}
   })
   
   
@@ -1914,13 +1921,14 @@ server <- shinyServer(function(input, output, session) {
   
   #SAINTexpress Processing
   saint_output <- reactive({
-    norm_long <-get_df_long(norm())
-    saint_list<-list()
+    
     experimental_design<-data.frame(expdesign())
     #Check for C's
     validate(need('C' %in% experimental_design$bait_id, "For SAINTexpress processing, you must indicate the control samples with a 'C' in the 'bait_id' column of the Experimental Design file. Use the ExperimentalTemplate to assist you. ")
     )
     SysName <- Sys.info()['sysname']
+    norm_long <-norm_output()
+    saint_list<-list()
     
     for(i in sort(unique(experimental_design$condition_type))){
       #norm_df<-pg_filt[, c(1, grep("Norm",colnames(pg_filt)))]
@@ -2350,10 +2358,10 @@ server <- shinyServer(function(input, output, session) {
     })
     
     data_results3<- reactive({
-#      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
-#        return(NULL)
-#      if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress")
-#        return(NULL)
+      #      if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
+      #        return(NULL)
+      #      if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress")
+      #        return(NULL)
       if (input$comp_type == "2 Rounds of comparisons"){
         data_results2() [data_results2()$name %in% data_results1()$name, ]
       }
@@ -2433,14 +2441,14 @@ server <- shinyServer(function(input, output, session) {
     heatmap_input <- reactive({
       withProgress(message = 'Plotting', value = 0.66, {
         if(input$abund_choice == "imputed"){
-        abund_matrix<-imp_data()
-        if(input$signif_choice==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
-        protein_no<-abund_matrix %>% nrow()
-        if (protein_no>input$size){protein_no<-input$size}
-        abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
-        abund_matrix<-abund_matrix[1:protein_no,]
-        abund_matrix<-as.matrix(abund_matrix)
-        switch_no<-1
+          abund_matrix<-imp_data()
+          if(input$signif_choice==TRUE){abund_matrix<- abund_matrix[rownames(abund_matrix) %in% data_results()$name, ]}
+          protein_no<-abund_matrix %>% nrow()
+          if (protein_no>input$size){protein_no<-input$size}
+          abund_matrix<- abund_matrix[ order(rowMeans(abund_matrix), decreasing = T), ]
+          abund_matrix<-abund_matrix[1:protein_no,]
+          abund_matrix<-as.matrix(abund_matrix)
+          switch_no<-1
         }
         
         if(input$abund_choice == "normalised"){
@@ -2454,7 +2462,7 @@ server <- shinyServer(function(input, output, session) {
           abund_matrix<-abund_matrix[1:protein_no,]
           abund_matrix<-as.matrix(abund_matrix)
           switch_no<-2
-                  }
+        }
         
         if(input$signif_choice==TRUE){sign_txt<-"significant proteins only"}else{sign_txt<-"all proteins"}
         ht_title<-paste(input$data_type, "<br>", protein_no, " most abundant proteins", "<br>", input$abund_choice, " intensity values", "<br>", sign_txt, sep = "")
@@ -2533,8 +2541,8 @@ server <- shinyServer(function(input, output, session) {
       abund_table_merge <- merge(data_defn2(), abund_table, by.x = "name", by.y = "name", all.x = FALSE, all.y = TRUE)
       abund_table_merge[match(abund_table$name, abund_table_merge$name),]
     })
-
-     volcano_input <- reactive({
+    
+    volcano_input <- reactive({
       if(!is.null(input$volcano_cntrst)) {
         plot_volcano(dep(),
                      input$volcano_cntrst,
@@ -2596,7 +2604,7 @@ server <- shinyServer(function(input, output, session) {
       plot_imputation(norm2(),
                       df2())
     })
-
+    
     numbers_input <- reactive({
       plot_numbers(norm())
     })
@@ -2614,7 +2622,7 @@ server <- shinyServer(function(input, output, session) {
       num_total <- dep() %>% nrow()
       if(num_total >= input$pca_num){
         if(input$pca_split==FALSE){
-        plot_pca_txt(dep(), x = 1, y = 2, n=input$pca_num, point_size = 4)
+          plot_pca_txt(dep(), x = 1, y = 2, n=input$pca_num, point_size = 4)
         }else{plot_pca_txt(dep(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num, point_size = 4)}
       }else{
         plot_pca_txt(dep(), x = 1, y = 2, n=num_total, point_size = 4)
@@ -2931,7 +2939,7 @@ server <- shinyServer(function(input, output, session) {
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_mode == FALSE){
             if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
-            }else{if(input$data_type2 == "FragPipe"){data_type <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type<-input$data_type2}}
+          }else{if(input$data_type2 == "FragPipe"){data_type <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type<-input$data_type2}}
           ht_title<-paste(data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
@@ -3392,7 +3400,7 @@ server <- shinyServer(function(input, output, session) {
     
     #signif plot output
     output$signif_plot <- renderPlot({
-    signif_plot_input()
+      signif_plot_input()
     })
     
     output$signif_plot2 <- renderPlot({
@@ -3423,7 +3431,7 @@ server <- shinyServer(function(input, output, session) {
     output$imputation2 <- renderPlot({
       imputation_input2()
     })
-
+    
     output$numbers <- renderPlot({
       numbers_input()
     })
@@ -3431,7 +3439,7 @@ server <- shinyServer(function(input, output, session) {
     output$numbers2 <- renderPlot({
       numbers_input2()
     })
-
+    
     output$coverage <- renderPlot({
       coverage_input()
     })
@@ -4131,7 +4139,7 @@ server <- shinyServer(function(input, output, session) {
         dev.off()
       }
     )
-
+    
     output$downloadCoverage <- downloadHandler(
       filename = "coverage.pdf",
       content = function(file) {
