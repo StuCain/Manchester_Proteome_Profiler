@@ -36,7 +36,7 @@ library(MSnbase)
 library(assertthat)
 source("R/functions.R")
 source("R/functions_DEP.R")
-Version = "0.9.2-beta"
+Version = "0.9.3-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 

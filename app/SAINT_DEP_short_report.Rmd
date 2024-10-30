@@ -203,7 +203,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.3.2
+Version:0.3.3
 
 ## Method details
  
@@ -565,7 +565,7 @@ shiny::setProgress(0.60)  # set progress to 60%
 
 ### Cluster Heatmaps
 
-```{r heatmap_cluster1, echo=FALSE, fig.height=clust_height_1, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster1, echo=FALSE, fig.height=clust_height_1, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>0){
   print(params$cluster_heatmap_input()[[1]][[1]])
  
@@ -586,7 +586,7 @@ knitr::kable(clust1_table)
 
 \pagebreak
 
-```{r heatmap_cluster2, echo=FALSE, fig.height=clust_height_2, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster2, echo=FALSE, fig.height=clust_height_2, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[1]][[2]])
@@ -605,7 +605,7 @@ knitr::kable(clust2_table)
 
 \pagebreak
 
-```{r heatmap_cluster3, echo=FALSE, fig.height=clust_height_3, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster3, echo=FALSE, fig.height=clust_height_3, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 
 if(params$k1>2){
   print(params$cluster_heatmap_input()[[1]][[3]])
@@ -624,7 +624,7 @@ knitr::kable(clust3_table)
 
 \pagebreak
 
-```{r heatmap_cluster4, echo=FALSE, fig.height=clust_height_4, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster4, echo=FALSE, fig.height=clust_height_4, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[1]][[4]])
@@ -643,7 +643,7 @@ knitr::kable(clust4_table)
 
 \pagebreak
 
-```{r heatmap_cluster5, echo=FALSE, fig.height=clust_height_5, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster5, echo=FALSE, fig.height=clust_height_5, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[1]][[5]])
 }
@@ -660,7 +660,7 @@ knitr::kable(clust5_table)
 
 \pagebreak
 
-```{r heatmap_cluster6, echo=FALSE, fig.height=clust_height_6, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster6, echo=FALSE, fig.height=clust_height_6, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>5){
   print(params$cluster_heatmap_input()[[1]][[6]])
 }
@@ -677,7 +677,7 @@ knitr::kable(clust6_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster7, echo=FALSE, fig.height=clust_height_7, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster7, echo=FALSE, fig.height=clust_height_7, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>6){
   print(params$cluster_heatmap_input()[[1]][[7]])
 }
@@ -694,7 +694,7 @@ knitr::kable(clust7_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster8, echo=FALSE, fig.height=clust_height_8, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster8, echo=FALSE, fig.height=clust_height_8, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>7){
   print(params$cluster_heatmap_input()[[1]][[8]])
 }
@@ -711,7 +711,7 @@ knitr::kable(clust8_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster9, echo=FALSE, fig.height=clust_height_9, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster9, echo=FALSE, fig.height=clust_height_9, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>8){
   print(params$cluster_heatmap_input()[[1]][[9]])
 }
@@ -729,7 +729,7 @@ knitr::kable(clust9_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster10, echo=FALSE, fig.height=clust_height_10, fig.width=(comp_no/2)+3, warning=FALSE, results='hide'}
+```{r heatmap_cluster10, echo=FALSE, fig.height=clust_height_10, fig.width=(comp_no/2)+3, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>9){
   print(params$cluster_heatmap_input()[[1]][[10]])
 }
