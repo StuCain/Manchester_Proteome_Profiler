@@ -3,7 +3,7 @@ FROM rocker/shiny-verse:latest
 RUN apt-get update && apt-get install -y \
     sudo \
     pandoc \
-    pandoc-citeproc \
+    #pandoc-citeproc \
     libcurl4-gnutls-dev \
     libcairo2-dev \
     libxt-dev \
@@ -18,27 +18,26 @@ RUN apt-get update && apt-get install -y \
     libgdal-dev \
     libglpk-dev
     
-
-
-#Needed for clusterProfiler
-#RUN apt-get install libglpk-dev
-#Needed for DEP
-#RUN apt-get install libnetcdf-dev
-
 RUN Rscript -e 'install.packages(c("devtools", "tidyverse", "ggrepel", "httr", "rjson", "mvtnorm", "tmvtnorm", \
 "DT", "BiocManager", "shiny", "shinyalert", "shinydashboard", \
 "shinyjs", "svglite", "shinyBS", "shinyWidgets", "shinycssloaders", \
 "shiny.info", "circlize", "data.table", "scales", "gridtext", "waiter", "shinythemes", "RColorBrewer", "readxl", \
-"rmarkdown", "tinytex", "assertthat"), dependencies=TRUE)'
+"rmarkdown", "tinytex", "assertthat", "shinyWidgets", "fdrtool"), dependencies=TRUE)'
+#Needed for DEP
+RUN apt-get install libnetcdf-dev
 
 #FROM bioconductor/bioconductor_docker
-RUN Rscript -e 'BiocManager::install(pkgs=c("ComplexHeatmap","EnhancedVolcano","org.Hs.eg.db","HDO.db"), ask=F, dependencies=TRUE)'
-RUN R -e "BiocManager::install('clusterProfiler')"
-RUN R -e "BiocManager::install('org.Mm.eg.db')"
-RUN R -e "BiocManager::install('VennDetail')"
-RUN Rscript -e 'BiocManager::install(pkgs=c("limma", "MSnbase"), ask=F, dependencies=TRUE)'
-RUN apt-get install perl wget -y  
+RUN Rscript -e "BiocManager::install('DEP', ask=F, dependencies=TRUE)"
+RUN Rscript -e "BiocManager::install('ComplexHeatmap', ask=F, dependencies=TRUE)"
+RUN Rscript -e "BiocManager::install(pkgs=c('EnhancedVolcano', 'org.Hs.eg.db', 'org.Mm.eg.db', 'HDO.db', 'VennDetail'), ask=F, dependencies=TRUE)"
+RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE)"
+#RUN Rscript -e "BiocManager::install(pkgs=c('limma', 'MSnbase'), ask=F, dependencies=TRUE)"
+#Multi-threading has to be disabled on preprocessCore in QFeatures package
+RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-threading')"
+RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"
+
 #fetch TinyTeX installer and run it
+RUN apt-get install perl wget -y  
 RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
 #add TinyTeX to PATH variable
 ENV PATH="$PATH:/root/.TinyTeX/bin/x86_64-linux"
@@ -48,17 +47,14 @@ RUN tlmgr install ly1
 RUN tlmgr install bookmark
 #Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
+
 RUN sudo rm /srv/shiny-server/index.html
-RUN Rscript -e 'install.packages(c("shinyWidgets", "fdrtool"), dependencies=TRUE)'
-RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-threading')"
-#Multi-threading has to be disabled on preprocessCore in QFeatures package
-RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"
 
 # Make the ShinyApp available at port 80
 EXPOSE 80
-COPY ./ /srv/shiny-server/shiny-saint-dep
+COPY ./ /srv/shiny-server/shiny-mpp
 COPY shiny-server.conf /etc/shiny-server/shiny-server.conf
 
-RUN chmod -R +r /srv/shiny-server/shiny-saint-dep
+RUN chmod -R +r /srv/shiny-server/shiny-mpp
 
 RUN chown -R shiny:shiny /srv/shiny-server

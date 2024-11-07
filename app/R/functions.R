@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 4.2
+Version = 4.3
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -1845,13 +1845,14 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   
   orig<-ggplot(orig_melt_filt, aes(Condition, val))+
     geom_boxplot()+
+    theme_DEP1()+
     geom_jitter(aes(color = factor(Rep)),
                 size = 3, position = position_dodge(width=0.3)) +
     labs(
       y = expression(log[2]~"Intensity"),
       col = "Replicates") +
     facet_wrap(~rowname) +
-    scale_color_brewer(palette = palette_choice)+
+    #scale_color_brewer(palette = palette_choice)+
     #theme_linedraw() +
     theme (axis.text.x = element_text(angle=90, hjust = 1, vjust = 1))+
     ggtitle(origtitle)
@@ -1873,13 +1874,14 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   
   Imp<-ggplot(int_melt_filt, aes(Condition, val))+
     geom_boxplot()+
+    theme_DEP1()+
     geom_jitter(aes(color = factor(Rep)),
                 size = 3, position = position_dodge(width=0.3)) +
     labs(
       y = expression(log[2]~"Intensity"),
       col = "Replicates") +
     facet_wrap(~rowname) +
-    scale_color_brewer(palette = palette_choice)+
+    #scale_color_brewer(palette = palette_choice)+
     #theme_linedraw() +
     theme (axis.text.x = element_text(angle=90, hjust = 1, vjust = 1))+
     ggtitle(Imptitle)

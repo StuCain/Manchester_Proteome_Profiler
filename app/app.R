@@ -9,7 +9,7 @@
 #BiocManager::install(c("EnhancedVolcano", "enrichplot",  "clusterProfiler",
 #"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail", "QFeatures"))
 #BiocManager::install("org.Mm.eg.db")
-#library(DEP)
+library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
 library(shiny)
@@ -31,12 +31,12 @@ library(rmarkdown)
 library(SummarizedExperiment)
 library(VennDetail)
 library(QFeatures)
-library(limma)
-library(MSnbase)
-library(assertthat)
+#library(limma)
+#library(MSnbase)
+#library(assertthat)
 source("R/functions.R")
-source("R/functions_DEP.R")
-Version = "0.9.3-beta"
+#source("R/functions_DEP.R")
+Version = "0.9.7-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1786,18 +1786,15 @@ server <- shinyServer(function(input, output, session) {
   imp <- reactive({
     set.seed(123)
     if (input$imputation == "man"){
-      #      DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-      #        DEP::impute(norm(), input$imputation)}
-      impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-        impute(norm(), input$imputation)}
-    
+      DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+        DEP::impute(norm(), input$imputation)}
   })
   
   imp2 <- reactive({
     set.seed(123)
     if (input$imputation == "man"){
-      impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        impute(norm2(), input$imputation)}
+      DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+        DEP::impute(norm2(), input$imputation)}
   })
   
   
@@ -1858,17 +1855,17 @@ server <- shinyServer(function(input, output, session) {
   
   
   df <- reactive({
-    test_diff(imp(), type = "manual", test = comp())
+    DEP::test_diff(imp(), type = "manual", test = comp())
     
     
   })
   
   df2 <- reactive({
     if (input$comp_type == "2 Rounds of comparisons"){
-      test_diff(imp(), type = "manual", test = comp2())
+      DEP::test_diff(imp(), type = "manual", test = comp2())
     }
     else{
-      test_diff(imp2(), type = "manual", test = comp2())
+      DEP::test_diff(imp2(), type = "manual", test = comp2())
     }
   })
   
@@ -1910,11 +1907,11 @@ server <- shinyServer(function(input, output, session) {
   })
   
   df_long_input <- reactive({
-    norm_long <-get_df_long(norm())
+    norm_long <-DEP::get_df_long(norm())
   })
   
   df_long_input2 <- reactive({
-    norm_long2 <-get_df_long(norm2())
+    norm_long2 <-DEP::get_df_long(norm2())
   })
   
   
