@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 4.3
+Version = 4.5
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -160,6 +160,7 @@ signif_count <- function( df, max_cutoff=20 ) {
     theme_DEP1()+
     geom_line() +
     geom_point()+
+    scale_y_continuous(limits = c(0, NA)) +
     scale_color_discrete (name = "p.adj cut-off", labels = c("0.05", "0.1", "0.5"))
   
   return(sig_plot)
@@ -201,6 +202,7 @@ signif_count_pval <- function( df, max_cutoff=20 ) {
     theme_DEP1()+
     geom_line() +
     geom_point()+
+    scale_y_continuous(limits = c(0, NA)) +
     scale_color_discrete (name = "p.Val cut-off", labels = c("0.05", "0.1", "0.5"))
   
   return(sig_plot)
@@ -296,6 +298,72 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
     return(pca_out)
   }
 }
+
+####Custom Normalisation Plot####
+plot_normalization_vert <-function (se,  ...) 
+{
+  call <- match.call()
+  arglist <- lapply(call[-1], function(x) x)
+  var.names <- vapply(arglist, deparse, character(1))
+  arglist <- lapply(arglist, eval.parent, n = 2)
+  names(arglist) <- var.names
+  lapply(arglist, function(x) {
+    assertthat::assert_that(inherits(x, "SummarizedExperiment"), 
+                            msg = "input objects need to be of class 'SummarizedExperiment'")
+    if (any(!c("label", "ID", "condition", "replicate") %in% 
+            colnames(colData(x)))) {
+      stop("'label', 'ID', 'condition' and/or 'replicate' ", 
+           "columns are not present in (one of) the input object(s)", 
+           "\nRun make_se() or make_se_parse() to obtain the required columns", 
+           call. = FALSE)
+    }
+  })
+  gather_join <- function(se) {
+    assay(se) %>% data.frame() %>% gather(ID, val) %>% left_join(., 
+                                                                 data.frame(colData(se)), by = "ID")
+  }
+  df <- map_df(arglist, gather_join, .id = "var") %>% mutate(var = factor(var, 
+                                                                          levels = names(arglist)))
+  # New facet label names
+  df$var <- factor(df$var, labels = c("Filtered Data", "Normalized Data"))
+  ggplot(df, aes(x = ID, y = val, fill = condition)) + geom_boxplot(notch = TRUE, 
+                                                                    na.rm = TRUE) + coord_flip() + facet_wrap(~var, ncol = 1) + 
+    labs(x = "", y = expression(log[2] ~ "Intensity")) + 
+    theme_DEP1()
+}
+
+plot_normalization_hor <-function (se,  ...) 
+{
+  call <- match.call()
+  arglist <- lapply(call[-1], function(x) x)
+  var.names <- vapply(arglist, deparse, character(1))
+  arglist <- lapply(arglist, eval.parent, n = 2)
+  names(arglist) <- var.names
+  lapply(arglist, function(x) {
+    assertthat::assert_that(inherits(x, "SummarizedExperiment"), 
+                            msg = "input objects need to be of class 'SummarizedExperiment'")
+    if (any(!c("label", "ID", "condition", "replicate") %in% 
+            colnames(colData(x)))) {
+      stop("'label', 'ID', 'condition' and/or 'replicate' ", 
+           "columns are not present in (one of) the input object(s)", 
+           "\nRun make_se() or make_se_parse() to obtain the required columns", 
+           call. = FALSE)
+    }
+  })
+  gather_join <- function(se) {
+    assay(se) %>% data.frame() %>% gather(ID, val) %>% left_join(., 
+                                                                 data.frame(colData(se)), by = "ID")
+  }
+  df <- map_df(arglist, gather_join, .id = "var") %>% mutate(var = factor(var, 
+                                                                          levels = names(arglist)))
+  # New facet label names
+  df$var <- factor(df$var, labels = c("Filtered Data", "Normalized Data"))
+  ggplot(df, aes(x = ID, y = val, fill = condition)) + geom_boxplot(notch = TRUE, 
+                                                                    na.rm = TRUE) + coord_flip() + facet_wrap(~var, ncol = 2) + 
+    labs(x = "", y = expression(log[2] ~ "Intensity")) + 
+    theme_DEP1()
+}
+
 
 ####Complex Heatmap function####
 plot_complex_heatmap <- function(data_results, kmeans, ht_title, col_fun, mypal, switch=3, font_size=6, cluster_cols=TRUE, comp_list) {
@@ -1700,7 +1768,10 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
 
 ####Entrelist####
 get_entrezlist <- function(clu_df, species="Human"){
-  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
+  if (species=="Human"){species_db<-"org.Hs.eg.db"}
+  if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
+  
   clu_df_no<-length(unique(clu_df$Cluster))
   clu_df_val<-unique(clu_df$Cluster)
   Cluster_list<- vector(mode='list', length=clu_df_no)
@@ -1740,7 +1811,9 @@ get_entrezlist <- function(clu_df, species="Human"){
 ####Cellular Compartment####
 
 plot_GO_CC <- function(entrezlist, species="Human"){
-  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
+  if (species=="Human"){species_db<-"org.Hs.eg.db"}
+  if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
   
   GOCC <- compareCluster(
     geneClusters = entrezlist,
@@ -1750,14 +1823,7 @@ plot_GO_CC <- function(entrezlist, species="Human"){
     ont = "CC",
     readable = T
   )
-  #GOCCtitle<-paste("Cellular Component ",sep="")
-  
-  #GOCC_dotplot<- dotplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle)
-  
-  #GOCC_cnetplot<- cnetplot(GOCC, showCategory = 5) + ggtitle(GOCCtitle) 
-  
-  #GO_CC<-list(GOCC_dotplot, GOCC_cnetplot)
-  
+
   return(GOCC)
   
 }
@@ -1765,7 +1831,9 @@ plot_GO_CC <- function(entrezlist, species="Human"){
 #####Molecular Function####
 
 plot_GO_MF <- function(entrezlist, species="Human"){
-  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
+  if (species=="Human"){species_db<-"org.Hs.eg.db"}
+  if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
   
   GOMF <- compareCluster(
     geneClusters = entrezlist,
@@ -1775,15 +1843,6 @@ plot_GO_MF <- function(entrezlist, species="Human"){
     ont = "MF",
     readable = T
   )
-  #GOMFtitle<-paste("Molecular Function ", sep="")
-  
-  #GOMF_dotplot<- dotplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle)
-  
-  #GOMF_cnetplot<- cnetplot(GOMF, showCategory = 5) + ggtitle(GOMFtitle) 
-  
-  #GO_MF<-list(GOMF_dotplot, GOMF_cnetplot)
-  
-  #return(GO_MF)
   return(GOMF)
   
 }
@@ -1791,7 +1850,9 @@ plot_GO_MF <- function(entrezlist, species="Human"){
 ####Biological Process####
 
 plot_GO_BP <- function(entrezlist, species="Human"){
-  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}else{species_db<-"org.Hs.eg.db"}
+  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
+  if (species=="Human"){species_db<-"org.Hs.eg.db"}
+  if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
   
   GOBP <- compareCluster(
     geneClusters = entrezlist,
@@ -1801,14 +1862,7 @@ plot_GO_BP <- function(entrezlist, species="Human"){
     ont = "BP",
     readable = T
   )
-  #GOBPtitle<-paste("Biological Process ",sep="")
-  
-  #GOBP_dotplot<- dotplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle)
-  
-  #GOBP_cnetplot<- cnetplot(GOBP, showCategory = 5) + ggtitle(GOBPtitle) 
-  
-  #GO_BP<-list(GOBP_dotplot, GOBP_cnetplot)
-  
+
   return(GOBP)
   
 }

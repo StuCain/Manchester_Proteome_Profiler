@@ -35,6 +35,7 @@ RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE
 #Multi-threading has to be disabled on preprocessCore in QFeatures package
 RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-threading')"
 RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"
+RUN Rscript -e "BiocManager::install('org.At.tair.db', ask=F, dependencies=TRUE)"
 
 #fetch TinyTeX installer and run it
 RUN apt-get install perl wget -y  

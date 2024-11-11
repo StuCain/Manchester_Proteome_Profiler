@@ -9,6 +9,7 @@
 #BiocManager::install(c("EnhancedVolcano", "enrichplot",  "clusterProfiler",
 #"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail", "QFeatures"))
 #BiocManager::install("org.Mm.eg.db")
+#BiocManager::install("org.At.tair.db")
 library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
@@ -36,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.7-beta"
+Version = "0.9.8-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -226,11 +227,11 @@ ui <- fluidPage(
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
                        ),
                        menuItemOutput("normalisations"),
-#                                radioButtons("nomalisation_choice",
-#                                             "Normalisation Method",
-#                                             choices = c("vsn", "quantile"),
-#                                             selected = "vsn")
-#                       ),
+                       #                                radioButtons("nomalisation_choice",
+                       #                                             "Normalisation Method",
+                       #                                             choices = c("vsn", "quantile"),
+                       #                                             selected = "vsn")
+                       #                       ),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -320,8 +321,8 @@ ui <- fluidPage(
         ),
         box(
           radioButtons("species",
-                       "GO ontology species",
-                       choices = c("Human", "Mouse"),
+                       "GO species",
+                       choices = c("Human", "Mouse", "Arabidopsis"),
                        selected = "Human"),
           width = 1, height = 120),
       ),
@@ -493,12 +494,12 @@ ui <- fluidPage(
                                                                        "Protein number",
                                                                        min = 0, max = 5000, value = 500, step = 100),
                                                           width = 6
-                                                          ),
+                                                      ),
                                                       box(checkboxInput("pca_split",
                                                                         "Split by condition_type",
                                                                         value = FALSE),
                                                           width = 6)
-                                                      ),
+                                                    ),
                                                     plotOutput("pca", height = 600),
                                                     downloadButton('downloadpca', 'Save Plot', class = "btn-primary"),
                                                     downloadButton('downloadpca_txt', 'Save Values', class = "btn-primary")
@@ -552,10 +553,22 @@ ui <- fluidPage(
                                                     downloadButton('downloadCoverage', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Normalization",
+                                                    fluidRow(
+                                                      box(checkboxInput("norm_orient",
+                                                                        "Horizontal plots",
+                                                                        value = FALSE),
+                                                          width = 12)
+                                                    ),
                                                     plotOutput("norm", height = 600),
                                                     downloadButton('downloadNorm', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Normalization (Dataset 2)",
+                                                    fluidRow(
+                                                      box(checkboxInput("norm_orient2",
+                                                                        "Horizontal plots",
+                                                                        value = FALSE),
+                                                          width = 12)
+                                                    ),
                                                     plotOutput("norm2", height = 600),
                                                     downloadButton('downloadNorm2', 'Save', class = "btn-primary")
                                            ),
@@ -956,15 +969,15 @@ ui <- fluidPage(
                                                       
                                                     ),
                                            )
-#                                           tabPanel(title = "App Variables",
-#                                                    fluidRow(
-#                                                      helpText("Save settings to reproduce results in future sessions"),
-#                                                    ),
-#                                                    fluidRow(
-#                                                      DT::dataTableOutput("table4"), #Setting Table
-#                                                      downloadButton('downloadsettings', 'Save Settings', class="btn btn-primary")
-#                                                    )
-#                                          )
+                                           #                                           tabPanel(title = "App Variables",
+                                           #                                                    fluidRow(
+                                           #                                                      helpText("Save settings to reproduce results in future sessions"),
+                                           #                                                    ),
+                                           #                                                    fluidRow(
+                                           #                                                      DT::dataTableOutput("table4"), #Setting Table
+                                           #                                                      downloadButton('downloadsettings', 'Save Settings', class="btn btn-primary")
+                                           #                                                    )
+                                           #                                          )
                                            
                                     )
                              )
@@ -2574,13 +2587,13 @@ server <- shinyServer(function(input, output, session) {
     
     
     norm_input <- reactive({
-      plot_normalization(filt(),
-                         norm())
+      if(input$norm_orient == TRUE){plot_normalization_hor(filt(), norm())}else{
+      plot_normalization_vert(filt(), norm())}
     })
     
     norm_input2 <- reactive({
-      plot_normalization(filt2(),
-                         norm2())
+      if(input$norm_orient2 == TRUE){plot_normalization_hor(filt2(), norm2())}else{
+        plot_normalization_vert(filt2(), norm2())}
     })
     
     

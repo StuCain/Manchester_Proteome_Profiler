@@ -134,7 +134,7 @@
 				<h3>Report Generation</h3>
 				<p>Detailed reports which contain a description of the analysis methods used, the selected cut-off values, significant protein numbers and the generated plots can be downloaded as a single PDF file. There are three lengths of reports. The short report contains the correlation plots, the QC plots, complex heatmaps, all cluster heatmaps, and all the enhanced volcano plots. This can can be generated relatively quickly and is useful for checking if the correct cluster number has been selected and the heatmaps have the correct saturation levels. If one of the heatmap clusters contains only a single protein, an error message will be displayed. A different cluster number must be selected before the report can be generated.</p>
 				<p>To add all the possible cluster box plots for both the non-imputed and imputed data. The "with Box Plots" should be selected</p>
-				<p>If the "long" report is selected, all the GO-ontology plots will be generated, which can take several minutes. The plots can then be inspected, by pressing the analyse button on the specific tab e.g. "Molecular Function". The GO level displayed can then be altered to choice. The long report can then be downloaded by pressing the "Download Report" button as before.  </p>
+				<p>If the "long" report is selected, all the GO-ontology plots will be generated, which can take several minutes, <strong>the correct option must be selected from the "GO species" radio buttons in the top right corner of app</strong>. The plots can then be inspected, by pressing the analyse button on the specific tab e.g. "Molecular Function". The GO level displayed can then be altered to choice. The long report can then be downloaded by pressing the "Download Report" button as before.  </p>
 				
 			</div>
 		</div>
@@ -307,7 +307,7 @@
 			</div>
 			<div class="text">
 				<h3><FONT COLOR="#000000">Gene Ontology plots</h3>
-				<p>The Gene Ontology plots are generated from the proteins listed in each cluster of the complex Heatmap, and uses the clusterProfiler package. Each cluster is used to calculate enriched functional profiles using enrichGO, which are then aggregated to generate a single plot. All three GO domains can be tested, "Molecular Function", "Cellular Component" and "Biological Process" and the enrichment results are displayed as a "Dot plot" and a "Network plot". The "GO level" input box can be used to show either more global GO terms (lower number) or more granular GO terms (higher number).</p>
+				<p>The Gene Ontology plots are generated from the proteins listed in each cluster of the complex Heatmap, and uses the clusterProfiler package. Each cluster is used to calculate enriched functional profiles using enrichGO, which are then aggregated to generate a single plot. All three GO domains can be tested, "Molecular Function", "Cellular Component" and "Biological Process" and the enrichment results are displayed as a "Dot plot" and a "Network plot". The "GO level" input box can be used to show either more global GO terms (lower number) or more granular GO terms (higher number). Before generating the Gene Ontology plots, the correct option must be selected from the "GO species" radio buttons in the top right corner of app. </p>
 				<p>Both plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons and a table of Go enrichment result data can be downloaded.</p>
 			</div>
 						<div class="image">
