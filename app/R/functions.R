@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 4.5
+Version = 4.6
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -260,6 +260,20 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
   for (feat in indicate) {
     pca_df[[feat]] <- as.factor(pca_df[[feat]])
   }
+  scree_data <- data.frame(
+    Component = 1:length(pca$sdev),
+    Variance = round(100 * pca$sdev^2/sum(pca$sdev^2), 1)
+  )
+  
+  scree_plot<-ggplot(scree_data, aes(x = Component, y = Variance)) +
+    geom_bar(stat = "identity", fill = "#DF536B") +
+    geom_line() +
+    geom_point() +
+    theme_DEP1() +
+    xlab("Principal Components") +
+    ylab("Percentage of Variance Explained") +
+    ggtitle("Scree Plot")
+  
   p <- ggplot(pca_df, aes(get(paste0("PC", x)), get(paste0("PC", y)))) + 
     labs(title = paste0("PCA plot - top ", n, " variable proteins"), 
          x = paste0("PC", x, ": ", percent[x], "%"), 
@@ -287,14 +301,14 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
     p <- p + geom_text(aes(label = rowname), size = label_size)
   }
   if (plot) {
-    pca_out<-list(p, pca_df)
+    pca_out<-list(p, pca_df, scree_plot)
     return(pca_out)
   }
   else {
     df <- pca_df %>% select(rowname, paste0("PC", c(x, y)), 
                             match(indicate, colnames(pca_df)))
     colnames(df)[1] <- "sample"
-    pca_out<-list(df, pca_df)
+    pca_out<-list(df, pca_df, scree_data)
     return(pca_out)
   }
 }

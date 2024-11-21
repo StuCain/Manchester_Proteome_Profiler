@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.9-beta"
+Version = "0.9.10-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -493,16 +493,30 @@ ui <- fluidPage(
                                                       box(numericInput("pca_num",
                                                                        "Protein number",
                                                                        min = 0, max = 5000, value = 500, step = 100),
-                                                          width = 6
+                                                          width = 3
+                                                      ),
+                                                      box(numericInput("pcx_num",
+                                                                       "x = PC",
+                                                                       min = 1, max = 10, value = 1),
+                                                          width = 3
+                                                      ),
+                                                      box(numericInput("pcy_num",
+                                                                       "y = PC",
+                                                                       min = 1, max = 10, value = 2),
+                                                          width = 3
                                                       ),
                                                       box(checkboxInput("pca_split",
                                                                         "Split by condition_type",
                                                                         value = FALSE),
-                                                          width = 6)
+                                                          width = 3)
                                                     ),
                                                     plotOutput("pca", height = 600),
                                                     downloadButton('downloadpca', 'Save Plot', class = "btn-primary"),
                                                     downloadButton('downloadpca_txt', 'Save Values', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "PCA Scree Plot",
+                                                    plotOutput("pca_scree", height = 600),
+                                                    downloadButton('downloadpca_scree', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Correlation",
                                                     plotOutput("cor", height = 600),
@@ -519,6 +533,17 @@ ui <- fluidPage(
                                                                        min = 0, max = 5000, value = 500, step = 100),
                                                           width = 6
                                                       ),
+                                                      box(numericInput("pcx_num2",
+                                                                       "x = PC",
+                                                                       min = 1, max = 10, value = 1),
+                                                          width = 3
+                                                      ),
+                                                      box(numericInput("pcy_num2",
+                                                                       "y = PC",
+                                                                       min = 1, max = 10, value = 2),
+                                                          width = 3
+                                                      ),
+                                                      
                                                       box(checkboxInput("pca_split2",
                                                                         "Split by condition_type",
                                                                         value = FALSE),
@@ -527,6 +552,10 @@ ui <- fluidPage(
                                                     plotOutput("pca_c2", height = 600),
                                                     downloadButton('downloadpca_c2', 'Save Plot', class = "btn-primary"),
                                                     downloadButton('downloadpca_c2_txt', 'Save Values', class = "btn-primary")
+                                           ),
+                                           tabPanel(title = "PCA Scree Plot (Comp2)",
+                                                    plotOutput("pca_scree2", height = 600),
+                                                    downloadButton('downloadpca_scree2', 'Save', class = "btn-primary")
                                            ),
                                            tabPanel(title = "Correlation (Comp2)",
                                                     plotOutput("cor_c2", height = 600),
@@ -969,16 +998,7 @@ ui <- fluidPage(
                                                       
                                                     ),
                                            )
-                                           #                                           tabPanel(title = "App Variables",
-                                           #                                                    fluidRow(
-                                           #                                                      helpText("Save settings to reproduce results in future sessions"),
-                                           #                                                    ),
-                                           #                                                    fluidRow(
-                                           #                                                      DT::dataTableOutput("table4"), #Setting Table
-                                           #                                                      downloadButton('downloadsettings', 'Save Settings', class="btn btn-primary")
-                                           #                                                    )
-                                           #                                          )
-                                           
+
                                     )
                              )
                            )
@@ -1170,6 +1190,9 @@ server <- shinyServer(function(input, output, session) {
     if (input$data_mode == TRUE) {
       showTab(inputId =  "correlation_plots", target = "PCA (Comp2)")
     }else{hideTab(inputId =  "correlation_plots", target = "PCA (Comp2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "correlation_plots", target = "PCA Scree Plot (Comp2)")
+    }else{hideTab(inputId =  "correlation_plots", target = "PCA Scree Plot (Comp2)")}
     if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
       showTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")
     }else{hideTab(inputId =  "correlation_plots", target = "Correlation (Comp2)")}
@@ -1679,9 +1702,9 @@ server <- shinyServer(function(input, output, session) {
     
     if (input$data_type == "MaxQuant"){
       cols <- grep("^LFQ", colnames(data))
-      #filtered <- DEP:::filter_MaxQuant(data, input$filt)
-      filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
-      #unique_names <- make_unique(filtered, input$name, input$id)
+      if('Reverse' %in% names(data)==TRUE && 'Potential.contaminant' %in% names(data)==TRUE){
+        filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
+        }else{filtered<-data}
       unique_names <- make_unique(filtered, "Gene.names", "Protein.IDs", delim = ";")
     }
     
@@ -2632,10 +2655,10 @@ server <- shinyServer(function(input, output, session) {
       num_total <- dep() %>% nrow()
       if(num_total >= input$pca_num){
         if(input$pca_split==FALSE){
-          plot_pca_txt(dep(), x = 1, y = 2, n=input$pca_num, point_size = 4)
-        }else{plot_pca_txt(dep(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num, point_size = 4)}
+          plot_pca_txt(dep(), x = input$pcx_num, y = input$pcy_num, n=input$pca_num, point_size = 4)
+        }else{plot_pca_txt(dep(), x = input$pcx_num, y = input$pcy_num, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num, point_size = 4)}
       }else{
-        plot_pca_txt(dep(), x = 1, y = 2, n=num_total, point_size = 4)
+        plot_pca_txt(dep(), x = input$pcx_num, y = input$pcy_num, n=num_total, point_size = 4)
       }
     })
     
@@ -2644,10 +2667,10 @@ server <- shinyServer(function(input, output, session) {
       num_total <- dep2() %>% nrow()
       if(num_total >= input$pca_num2){
         if(input$pca_split2==FALSE){
-          plot_pca_txt(dep2(), x = 1, y = 2, n=input$pca_num2, point_size = 4)
-        }else{plot_pca_txt(dep2(), x = 1, y = 2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num2, point_size = 4)}
+          plot_pca_txt(dep2(), x = input$pcx_num2, y = input$pcy_num2, n=input$pca_num2, point_size = 4)
+        }else{plot_pca_txt(dep2(), x = input$pcx_num2, y = input$pcy_num2, indicate = c("condition", "replicate", "condition_type"), n=input$pca_num2, point_size = 4)}
       }else{
-        plot_pca_txt(dep2(), x = 1, y = 2, n=num_total, point_size = 4)
+        plot_pca_txt(dep2(), x = input$pcx_num2, y = input$pcy_num2, n=num_total, point_size = 4)
       }
     })
     
@@ -2656,8 +2679,8 @@ server <- shinyServer(function(input, output, session) {
       expfile<-expdesign()
       condition_no<-length(unique(expfile$condition))
       if(condition_no<=12){  
-        plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"))
-      }else{plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds")}
+        plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"), font_size = 10)
+      }else{plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", font_size = 10)}
     })
     
     #Correlation Input (Comp2)
@@ -2665,8 +2688,8 @@ server <- shinyServer(function(input, output, session) {
       expfile<-expdesign()
       condition_no<-length(unique(expfile$condition))
       if(condition_no<=12){  
-        plot_cor(dep2(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"))
-      }else{plot_cor(dep2(), significant = TRUE, lower = 0, upper = 1, pal = "Reds")}
+        plot_cor(dep2(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"), font_size = 10)
+      }else{plot_cor(dep2(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", font_size = 10)}
     })
     
     #Frequency plot Input
@@ -3459,9 +3482,20 @@ server <- shinyServer(function(input, output, session) {
       pca_input()[[1]]
     })
     
+    #PCA output scree
+    output$pca_scree <- renderPlot({
+      pca_input()[[3]]
+    })
+    
+    
     #PCA output (Comp2)
     output$pca_c2 <- renderPlot({
       pca_c2_input()[[1]]
+    })
+    
+    #PCA output scree
+    output$pca_scree2 <- renderPlot({
+      pca_c2_input()[[3]]
     })
     
     
@@ -4067,6 +4101,24 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    #PCA Scree Download
+    output$downloadpca_scree <- downloadHandler(
+      filename = "PCA_scree.pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        plot(pca_input()[[3]])
+        dev.off()
+      }
+    )
+    
+    output$downloadpca_scree2 <- downloadHandler(
+      filename = "PCA_scree2.pdf",
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        plot(pca_c2_input()[[3]])
+        dev.off()
+      }
+    )
     
     #PCA table 1
     output$downloadpca_txt <- downloadHandler(
