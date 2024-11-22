@@ -266,8 +266,9 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
   )
   
   scree_plot<-ggplot(scree_data, aes(x = Component, y = Variance)) +
-    geom_bar(stat = "identity", fill = "#DF536B") +
+    geom_bar(stat = "identity", fill = "#F8766D") +
     geom_line() +
+    geom_text(data=scree_data, aes(label=paste0(Variance,"%"),vjust=-1), size =5) +
     geom_point() +
     theme_DEP1() +
     xlab("Principal Components") +
@@ -1639,10 +1640,11 @@ Freq" = anno_barplot(saint_count_list[[i]]$BFDR_Freq,ylim = c(0 , sc3max_c2), gp
 
 #####Enhanced Volcano Function####
 #choices ("p-adj sig.","p-Val sig.", "p-adj values")
-plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10){
+plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10, connect=TRUE)
+{
   mypal2<-adjustcolor(mypal, alpha.f = 0.5)
   mypal<-c(mypal,mypal2)
-
+  
   Cluster1 =clu_df[clu_df$Cluster == "cluster1", ]
   Cluster2 =clu_df[clu_df$Cluster == "cluster2", ]
   Cluster3 =clu_df[clu_df$Cluster == "cluster3", ]
@@ -1692,7 +1694,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
                                                                      ifelse(data_results$name %in% dfc8, mypal[8],
                                                                             ifelse(data_results$name %in% dfc9, mypal[9],
                                                                                    ifelse(data_results$name %in% dfc10, mypal[10],
-                                                              "#8F8F8F"))))))))))
+                                                                                          "#8F8F8F"))))))))))
   
   keyvals.colour[is.na(keyvals.colour)] <- "#8F8F8F"
   names(keyvals.colour)[keyvals.colour == mypal[1]] <- 'Cluster1'
@@ -1705,7 +1707,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
   names(keyvals.colour)[keyvals.colour == mypal[8]] <- 'Cluster8'
   names(keyvals.colour)[keyvals.colour == mypal[9]] <- 'Cluster9'
   names(keyvals.colour)[keyvals.colour == mypal[10]] <- 'Cluster10'
-  names(keyvals.colour)[keyvals.colour == '#8F8F8F'] <- 'NA'
+  names(keyvals.colour)[keyvals.colour == '#8F8F8F'] <- 'ns'
   
   if (padj_check =="p-adj sig."){
     enh_vol<-plot(EnhancedVolcano(
@@ -1719,7 +1721,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       FCcutoff = log2(FC),
       pointSize = 3.0,
       labSize = 3.0,
-      drawConnectors = TRUE,
+      drawConnectors = connect,
       widthConnectors = 0.5,
       ylim = c(0, p_Val_min),
       #maxoverlapsConnectors = Inf,
@@ -1741,7 +1743,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       FCcutoff = log2(FC),
       pointSize = 3.0,
       labSize = 3.0,
-      drawConnectors = TRUE,
+      drawConnectors = connect,
       widthConnectors = 0.5,
       ylim = c(0, p_Val_min),
       #maxoverlapsConnectors = Inf,
@@ -1766,7 +1768,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       FCcutoff = log2(FC),
       pointSize = 3.0,
       labSize = 3.0,
-      drawConnectors = TRUE,
+      drawConnectors = connect,
       widthConnectors = 0.5,
       ylim = c(0, p_adj_min),
       #maxoverlapsConnectors = Inf,

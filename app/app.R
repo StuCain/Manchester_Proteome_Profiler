@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.10-beta"
+Version = "0.9.11-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -826,7 +826,15 @@ ui <- fluidPage(
                                                                box(numericInput("pdfwidth_enh",
                                                                                 "PDF Width",
                                                                                 min = 3, max = 30, value = 6),
-                                                                   width = 6),
+                                                                   width = 3),
+                                                               box(checkboxInput("enh_vol_data",
+                                                                                 "Significant proteins only",
+                                                                                 value = TRUE),
+                                                                   width = 3),
+                                                               box(checkboxInput("enh_vol_connect",
+                                                                                 "Draw Arrows",
+                                                                                 value = TRUE),
+                                                                   width = 3),
                                                                downloadButton('downloadVolcano_enh1', 'Save volcano', class = "btn-primary")
                                                              )
                                                       ),
@@ -847,7 +855,15 @@ ui <- fluidPage(
                                                                box(numericInput("pdfheight_enh",
                                                                                 "PDF Height",
                                                                                 min = 3, max = 30, value = 8),
-                                                                   width = 6),
+                                                                   width = 3),
+                                                               box(checkboxInput("enh_vol_data2",
+                                                                                 "Significant proteins only",
+                                                                                 value = TRUE),
+                                                                   width = 3),
+                                                               box(checkboxInput("enh_vol_connect2",
+                                                                                 "Draw Arrows",
+                                                                                 value = TRUE),
+                                                                   width = 3),
                                                                downloadButton('downloadVolcano_enh2', 'Save volcano', class = "btn-primary")
                                                              )
                                                       ),
@@ -3172,15 +3188,19 @@ server <- shinyServer(function(input, output, session) {
       if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
+        if(input$enh_vol_data==FALSE){vol_data<-get_results(dep2())}
+        else{vol_data<-data_results()}
       }else{lfc<-input$lfc
       p<-input$p
+      if(input$enh_vol_data==FALSE){vol_data<-get_results(dep())}
+      else{vol_data<-data_results()}
       }
       #Check for single protein clusters
       validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
           please alter the Kmeans number")
       )
       input_volcano_cntrst_enh1 <- req(input$volcano_cntrst_enh1)
-      plot_enhanced_volcano (data_results(),
+      plot_enhanced_volcano (vol_data,
                              #get_results(dep()),
                              cludf_check_input(),
                              comp_pick = input_volcano_cntrst_enh1,
@@ -3188,7 +3208,8 @@ server <- shinyServer(function(input, output, session) {
                              pVal=p,
                              padj_check=input$p_adj_enh1,
                              colour_functions_input()[[2]],
-                             colour_functions_input()[[3]]
+                             colour_functions_input()[[3]],
+                             connect=input$enh_vol_connect
       )
     })
     
@@ -3197,8 +3218,12 @@ server <- shinyServer(function(input, output, session) {
       if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
+        if(input$enh_vol_data2==FALSE){vol_data<-get_results(dep2())}
+        else{vol_data<-data_results()}
       }else{lfc<-input$lfc
       p<-input$p
+      if(input$enh_vol_data2==FALSE){vol_data<-get_results(dep())}
+      else{vol_data<-data_results()}
       }
       #Check for single protein clusters
       validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
@@ -3212,7 +3237,8 @@ server <- shinyServer(function(input, output, session) {
                              pVal=p,
                              padj_check=input$p_adj_enh2,
                              colour_functions_input()[[2]],
-                             colour_functions_input()[[3]]
+                             colour_functions_input()[[3]],
+                             connect=input$enh_vol_connect2
                              
       )
     })
