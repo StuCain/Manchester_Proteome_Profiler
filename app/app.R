@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.11-beta"
+Version = "0.9.12-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -3230,7 +3230,7 @@ server <- shinyServer(function(input, output, session) {
           please alter the Kmeans number")
       )
       input_volcano_cntrst_enh2 <- req(input$volcano_cntrst_enh2)
-      plot_enhanced_volcano (data_results(),
+      plot_enhanced_volcano (vol_data,
                              cludf_check_input(),
                              comp_pick = input_volcano_cntrst_enh2,
                              FC=lfc,
