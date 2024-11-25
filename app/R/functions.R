@@ -1640,7 +1640,7 @@ Freq" = anno_barplot(saint_count_list[[i]]$BFDR_Freq,ylim = c(0 , sc3max_c2), gp
 
 #####Enhanced Volcano Function####
 #choices ("p-adj sig.","p-Val sig.", "p-adj values")
-plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10, connect=TRUE)
+plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10, connect=TRUE, selected=FALSE, selected_names="")
 {
   mypal2<-adjustcolor(mypal, alpha.f = 0.5)
   mypal<-c(mypal,mypal2)
@@ -1675,6 +1675,8 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
   colnames(FC_data) = gsub(paste(comp_pick,"_", sep = ""),"", colnames(FC_data))
   FC_data<-data.frame(FC_data)
   FC_data_sig<-FC_data %>% filter(significant)
+  
+  if (selected == TRUE){vol_names <- selected_names}else{vol_names<-FC_data_sig$name}
   
   #obtain minimum p_val number
   p_val_min<-min(FC_data$p.val)
@@ -1727,7 +1729,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       #maxoverlapsConnectors = Inf,
       colCustom = keyvals.colour,
       colAlpha = (alpha_input/10)*0.5,
-      selectLab = FC_data_sig$name #show labels for significant padj proteins
+      selectLab = vol_names #show labels for significant padj proteins
     ))
   }  
   #Volcano plots with pVal significant labels
@@ -1773,8 +1775,8 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       ylim = c(0, p_adj_min),
       #maxoverlapsConnectors = Inf,
       colCustom = keyvals.colour,
-      colAlpha = (alpha_input/10)*0.5
-      #selectLab = FC_data_sig$name #show labels for significant padj proteins
+      colAlpha = (alpha_input/10)*0.5,
+      selectLab = vol_names #show labels for significant padj proteins
     ))
   }  
   return(enh_vol)

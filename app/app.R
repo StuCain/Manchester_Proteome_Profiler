@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.12-beta"
+Version = "0.9.13-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -823,20 +823,27 @@ ui <- fluidPage(
                                                              ),
                                                              fluidRow(
                                                                plotOutput("enh_volcano_1", height = 600),
-                                                               box(numericInput("pdfwidth_enh",
-                                                                                "PDF Width",
-                                                                                min = 3, max = 30, value = 6),
-                                                                   width = 3),
                                                                box(checkboxInput("enh_vol_data",
                                                                                  "Significant proteins only",
                                                                                  value = TRUE),
-                                                                   width = 3),
+                                                                   width = 3, height = 90),
+                                                               box(checkboxInput("enh_vol_names",
+                                                                                 "Selected Names Only",
+                                                                                 value = FALSE),
+                                                                   width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_connect",
                                                                                  "Draw Arrows",
                                                                                  value = TRUE),
-                                                                   width = 3),
+                                                                   width = 3, height = 90),
+                                                               box(numericInput("pdfwidth_enh",
+                                                                                "PDF Width",
+                                                                                min = 3, max = 30, value = 6),
+                                                                   width = 3, height = 90)
+                                                             ),
+                                                             fluidRow(
                                                                downloadButton('downloadVolcano_enh1', 'Save volcano', class = "btn-primary")
                                                              )
+                                                             
                                                       ),
                                                       
                                                       #Second Column
@@ -855,20 +862,29 @@ ui <- fluidPage(
                                                                box(numericInput("pdfheight_enh",
                                                                                 "PDF Height",
                                                                                 min = 3, max = 30, value = 8),
-                                                                   width = 3),
+                                                                   width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_data2",
                                                                                  "Significant proteins only",
                                                                                  value = TRUE),
-                                                                   width = 3),
+                                                                   width = 3, height = 90),
+                                                               box(checkboxInput("enh_vol_names2",
+                                                                                 "Selected Names Only",
+                                                                                 value = FALSE),
+                                                                   width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_connect2",
                                                                                  "Draw Arrows",
                                                                                  value = TRUE),
-                                                                   width = 3),
+                                                                   width = 3, height = 90),
+                                                             ),
+                                                             fluidRow(
                                                                downloadButton('downloadVolcano_enh2', 'Save volcano', class = "btn-primary")
                                                              )
                                                       ),
-                                                    )
-                                                    
+                                                    ),
+                                                    fluidRow(
+                                                      helpText("Select Proteins from the list below. You can search for name or cluster number"),
+                                                      DT::dataTableOutput("tablecludf"), width = 12,
+                                                    ),
                                            ),
                                            tabPanel(title = "Box Plots",
                                                     fluidRow(
@@ -3209,7 +3225,9 @@ server <- shinyServer(function(input, output, session) {
                              padj_check=input$p_adj_enh1,
                              colour_functions_input()[[2]],
                              colour_functions_input()[[3]],
-                             connect=input$enh_vol_connect
+                             connect=input$enh_vol_connect,
+                             selected=input$enh_vol_names, 
+                             selected_names = cludf_check_input()[input$tablecludf_rows_selected,1]
       )
     })
     
@@ -3238,7 +3256,10 @@ server <- shinyServer(function(input, output, session) {
                              padj_check=input$p_adj_enh2,
                              colour_functions_input()[[2]],
                              colour_functions_input()[[3]],
-                             connect=input$enh_vol_connect2
+                             connect=input$enh_vol_connect2,
+                             selected=input$enh_vol_names2, 
+                             selected_names = cludf_check_input()[input$tablecludf_rows_selected,1]
+                             
                              
       )
     })
@@ -3400,6 +3421,12 @@ server <- shinyServer(function(input, output, session) {
       df_long_input()
       #norm_data()
     })
+    
+    #cludf table
+    output$tablecludf <- DT::renderDataTable({
+      cludf_check_input()
+    }) 
+    
     
     #Abundance Table
     output$table_abund <- DT::renderDataTable({
@@ -3868,7 +3895,7 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
-    #Test table
+    #cludf table
     output$downloadclusterlist <- downloadHandler(
       filename = function() { paste("Cluster_list.txt", sep = "") },
       content = function(file) {
