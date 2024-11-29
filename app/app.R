@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.13-beta"
+Version = "0.9.14-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1269,6 +1269,8 @@ server <- shinyServer(function(input, output, session) {
       inFile <- input$file1
       if (is.null(inFile))
         return(NULL)
+      line<-paste(Sys.time(),"MaxQuant")
+      write(line,file="count.txt",append=TRUE)
       maxdata<-read.csv(inFile$datapath, header = TRUE,
                         sep = "\t", stringsAsFactors = FALSE) %>%
         mutate(id = row_number())
@@ -1279,6 +1281,8 @@ server <- shinyServer(function(input, output, session) {
       inFile <- input$filePD
       if (is.null(inFile))
         return(NULL)
+      line<-paste(Sys.time(),"Proteome_Discover")
+      write(line,file="count.txt",append=TRUE)
       pd<-read_excel(path = inFile$datapath, sheet = 1, .name_repair = "universal") %>%
         mutate(id = row_number())
       data<-pd %>% 
@@ -1303,6 +1307,8 @@ server <- shinyServer(function(input, output, session) {
       if(is.null(inFile))
         return(NULL)
       if (input$exp == "LFQ") {
+        line<-paste(Sys.time(),"FragPipe_DDA")
+        write(line,file="count.txt",append=TRUE)
         temp_data <- read.csv(inFile$datapath,
                               header = TRUE,
                               fill= TRUE, # to fill any missing data
@@ -1338,6 +1344,8 @@ server <- shinyServer(function(input, output, session) {
           data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         }
       }else if(input$exp == "DIA"){
+        line<-paste(Sys.time(),"FragPipe_DIA")
+        write(line,file="count.txt",append=TRUE)
         temp_data <- read.table(inFile$datapath,
                                 header = T,
                                 sep="\t",
@@ -1368,7 +1376,7 @@ server <- shinyServer(function(input, output, session) {
             Sequence.length=Length
           )
         data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
-        data<-data_2 %>% 
+        data1<-data_2 %>% 
           dplyr::rename(
             Protein.names=Protein.names.y)
         #data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
@@ -1377,7 +1385,7 @@ server <- shinyServer(function(input, output, session) {
         
       } # end of DIA
     }
-    #    return(data1)
+        return(data1)
   })
   
   data2 <- reactive({
@@ -1385,6 +1393,8 @@ server <- shinyServer(function(input, output, session) {
       inFile <- input$fileMax2
       if (is.null(inFile))
         return(NULL)
+      line<-paste(Sys.time(),"MaxQuant_data2")
+      write(line,file="count.txt",append=TRUE)
       maxdata<-read.csv(inFile$datapath, header = TRUE,
                         sep = "\t", stringsAsFactors = FALSE) %>%
         mutate(id = row_number())
@@ -1395,6 +1405,8 @@ server <- shinyServer(function(input, output, session) {
       inFile <- input$filePD2
       if (is.null(inFile))
         return(NULL)
+      line<-paste(Sys.time(),"Proteome_Discover_data2")
+      write(line,file="count.txt",append=TRUE)
       pd<-read_excel(path = inFile$datapath, sheet = 1, .name_repair = "universal") %>%
         mutate(id = row_number())
       data<-pd %>% 
@@ -1419,6 +1431,8 @@ server <- shinyServer(function(input, output, session) {
       if(is.null(inFile))
         return(NULL)
       if (input$exp2 == "LFQ") {
+        line<-paste(Sys.time(),"FragPipe_DDA_data2")
+        write(line,file="count.txt",append=TRUE)
         temp_data <- read.csv(inFile$datapath,
                               header = TRUE,
                               fill= TRUE, # to fill any missing data
@@ -1454,6 +1468,8 @@ server <- shinyServer(function(input, output, session) {
           data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         }
       }else if(input$exp2 == "DIA"){
+        line<-paste(Sys.time(),"FragPipe_DIA_data2")
+        write(line,file="count.txt",append=TRUE)
         temp_data <- read.table(inFile$datapath,
                                 header = T,
                                 sep="\t",
@@ -2043,6 +2059,7 @@ server <- shinyServer(function(input, output, session) {
       #if(SysName=="Windows"){system(paste0(cmd))}
       
       saint_list[[i]]<-saint_df
+      if(SysName=="Linux"){system("rm -r list.txt")}
     }
     return(saint_list)
     
@@ -4357,6 +4374,8 @@ server <- shinyServer(function(input, output, session) {
           # Copy the report file to a temporary directory before processing it, in
           # case we don't have write permissions to the current working dir (which
           # can happen when deployed).
+          line<-paste(Sys.time(),input$report_type)
+          write(line,file="report.txt",append=TRUE)
           if(input$report_type=="Short"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
             file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
