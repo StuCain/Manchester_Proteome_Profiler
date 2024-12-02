@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.14-beta"
+Version = "0.9.15-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -4374,19 +4374,24 @@ server <- shinyServer(function(input, output, session) {
           # Copy the report file to a temporary directory before processing it, in
           # case we don't have write permissions to the current working dir (which
           # can happen when deployed).
-          line<-paste(Sys.time(),input$report_type)
-          write(line,file="report.txt",append=TRUE)
+          
           if(input$report_type=="Short"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
             file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
+            line<-paste(Sys.time(), input$comp_type, input$data_mode, input$report_type, sep = ";")
+            write(line,file="report.txt",append=TRUE)
           }
           if(input$report_type=="with Box Plots"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_med_report.Rmd")
             file.copy(paste0("SAINT_DEP_med_report.Rmd"), tempReport, overwrite = TRUE)
+            line<-paste(Sys.time(), input$comp_type, input$data_mode, input$report_type, sep = ";")
+            write(line,file="report.txt",append=TRUE)
           }
           if(input$report_type=="Long"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
+            line<-paste(Sys.time(), input$comp_type, input$data_mode, input$report_type, input$species, sep = ";")
+            write(line,file="report.txt",append=TRUE)
           }
           templogo <- file.path(tempdir(), "logo.png")
           file.copy(paste0("logo.png"), templogo, overwrite = TRUE)
@@ -4403,6 +4408,8 @@ server <- shinyServer(function(input, output, session) {
           tested_contrasts<- gsub("_p.adj", "", 
                                   colnames(SummarizedExperiment::rowData(dep()))[grep("p.adj", 
                                                                                       colnames(SummarizedExperiment::rowData(dep())))])
+          selected_names <- cludf_check_input()[input$tablecludf_rows_selected,1]
+          
           #pg_width<- ncol(imp_data()) / 2.5
           clust_height<-(dep_num()/8)+4
           # Set up parameters to pass to Rmd document
@@ -4462,6 +4469,10 @@ server <- shinyServer(function(input, output, session) {
                          p_adj_enh1 = input$p_adj_enh1,
                          dep = dep,
                          dep2 = dep2,
+                         enh_vol_data = input$enh_vol_data,
+                         enh_vol_connect = input$enh_vol_connect,
+                         enh_vol_names = input$enh_vol_names,
+                         selected_names = selected_names,
                          dep_num = dep_num,
                          dep_num_c1 = dep_num_c1,
                          dep_num_c2 = dep_num_c2,

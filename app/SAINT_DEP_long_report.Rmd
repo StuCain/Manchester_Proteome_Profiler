@@ -57,6 +57,10 @@ params:
   cluster_heatmap_input: NA
   dep: NA
   dep2: NA
+  enh_vol_data: NA
+  enh_vol_connect: NA
+  enh_vol_names: NA
+  selected_names: NA
   dep_num: NA
   dep_num_c1: NA
   dep_num_c2: NA
@@ -223,7 +227,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.3.5
+Version:0.3.6
 
 ## Method details
  
@@ -781,17 +785,22 @@ knitr::kable(clust10_table)
 
 ### Enhanced Volcano Plots
 ```{r enh_volcano, echo=FALSE, fig.height=9, fig.width=7, warning=FALSE, comment=NA}
-      if (params$comp_type == "2 Rounds of comparisons"){
+      if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){
         lfc<-as.numeric(params$lfc2)
         p<-as.numeric(params$p2)
         comp<-params$comp2()              
+        if(params$enh_vol_data==FALSE){vol_data<-get_results(params$dep2())}
+        else{vol_data<-params$data_results()}
       }else{lfc<-as.numeric(params$lfc)
       p<-as.numeric(params$p)
       comp<-params$comp()
+      if(params$enh_vol_data==FALSE){vol_data<-get_results(params$dep())}
+      else{vol_data<-params$data_results()}
       }
 
+
 for(i in comp){
-  enh_vol<-plot_enhanced_volcano (params$data_results(),
+  enh_vol<-plot_enhanced_volcano (vol_data,
                                params$cluster_heatmap_input()[[4]],
                                comp_pick = i,
                                FC=lfc,
@@ -799,7 +808,11 @@ for(i in comp){
                                #padj_check="p-adj sig.",
                                padj_check=params$p_adj_enh1,
                                params$colour_functions_input()[[2]],
-                               as.numeric(params$colour_functions_input()[[3]])
+                               as.numeric(params$colour_functions_input()[[3]]),
+                               connect=params$enh_vol_connect,
+                               selected=params$enh_vol_names, 
+                               selected_names = params$selected_names
+
   )
 # print(enh_vol)
   print(i)
@@ -907,7 +920,7 @@ It is useful to check the individual box plots of any potential proteins of inte
 
 ### Supported by
 
-```{r logo, echo=FALSE,message=FALSE, warning=FALSE}
+```{r logo, echo=FALSE,message=FALSE, out.width='90%', warning=FALSE}
 knitr::include_graphics("logo.png")
 ```
 
