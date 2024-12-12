@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.16-beta"
+Version = "0.9.18-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -224,7 +224,9 @@ ui <- fluidPage(
                                              min = 0, max = 1, value = 0.3, step = 0.1),
                                 p(a("Detailed information link",
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
-                                    target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html"))
+                                    target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
+                                checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE),
+                                checkboxInput("impute_ave", "Average Impuation of 3 different random seeds", FALSE)
                        ),
                        menuItemOutput("normalisations"),
                        #                                radioButtons("nomalisation_choice",
@@ -1868,14 +1870,37 @@ server <- shinyServer(function(input, output, session) {
   
   
   imp <- reactive({
-    set.seed(123)
+    if(input$impute_ave == TRUE){
+      set.seed(123)
+      if (input$imputation == "man"){
+        imp1<-DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp1<-DEP::impute(norm(), input$imputation)}
+      imp1_data<-SummarizedExperiment::assay(imp1)
+      
+      set.seed(321)
+      if (input$imputation == "man"){
+        imp2<-DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp2<-DEP::impute(norm(), input$imputation)}
+      imp2_data<-SummarizedExperiment::assay(imp2)
+      
+      set.seed(456)
+      if (input$imputation == "man"){
+        imp3<-DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp3<-DEP::impute(norm(), input$imputation)}
+      imp3_data<-SummarizedExperiment::assay(imp3)
+      
+      imp_ave<-(imp1_data + imp2_data + imp3_data)/3
+      SummarizedExperiment::assay(imp1)<-imp_ave
+      return(imp1)
+    }else{set.seed(123)
     if (input$imputation == "man"){
       DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
         DEP::impute(norm(), input$imputation)}
+    }
   })
   
   imp2 <- reactive({
-    set.seed(123)
+    if(input$impute_seed == TRUE) {set.seed(321)}else{set.seed(123)}
     if (input$imputation == "man"){
       DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
         DEP::impute(norm2(), input$imputation)}
@@ -3221,7 +3246,8 @@ server <- shinyServer(function(input, output, session) {
       if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
-        if(input$enh_vol_data==FALSE){vol_data<-get_results(dep2())}
+        if(input$enh_vol_data==FALSE){if (input$data_mode == TRUE){vol_data<-get_results(dep())}
+          else{vol_data<-get_results(dep2())}}
         else{vol_data<-data_results()}
       }else{lfc<-input$lfc
       p<-input$p
@@ -3253,7 +3279,8 @@ server <- shinyServer(function(input, output, session) {
       if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
-        if(input$enh_vol_data2==FALSE){vol_data<-get_results(dep2())}
+        if(input$enh_vol_data2==FALSE){if (input$data_mode == TRUE){vol_data<-get_results(dep())}
+          else{vol_data<-get_results(dep2())}}
         else{vol_data<-data_results()}
       }else{lfc<-input$lfc
       p<-input$p
