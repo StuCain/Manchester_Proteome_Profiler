@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.18-beta"
+Version = "0.9.21-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -226,7 +226,7 @@ ui <- fluidPage(
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
                                 checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE),
-                                checkboxInput("impute_ave", "Average Impuation of 3 different random seeds", FALSE)
+                                checkboxInput("impute_ave", "Average Imputation of 3 different random seeds", FALSE)
                        ),
                        menuItemOutput("normalisations"),
                        #                                radioButtons("nomalisation_choice",
@@ -340,6 +340,7 @@ ui <- fluidPage(
                                     box(title = "Chosen Comparisons",
                                         DT::dataTableOutput("table_comp"), width = 12),
                                     box(title = "Top Table",
+                                        checkboxInput("top_table_opt", "Show all proteins", FALSE),
                                         DT::dataTableOutput("table"), width = 12),
                                     box(title = "Exp Table",
                                         DT::dataTableOutput("exp_des"), width = 12), #exp_design
@@ -1682,8 +1683,12 @@ server <- shinyServer(function(input, output, session) {
     inFile2 <- input$file22
     expfile<-expdesign()
     expfile2<-expdesign2()
-    if (!is.null(inFile2)){condition2<-unique(expfile2$condition)}
     if (!is.null(inFile)){condition<-unique(expfile$condition)}
+    
+    if (!is.null(inFile2)){condition2<-unique(expfile2$condition)
+    if (length(condition)>length(condition2)){length(condition2)<-length(condition)}
+    if (length(condition2)>length(condition)){length(condition)<-length(condition2)}
+    }
     comp_template_new<- data.frame(condition, comp1_A, comp1_B, comp2_A, comp2_B, condition2)
     
     return(comp_template_new)
@@ -2528,10 +2533,12 @@ server <- shinyServer(function(input, output, session) {
       if(!is.null(input$table_rows_selected)) {
         if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
           if (input$protein_plot == "contrast"){validate(need(length(comp()) != 1, "   You need to select a second comparison for this plot to generate"))}
-          selected_id <- data_results()[input$table_rows_selected,1]
+          if (input$top_table_opt == TRUE){selected_id <- get_results(dep())[input$table_rows_selected,1]}
+          else{selected_id <- data_results()[input$table_rows_selected,1]}
           plot_single(dep(), selected_id, input$protein_plot)
         }else{
-          GeneID <- data_results()[input$table_rows_selected,1]
+          if (input$top_table_opt == TRUE){GeneID <- get_results(dep())[input$table_rows_selected,1]}
+          else{GeneID <- data_results()[input$table_rows_selected,1]}
           Cluster <- "cluster0"
           clu_df_temp<-data.frame(GeneID, Cluster)
           plot_box_plot (norm_data(),
@@ -3358,44 +3365,16 @@ server <- shinyServer(function(input, output, session) {
       get_entrezlist(cludf_check_input(), input$species)
     })
     
-    #Make Variables Table
-    settings_input <- reactive({
-      file1<-input$file1[1]
-      file2<-input$file2[1]
-      filePD<-input$filePD[1]
-      comp_1<-paste(comp(),collapse=',')
-      comp_2<-paste(comp2(),collapse=',')
-      if(is.null(file1) == TRUE){file1<-"NA"}
-      if(is.null(file2) == TRUE){file2<-"NA"}
-      if(is.null(filePD) == TRUE){filePD<-"NA"}
-      values_all<-rbind (input$data_type, file1, filePD, file2,  input$comp_type, comp_1, comp_2)
-      variables_all <- c("Data_type", "MaxQuant_File", "PD_File", "Experimental_Settings_File", "Comparison_No.", "Comp1", "Comp2")
-      all_settings<-data.frame(
-        Variables=variables_all,
-        Set_Values=values_all)
-      #all_settings
-      
-      myvalues <- NULL
-      newvalues <- NULL
-      for(i in c(1:29,31:56)){
-        newvalues <- paste(names(input)[i], input[[names(input)[i]]], sep=":")
-        myvalues <- append(myvalues, newvalues)
-      }
-      DF <- data.frame(do.call(rbind, strsplit(myvalues, ":", fixed=TRUE)))
-      DF <- tibble::rownames_to_column(DF, "variable")
-      DF<-data.frame(DF[-1])
-      colnames(DF) <- colnames(all_settings)
-      total_settings<-rbind(all_settings,DF)
-      total_settings
-      
-    })
-    
+
     GO_MF_report_input <- reactive({
       withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
         for (i in 1:100) {
           incProgress(1/100)
           Sys.sleep(0.5)
         }
+        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
+        )
+        
         plot_GO_MF(entrezlist_input(), input$species)
       })
     })
@@ -3406,6 +3385,9 @@ server <- shinyServer(function(input, output, session) {
           incProgress(1/100)
           Sys.sleep(0.5)
         }
+        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
+        )
+        
         plot_GO_CC(entrezlist_input(), input$species)
       })
     })
@@ -3416,6 +3398,9 @@ server <- shinyServer(function(input, output, session) {
           incProgress(1/100)
           Sys.sleep(0.5)
         }
+        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
+        )
+        
         plot_GO_BP(entrezlist_input(), input$species)
       })
     })
@@ -3425,7 +3410,9 @@ server <- shinyServer(function(input, output, session) {
     
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
-      data_results() #should be default
+      if (input$top_table_opt == TRUE){
+        if (input$comp_type == "2 Rounds of comparisons"){get_results(dep2())}else{get_results(dep())}
+      }else{data_results()} #should be default
       #pca_input()[[2]]
       #heatmap_input()[[2]]
       #norm_data()
