@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.21-beta"
+Version = "0.9.22-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -637,19 +637,19 @@ ui <- fluidPage(
                                           checkboxInput("cluster_cols",
                                                         "Cluster columns",
                                                         value = TRUE),
-                                          width = 6),
+                                          width = 6, height = 120),
                                       box(
                                         selectizeInput("high_col",
                                                        "High Colour",
                                                        choices=c("red","orangered","yellow","green", "darkgreen", "cornflowerblue","blue", "brown", "black"),
                                                        selected = "red"),
-                                        width = 3),
+                                        width = 3, height = 120),
                                       box(
                                         selectizeInput("low_col",
                                                        "Low Colour",
                                                        choices=c("red","orangered","yellow","green","darkgreen","cornflowerblue","blue", "brown", "black"),
                                                        selected = "blue"),
-                                        width = 3),
+                                        width = 3, height = 120),
                                     ),
                                     fluidRow(
                                       box(
@@ -657,15 +657,19 @@ ui <- fluidPage(
                                                        "Choose palette",
                                                        choices=c("default", "nejm", "Set1","Set2","Set3","Pastel1","Pastel2", "Paired", "Dark2", "Accent", "Reds", "Blues", "Greens", "Greys"),
                                                        selected = "default"),
-                                        width = 6),
+                                        width = 3, height = 120),
+                                      box(numericInput("heatmap_pad",
+                                                       "Increase height",
+                                                       min = -200, max = 400, value = 0, step = 10),
+                                          width = 3, height = 120),
                                       box(numericInput("alpha_input",
                                                        "Alpha",
                                                        min = 0, max = 10, value = 10),
-                                          width = 3),
+                                          width = 3, height = 120),
                                       box(numericInput("limit_comp",
                                                        "Colour limit (log2)",
                                                        min = 0, max = 16, value = 6),
-                                          width = 3)
+                                          width = 3, height = 120)
                                     ),
                                     
                                     #Heatmap in variable box
@@ -790,6 +794,10 @@ ui <- fluidPage(
                                                                box(numericInput("cluster_no",
                                                                                 "Cluster No.",
                                                                                 min = 1, max = 10, value = 1),
+                                                                   width = 4),
+                                                               box(numericInput("cluster_pad",
+                                                                                "Increase height",
+                                                                                min = -200, max = 400, value = 0, step = 10),
                                                                    width = 4),
                                                              ),
                                                              fluidRow(
@@ -1896,6 +1904,7 @@ server <- shinyServer(function(input, output, session) {
       
       imp_ave<-(imp1_data + imp2_data + imp3_data)/3
       SummarizedExperiment::assay(imp1)<-imp_ave
+      set.seed(123)
       return(imp1)
     }else{set.seed(123)
     if (input$imputation == "man"){
@@ -1909,6 +1918,7 @@ server <- shinyServer(function(input, output, session) {
     if (input$imputation == "man"){
       DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
         DEP::impute(norm2(), input$imputation)}
+    set.seed(123)
   })
   
   
@@ -3428,6 +3438,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Output of table on Cluster tab
     output$table3 <- DT::renderDataTable({
+      validate(need(!(input$cluster_no > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
       cluster_heatmap_input()[[3]][[input$cluster_no]]
     }, options = list(pageLength = 25, scrollX = T),
     )
@@ -3474,12 +3485,18 @@ server <- shinyServer(function(input, output, session) {
       saint_output()[[1]]
     })
     output$tablesaint_output2 <- DT::renderDataTable({
+     # validate(need(saint_output()[[2]] != "", " "))
+      
       saint_output()[[2]]
     }) 
     output$tablesaint_output3 <- DT::renderDataTable({
+      #validate(need(saint_output()[[3]] != "", " "))
+      
       saint_output()[[3]]
     }) 
     output$tablesaint_output4 <- DT::renderDataTable({
+      #validate(need(saint_output()[[4]] != "", " "))
+      
       saint_output()[[4]]
     }) 
     
@@ -3639,6 +3656,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Box Plots
     output$box_plot <- renderPlot({
+      validate(need(!(input$cluster_no_box > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
       if (input$pres_box=="normalised"){choice=1}else{choice=2}
       box_plot_input()[[choice]]
     })
@@ -3696,7 +3714,7 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_comp <- renderUI({
-        ht_height<-((dep_num()*12)+270)
+        ht_height<-((dep_num()*12)+270+input$heatmap_pad)
         if (ht_height < 420){ht_height<-ht_height+80}
         plotOutput("comp_heatmap", height = ht_height)
       })
@@ -3721,7 +3739,8 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_clust <- renderUI({
-        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[input$cluster_no]]*12)+270)
+        validate(need(!(input$cluster_no > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
+        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[input$cluster_no]]*12)+270+input$cluster_pad)
       })
     })
     

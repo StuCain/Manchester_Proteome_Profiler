@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 4.6
+Version = 4.7
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -574,7 +574,7 @@ Freq" = anno_barplot(
                  column_names_gp = gpar(fontsize = font_size+2),
                  column_title = gt_render (ht_title))
   }
-  #ht = draw(ht)
+  ht = draw(ht) #Important to draw ht, to fix variations in heatmap
   if(switch==3){
     compht<-list(ht, my_mat, dfdata_sig2)}else{compht<-list(ht, my_mat)}
   
@@ -1213,7 +1213,7 @@ Freq" = anno_barplot(saint_count_list[[i]]$sigcount, ylim = c( 0 , sc3max ), gp 
   }
   
   for (i in 1:kmeans){
-    ht_list[[i]] = Heatmap(
+    ht_c = Heatmap(
       my_mat_list[[i]],
       name = htname,
       cluster_rows = TRUE,
@@ -1232,6 +1232,7 @@ Freq" = anno_barplot(saint_count_list[[i]]$sigcount, ylim = c( 0 , sc3max ), gp 
       column_names_gp = gpar(fontsize = font_size+2),
       column_title = (paste("Cluster ",i, " (", C_Count_list[[i]], ")", sep =""))
     )
+    ht_list[[i]] = draw(ht_c)
   }
   
   comphtclust<-list(ht_list, C_Count_list, ClusterFC_list, clu_df)
