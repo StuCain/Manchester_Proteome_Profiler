@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.22-beta"
+Version = "0.9.23-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1904,7 +1904,7 @@ server <- shinyServer(function(input, output, session) {
       
       imp_ave<-(imp1_data + imp2_data + imp3_data)/3
       SummarizedExperiment::assay(imp1)<-imp_ave
-      set.seed(123)
+      #set.seed(123)
       return(imp1)
     }else{set.seed(123)
     if (input$imputation == "man"){
@@ -1918,7 +1918,7 @@ server <- shinyServer(function(input, output, session) {
     if (input$imputation == "man"){
       DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
         DEP::impute(norm2(), input$imputation)}
-    set.seed(123)
+    #set.seed(123)
   })
   
   
