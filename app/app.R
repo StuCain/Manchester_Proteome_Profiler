@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.23-beta"
+Version = "0.9.26-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -225,8 +225,8 @@ ui <- fluidPage(
                                 p(a("Detailed information link",
                                     href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                                     target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
-                                checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE),
-                                checkboxInput("impute_ave", "Average Imputation of 3 different random seeds", FALSE)
+                                checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
+                                checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE)
                        ),
                        menuItemOutput("normalisations"),
                        #                                radioButtons("nomalisation_choice",

@@ -87,7 +87,7 @@
 			</div>
 			<div class="text">
 				<h3>Two dataset comparison mode</h3>
-				<p>If the Two Dataset comparison mode toggle is activated, this now allows two separate data files to be loaded. They can be from the same data-type or different (eg. MaxQuant and FragPipe analysis, or FragPipe DDA and DIA data). Each must have is own Experimental Design file, which can be generated from its specific template file. The comparison template file will now have a sixth column containing the list of the conditions from the second Experimental Template, which must be used to generate the conditions for the second round of comparisons (4th and 5th columns).</p> 
+				<p>If the Two Dataset comparison mode toggle is activated, this now allows two separate data files to be loaded. They can be from the same data-type or different (eg. MaxQuant and FragPipe analysis, or FragPipe DDA and DIA data). Each must have is own Experimental Design file, which can be generated from its specific template file. The comparison template file will now have a sixth column containing the list of the conditions from the second Experimental Template, which must be used to generate the conditions for the second round of comparisons (4th and 5th columns). This option can also be used to assess the affect on the significant protein list of different imputation or normalisation options, by loading the same datafile and experimental template in twice and generating two identical comparison lists (see "Imputation" instructions). </p> 
 			</div>
 		</div>
 
@@ -240,12 +240,20 @@
 			
 		<div class="flex-container">
 			<div class="image">
-				<img src="imputation.jpg" width=200px>
+				<img src="imputation.jpg" width=350px>
 			</div>
 			<div class="text">
 				<h3><FONT COLOR="#000000">Imputation</h3>
-					<p>The imputation plot shows the effect on the protein intensities of imputation of missing values. The default method ("Man") is a  manually defined left-shifted Gaussian distribution (MNAR). The results in a peak  appearing on the left side of the intensity distribution on the lower plot. This peak can be adjusted to be closer or further away from the main distribution using the "Left-shifted Gaussian distribution" input box on the "Imputation options" section of the sidebar. Other imputation options can also be selected there. Usually the default settings are sufficient, if different imputation setting are needed, more detailed information on the other imputation options can be found by clicking on the "Detailed information link".</p>
+					<p>The imputation plot shows the effect on the protein intensities of imputation of missing values. The default method ("man") impute missing data using random draws from a manually defined left-shifted Gaussian distribution centred around a minimal value (used for missing not at random data (MNAR)). This results in a peak  appearing on the left side of the intensity distribution on the lower plot. This peak can be adjusted to be closer or further away from the main distribution using the "Left-shifted Gaussian distribution" input box on the "Imputation options" section of the sidebar. Other imputation options can also be selected there. Usually the default settings are sufficient, if different imputation setting are needed, more detailed information on the other imputation options can be found by clicking on the "Detailed information link".</p>
+					<p><strong>Imputation Analysis Tools</strong> </p>
+					<p>As some of the imputation methods use a degree of randomisation in the calculation process (man, QRILC, MinProb), this can lead to some proteins having a greater fold-change between comparisons, due to artefacts of the randomly assigned missing values. This is especially true if the fold change cut-off value is low. To overcome this problem it is possible to impute the missing values with 3 different random seeds, and then use the average imputed value of the three. The original non-missing values will be unchanged. To use the averaged value select the "Average Imputation of 3 different random seeds (1st Dataset)" box in the "Imputation options" menu. Another option is to use methods not affected by random seed values such as Nearest neighbour averaging (knn) or Bayesian missing value imputation (bpca). </p>
+					<p><strong>Two dataset comparison method</strong> </p>
+					<p>To study the effect of random assigned imputation values on the significant protein list, it is possible to use the "Two Dataset comparison mode". Load in the same data file and experimental template for both "Data file types", then generate a comparison file with identical comparisons (columns B and C should match columns D and E), and upload the file. Set identical "adj. P value" and "Fold change" values for both datasets and press "Analyse". This should generate two identical significant protein lists. You can then either select the  "Average Imputation of 3 different random seeds (1st Dataset)" box or the "Use different imputation seed on second dataset" box to assess the effect of using the different imputation options. Use the "Comparison Heatmaps" tab in the "Cluster Analysis" section to see the differences.</p>
 				</div>
+			<div class="image">
+				<img src="imputation_menu.jpg" width=200px>
+			</div>
+
 			</div>
 		<div class="text">
 				<h3><FONT COLOR="#000000">Sample Coverage, Missing values-Quant and Missing Values - Heatmap plots</h3>
@@ -310,10 +318,9 @@
 				<p>The Gene Ontology plots are generated from the proteins listed in each cluster of the complex Heatmap, and uses the clusterProfiler package. Each cluster is used to calculate enriched functional profiles using enrichGO, which are then aggregated to generate a single plot. All three GO domains can be tested, "Molecular Function", "Cellular Component" and "Biological Process" and the enrichment results are displayed as a "Dot plot" and a "Network plot". The "GO level" input box can be used to show either more global GO terms (lower number) or more granular GO terms (higher number). Before generating the Gene Ontology plots, the correct option must be selected from the "GO species" radio buttons in the top right corner of app. </p>
 				<p>Both plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons and a table of Go enrichment result data can be downloaded.</p>
 			</div>
-						<div class="image">
+			<div class="image">
 				<img src="cell_comp_map.jpg" width=300px>
 			</div>
-
 		</div>
 
 

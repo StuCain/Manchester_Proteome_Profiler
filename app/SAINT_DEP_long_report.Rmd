@@ -185,7 +185,7 @@ if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){co
 if (params$comp_type == "2 Rounds of comparisons"){comp_data_c1<-as.character(params$comp())}else{comp_data_c1<-as.character(params$comp())}
 comp_no_c1<-length(comp_data_c1)
 
-if (params$comp_type == "2 Rounds of comparisons"){comp_data_c2<-as.character(params$comp2())}else{comp_data_c2<-as.character(params$comp())}
+if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){comp_data_c2<-as.character(params$comp2())}else{comp_data_c2<-as.character(params$comp())}
 comp_no_c2<-length(comp_data_c2)
 
 
@@ -227,7 +227,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.3.6
+Version:0.3.7
 
 ## Method details
  
@@ -785,7 +785,8 @@ knitr::kable(clust10_table)
 
 ### Enhanced Volcano Plots
 ```{r enh_volcano, echo=FALSE, fig.height=9, fig.width=7, warning=FALSE, comment=NA}
-      if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){
+ #     if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){
+       if (params$comp_type == "2 Rounds of comparisons"){  
         lfc<-as.numeric(params$lfc2)
         p<-as.numeric(params$p2)
         comp<-params$comp2()              
