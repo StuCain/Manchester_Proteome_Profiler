@@ -24,6 +24,7 @@
 	.text {
 	font-size: 15px;
 	padding-left: 20px;
+	padding-right: 20px;
 	h3{font-weight: bold;}
 	}
 	
@@ -190,17 +191,21 @@
 		<h3><FONT COLOR="#2297E6">Correlation Plots</h3>
 		<div class="flex-container">
 			<div class="image">
-				<img src="PCA.jpg" width=200px>
+				<img src="PCA.jpg" width=250px>
 			</div>
 			<div class="text">
 			<h3><FONT COLOR="#000000">PCA</h3>
-				<p>The Principle Component Analysis plot shows similarities between groups of samples in a data set. Each point on a PCA plot represents a correlation between an initial variable and the first and second principal components. Ideally the points should be grouped together for each of the conditions (as shown), rather than grouped by replicate, or grouped randomly. The plot can be saved as a pdf file and resized using the "PDF Width" and "PDF Height" buttons. The values used to generate the plot can also be downloaded for plotting in another application using the "Save Values" button. If two datasets are loaded a second PCA plot will be available. </p>
+				<p>The Principle Component Analysis plot shows similarities between groups of samples in a data set. Each point on a PCA plot represents a correlation between an initial variable and the first and second principal components. Ideally the points should be grouped together for each of the conditions (as shown), rather than grouped by replicate, or grouped randomly. The plot can be saved as a pdf file and resized using the "PDF Width" and "PDF Height" buttons. The values used to generate the plot can also be downloaded for plotting in another application using the "Save Values" button. If two datasets are loaded a second PCA plot will be available.  It is also possible to split the PCA plots into groups, groups can be assigned in the ExperimentalTemplate.txt file using the "condition_type" column. By default the plots show the Principle Component values with the most variation (PC1 and PC2), other Principle Component values can be plotted on the X or Y axis using the numeric value boxes above the plot.  To see what percentage of the total variance the other components have, use the "PCA Scree Plot" in the adjacent tab.</p>
 			</div>
+			<div class="image">
+				<img src="PCA_2.jpg" width=500px>
+			</div>
+
 		</div>
 
 		<div class="flex-container">
 			<div class="image">
-				<img src="correlation.jpg" width=200px>
+				<img src="correlation.jpg" width=250px>
 			</div>
 			<div class="text">
 			<h3><FONT COLOR="#000000">Correlation</h3>
@@ -210,7 +215,7 @@
 			
 		<div class="flex-container">
 			<div class="image">
-				<img src="frequency.jpg" width=200px>
+				<img src="frequency.jpg" width=250px>
 			</div>
 			<div class="text">
 				<h3><FONT COLOR="#000000">Frequency Plot</h3>
@@ -285,7 +290,7 @@
 				<h3><FONT COLOR="#000000">Cluster Heatmap</h3>
 				<p>Each individual cluster can be rendered as a heatmap by selecting the "Cluster" tab on the right hand side. The cluster heatmap to be displayed can be selected using the "Cluster No." input box. The resulting heatmap is rendered with a top annotation using fold change data from the protein displayed in that cluster only. The colour scheme of the heatmap will match the initial complex heatmap.  </p>
 				<p>The cluster heatmap can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons. </p>
-				<p><strong>Cluster table</strong> The Gene symbol name, protein name and Uniprot ID for each of the protein in the chaosen cluster is displayed at the right hand side of the cluster heatmap. This can be downloaded using the "Save Cluster Table" button.  </p>
+				<p><strong>Cluster table</strong> The Gene symbol name, protein name and Uniprot ID for each of the protein in the chosen cluster is displayed at the right hand side of the cluster heatmap. This can be downloaded using the "Save Cluster Table" button.  </p>
 				<p>A table containing all the significant proteins and the specific cluster they are found can be downloaded using the "Save All Clusters" button. </p>
 			</div>
 		</div>
@@ -295,9 +300,14 @@
 			</div>
 			<div class="text">
 				<h3><FONT COLOR="#000000">Enhanced Volcano</h3>
-				<p>Enhanced volcano plots can be generated for all the comparisons chosen. These plots show the positions on the volcano plot for the significant protein list only. The colour of the points is dependent on the cluster group it belongs to. The colour scheme will also match the palette chosen in the complex heatmap.</p>
+				<p>Enhanced volcano plots can be generated for all the comparisons chosen. By default these plots show the positions on the volcano plot for the significant protein list only. The colour of the points is dependent on the cluster group it belongs to. The colour scheme will also match the palette chosen in the complex heatmap.</p>
+				<p>The enhanced volcano plots can be further customised to show the names of selected proteins only using the "Selected Names only " check box. You can search for the required names from the significant protein list in the table below, it is also possible to search by cluster number, use shift+click to select multiple entries. To show the data points for all the proteins uncheck the "Significant proteins only" check box, the non-significant proteins will be indicated in grey. The customised options selected in the left hand volcano plot will be carried over to the report, to allow easier generation of multiple plots.</p>
 				<p>The enhanced volcano plot can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" buttons.</p>
 			</div>
+			<div class="image">
+				<img src="enh_volcano_2.jpg" width=300px>
+			</div>
+
 		</div>
 		<div class="flex-container">
 			<div class="image">

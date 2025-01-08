@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.26-beta"
+Version = "0.9.27-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -128,7 +128,7 @@ ui <- fluidPage(
                        #                                menuItemOutput("file_input"),
                        #                                infoBoxOutput("ibox"), #Info box for testing
                        fileInput('file2',
-                                 'ExperimentalDesign.txt',
+                                 'ExperimentalTemplate.txt',
                                  accept=c('text/csv',
                                           'text/comma-separated-values,text/plain',
                                           '.csv')),
@@ -197,7 +197,7 @@ ui <- fluidPage(
                        conditionalPanel(
                          condition = "input.data_mode == true",
                          fileInput('file22',
-                                   'ExperimentalDesign.txt',
+                                   'ExperimentalTemplate.txt',
                                    accept=c('text/csv',
                                             'text/comma-separated-values,text/plain',
                                             '.csv')),
