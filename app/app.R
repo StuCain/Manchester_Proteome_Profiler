@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.9.27-beta"
+Version = "0.10.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -209,31 +209,27 @@ ui <- fluidPage(
                        
                        menuItemOutput("comparisons"),
                        actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
-                       menuItem("Imputation options",
-                                radioButtons("imputation",
-                                             "Imputation type",
-                                             choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
-                                             #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
-                                             selected = "man"),
-                                helpText("Manual (man) Imputation settings) "),
-                                numericInput("shift",
-                                             "Left-shifted Gaussian distribution",
-                                             min = 1.1, max = 2.9, value = 1.8, step = 0.1),
-                                numericInput("width",
-                                             "Width",
-                                             min = 0, max = 1, value = 0.3, step = 0.1),
-                                p(a("Detailed information link",
-                                    href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
-                                    target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
-                                checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
-                                checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE)
-                       ),
+                       menuItemOutput("imputation_options"),
+                       #menuItem("Imputation options",
+                      #          radioButtons("imputation",
+                      #                       "Imputation type",
+                      #                       choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                      #                       #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
+                      #                       selected = "man"),
+                      #          helpText("Manual (man) Imputation settings) "),
+                      #          numericInput("shift",
+                      #                       "Left-shifted Gaussian distribution",
+                      #                       min = 1.1, max = 2.9, value = 1.8, step = 0.1),
+                      #          numericInput("width",
+                      #                       "Width",
+                      #                       min = 0, max = 1, value = 0.3, step = 0.1),
+                      #          p(a("Detailed information link",
+                      #              href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
+                      #              target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
+                      #          checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
+                      #          checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE)
+                      # ),
                        menuItemOutput("normalisations"),
-                       #                                radioButtons("nomalisation_choice",
-                       #                                             "Normalisation Method",
-                       #                                             choices = c("vsn", "quantile"),
-                       #                                             selected = "vsn")
-                       #                       ),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -1177,6 +1173,36 @@ server <- shinyServer(function(input, output, session) {
     )
   })
   
+  output$imputation_options <- renderMenu({
+    menuItem("Imputation options",
+             radioButtons("imputation",
+                          "Imputation type (Dataset 1)",
+                          choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                          #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
+                          selected = "man"),
+             helpText("Manual (man) Imputation settings"),
+             numericInput("shift",
+                          "Left-shifted Gaussian distribution",
+                          min = 1.1, max = 2.9, value = 1.8, step = 0.1),
+             numericInput("width",
+                          "Width",
+                          min = 0, max = 1, value = 0.3, step = 0.1),
+             p(a("Detailed information link",
+                 href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
+                 target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
+             checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
+             checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE),
+             if (input$data_mode == TRUE) {
+               radioButtons("imputation2",
+                            "Imputation type (Dataset 2)",
+                            choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                            #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
+                            selected = "man")
+               
+             }
+    )
+  })
+  
   output$normalisations <- renderMenu({
     menuItem("Normalisation options",
              radioButtons("nomalisation_choice",
@@ -1915,9 +1941,9 @@ server <- shinyServer(function(input, output, session) {
   
   imp2 <- reactive({
     if(input$impute_seed == TRUE) {set.seed(321)}else{set.seed(123)}
-    if (input$imputation == "man"){
+    if (input$imputation2 == "man"){
       DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm2(), input$imputation)}
+        DEP::impute(norm2(), input$imputation2)}
     #set.seed(123)
   })
   
