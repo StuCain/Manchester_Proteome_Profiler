@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.10.1-beta"
+Version = "0.10.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -360,6 +360,19 @@ ui <- fluidPage(
                                                       plotOutput("selected_plot"),
                                                     ),
                                                     downloadButton('downloadPlot', 'Save plot', class = "btn-primary")),
+                                           tabPanel(title = "Selected Protein (Dataset 2)",
+                                                    fluidRow(
+                                                      box(radioButtons("protein_plot2",
+                                                                       "Choose plot type",
+                                                                       c("contrast", "centered", "normalised", "imputed"),
+                                                                       selected = "contrast", inline=T,
+                                                      ),
+                                                      width = 12),
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("selected_plot2"),
+                                                    ),
+                                                    downloadButton('downloadPlot2', 'Save plot', class = "btn-primary")),
                                            tabPanel(title = "Abundance Heatmap",
                                                     fluidRow(
                                                       box(numericInput("size",
@@ -530,7 +543,7 @@ ui <- fluidPage(
                                                       box(numericInput("pca_num2",
                                                                        "Protein number",
                                                                        min = 0, max = 5000, value = 500, step = 100),
-                                                          width = 6
+                                                          width = 3
                                                       ),
                                                       box(numericInput("pcx_num2",
                                                                        "x = PC",
@@ -546,7 +559,7 @@ ui <- fluidPage(
                                                       box(checkboxInput("pca_split2",
                                                                         "Split by condition_type",
                                                                         value = FALSE),
-                                                          width = 6)
+                                                          width = 3)
                                                     ),
                                                     plotOutput("pca_c2", height = 600),
                                                     downloadButton('downloadpca_c2', 'Save Plot', class = "btn-primary"),
@@ -1241,7 +1254,7 @@ server <- shinyServer(function(input, output, session) {
     }
   })
   
-  #Hide/show Volcano Plots
+  #Hide/show Results tab Plots
   observeEvent(ignoreInit = FALSE, list(input$comp_type, input$data_mode), {
     if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
       showTab(inputId =  "result_plots", target = "Volcano plot (Comp2)")
@@ -1252,6 +1265,9 @@ server <- shinyServer(function(input, output, session) {
     if (input$comp_type == "2 Rounds of comparisons" | input$data_mode == TRUE) {
       showTab(inputId =  "result_plots", target = "Significance Counts (Comp2)")
     }else{hideTab(inputId =  "result_plots", target = "Significance Counts (Comp2)")}
+    if (input$data_mode == TRUE) {
+      showTab(inputId =  "result_plots", target = "Selected Protein (Dataset 2)")
+    }else{hideTab(inputId =  "result_plots", target = "Selected Protein (Dataset 2)")}
   })
   
   #Hide/show Correlation plots/PCA Plots/Frequency Plots
@@ -2472,14 +2488,6 @@ server <- shinyServer(function(input, output, session) {
     #### Reactive functions  (Generate plots and tables)------------------------
     
     
-    #res <- reactive({
-    #  get_results(dep())
-    #})
-    
-    #    table <- reactive({
-    #      DEP:::get_table(res(), input$pres)
-    #    })
-    
     #Make results table 
     data_dep <- reactive({
       get_results(dep()) %>% filter(significant) %>% select(-significant) 
@@ -2564,7 +2572,7 @@ server <- shinyServer(function(input, output, session) {
       num_signif <- data_results4() %>% nrow()
     })
     
-    
+    #Selected Protein Plots
     selected_plot_input <- reactive ({
       if(!is.null(input$table_rows_selected)) {
         if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
@@ -2586,6 +2594,29 @@ server <- shinyServer(function(input, output, session) {
         }
       }
     })
+    
+    selected_plot_input2 <- reactive ({
+      if(!is.null(input$table_rows_selected)) {
+        if (input$protein_plot2 == "contrast" | input$protein_plot2 == "centered"){
+          if (input$protein_plot2 == "contrast"){validate(need(length(comp2()) != 1, "   You need to select a second comparison for this plot to generate"))}
+          if (input$top_table_opt == TRUE){selected_id <- get_results(dep())[input$table_rows_selected,1]}
+          else{selected_id <- data_results()[input$table_rows_selected,1]}
+          plot_single(dep2(), selected_id, input$protein_plot2)
+        }else{
+          if (input$top_table_opt == TRUE){GeneID <- get_results(dep())[input$table_rows_selected,1]}
+          else{GeneID <- data_results()[input$table_rows_selected,1]}
+          Cluster <- "cluster0"
+          clu_df_temp<-data.frame(GeneID, Cluster)
+          plot_box_plot (norm_data2(),
+                         imp_data2(),
+                         clu_df=clu_df_temp,
+                         cluster_no=0,
+                         input$palette_choice
+          )
+        }
+      }
+    })
+    
     
     #Abundance Heatmap
     heatmap_input <- reactive({
@@ -3532,6 +3563,7 @@ server <- shinyServer(function(input, output, session) {
       saintlist()[[2]]
     }) 
     
+    #Selcted Protein plots
     output$selected_plot <- renderPlot({
       if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
         selected_plot_input()
@@ -3540,6 +3572,16 @@ server <- shinyServer(function(input, output, session) {
         selected_plot_input()[[choice]]
       }
     })
+    
+    output$selected_plot2 <- renderPlot({
+      if (input$protein_plot2 == "contrast" | input$protein_plot2 == "centered"){
+        selected_plot_input2()
+      }else{
+        if (input$protein_plot2=="normalised"){choice=1}else{choice=2}
+        selected_plot_input2()[[choice]]
+      }
+    })
+    
     
     output$heatmap <- renderPlot({
       heatmap_input()[[1]]
@@ -4087,6 +4129,22 @@ server <- shinyServer(function(input, output, session) {
         }else{
           if (input$protein_plot=="normalised"){choice=1}else{choice=2}
           print(selected_plot_input()[[choice]])
+        }
+        dev.off()
+      }
+    )
+    
+    output$downloadPlot2 <- downloadHandler(
+      filename = function() {
+        paste0("Barplot_data2_", data_results()[input$table_rows_selected,1], ".pdf")
+      },
+      content = function(file) {
+        cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
+        if (input$protein_plot2 == "contrast" | input$protein_plot2 == "centered"){
+          print(selected_plot_input2())
+        }else{
+          if (input$protein_plot2=="normalised"){choice=1}else{choice=2}
+          print(selected_plot_input2()[[choice]])
         }
         dev.off()
       }
