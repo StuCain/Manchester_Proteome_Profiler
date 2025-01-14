@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 4.7
+Version = 4.8
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -1779,7 +1779,13 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       colAlpha = (alpha_input/10)*0.5,
       selectLab = vol_names #show labels for significant padj proteins
     ))
-  }  
+  }
+#  name1 <- gsub("_vs_.*", "", comp_pick)
+#  name2 <- gsub(".*_vs_", "", comp_pick)
+#  enh_vol<- enh_vol + geom_text(data = data.frame(), aes(x = c(Inf, -Inf), y = c(-Inf, -Inf), 
+#                                                                     hjust = c(1, 0), vjust = c(-1, -1), label = c(name1, name2), size = 5, 
+#                                                                     fontface = "bold"))
+  
   return(enh_vol)
 }
 

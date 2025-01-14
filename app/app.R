@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.10.2-beta"
+Version = "0.10.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -211,24 +211,24 @@ ui <- fluidPage(
                        actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
                        menuItemOutput("imputation_options"),
                        #menuItem("Imputation options",
-                      #          radioButtons("imputation",
-                      #                       "Imputation type",
-                      #                       choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
-                      #                       #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
-                      #                       selected = "man"),
-                      #          helpText("Manual (man) Imputation settings) "),
-                      #          numericInput("shift",
-                      #                       "Left-shifted Gaussian distribution",
-                      #                       min = 1.1, max = 2.9, value = 1.8, step = 0.1),
-                      #          numericInput("width",
-                      #                       "Width",
-                      #                       min = 0, max = 1, value = 0.3, step = 0.1),
-                      #          p(a("Detailed information link",
-                      #              href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
-                      #              target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
-                      #          checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
-                      #          checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE)
-                      # ),
+                       #          radioButtons("imputation",
+                       #                       "Imputation type",
+                       #                       choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                       #                       #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
+                       #                       selected = "man"),
+                       #          helpText("Manual (man) Imputation settings) "),
+                       #          numericInput("shift",
+                       #                       "Left-shifted Gaussian distribution",
+                       #                       min = 1.1, max = 2.9, value = 1.8, step = 0.1),
+                       #          numericInput("width",
+                       #                       "Width",
+                       #                       min = 0, max = 1, value = 0.3, step = 0.1),
+                       #          p(a("Detailed information link",
+                       #              href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
+                       #              target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
+                       #          checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
+                       #          checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE)
+                       # ),
                        menuItemOutput("normalisations"),
                        tags$hr(),
                        uiOutput("downloadTable"),
@@ -1050,7 +1050,7 @@ ui <- fluidPage(
                                                       
                                                     ),
                                            )
-
+                                           
                                     )
                              )
                            )
@@ -1438,7 +1438,7 @@ server <- shinyServer(function(input, output, session) {
         
       } # end of DIA
     }
-        return(data1)
+    return(data1)
   })
   
   data2 <- reactive({
@@ -1809,7 +1809,7 @@ server <- shinyServer(function(input, output, session) {
       cols <- grep("^LFQ", colnames(data))
       if('Reverse' %in% names(data)==TRUE && 'Potential.contaminant' %in% names(data)==TRUE){
         filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
-        }else{filtered<-data}
+      }else{filtered<-data}
       unique_names <- make_unique(filtered, "Gene.names", "Protein.IDs", delim = ";")
     }
     
@@ -1917,6 +1917,11 @@ server <- shinyServer(function(input, output, session) {
     return(data_norm)
   })
   
+  norm_data_table <- reactive({
+    rownames_to_column(norm_data(), var = "name")
+  })
+  
+  
   norm_data2 <- reactive({
     data_norm<-SummarizedExperiment::assay(norm2())
     data_norm<-as.data.frame(data_norm)
@@ -1949,9 +1954,9 @@ server <- shinyServer(function(input, output, session) {
       #set.seed(123)
       return(imp1)
     }else{set.seed(123)
-    if (input$imputation == "man"){
-      DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm(), input$imputation)}
+      if (input$imputation == "man"){
+        DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          DEP::impute(norm(), input$imputation)}
     }
   })
   
@@ -1969,6 +1974,11 @@ server <- shinyServer(function(input, output, session) {
     data_imp<-SummarizedExperiment::assay(imp())
     return(as.data.frame(data_imp))
   })
+  
+  imp_data_table <- reactive({
+    rownames_to_column(imp_data(), var = "name")
+  })
+  
   
   #Get imputed data table
   imp_data2 <- reactive({
@@ -2187,7 +2197,7 @@ server <- shinyServer(function(input, output, session) {
       selectizeInput("dataset",
                      "Choose a dataset to save" ,
                      c("results","significant_proteins",
-                       "displayed_subset","full_dataset","Cluster_list"))
+                       "displayed_subset","full_dataset","Cluster_list", "normalised_values", "imputed_values"))
     })
     
     output$downloadButton <- renderUI({
@@ -2577,12 +2587,23 @@ server <- shinyServer(function(input, output, session) {
       if(!is.null(input$table_rows_selected)) {
         if (input$protein_plot == "contrast" | input$protein_plot == "centered"){
           if (input$protein_plot == "contrast"){validate(need(length(comp()) != 1, "   You need to select a second comparison for this plot to generate"))}
-          if (input$top_table_opt == TRUE){selected_id <- get_results(dep())[input$table_rows_selected,1]}
-          else{selected_id <- data_results()[input$table_rows_selected,1]}
-          plot_single(dep(), selected_id, input$protein_plot)
+          if (input$comp_type == "2 Rounds of comparisons"){
+            if (input$top_table_opt == TRUE){selected_id <- get_results(dep2())[input$table_rows_selected,1]}
+            else{selected_id <- data_results()[input$table_rows_selected,1]}
+            plot_single(dep2(), selected_id, input$protein_plot)}
+          else if (input$top_table_opt == TRUE){selected_id <- get_results(dep())[input$table_rows_selected,1]
+          plot_single(dep(), selected_id, input$protein_plot)}
+          else{selected_id <- data_results()[input$table_rows_selected,1]
+          plot_single(dep(), selected_id, input$protein_plot)}
         }else{
-          if (input$top_table_opt == TRUE){GeneID <- get_results(dep())[input$table_rows_selected,1]}
-          else{GeneID <- data_results()[input$table_rows_selected,1]}
+          if (input$comp_type == "2 Rounds of comparisons"){
+            if (input$top_table_opt == TRUE){GeneID <- get_results(dep2())[input$table_rows_selected,1]}
+            else{GeneID <- data_results()[input$table_rows_selected,1]}
+          }
+          else if (input$top_table_opt == TRUE){GeneID <- get_results(dep())[input$table_rows_selected,1]
+          }
+          else{GeneID <- data_results()[input$table_rows_selected,1]
+          }
           Cluster <- "cluster0"
           clu_df_temp<-data.frame(GeneID, Cluster)
           plot_box_plot (norm_data(),
@@ -2759,7 +2780,7 @@ server <- shinyServer(function(input, output, session) {
     
     norm_input <- reactive({
       if(input$norm_orient == TRUE){plot_normalization_hor(filt(), norm())}else{
-      plot_normalization_vert(filt(), norm())}
+        plot_normalization_vert(filt(), norm())}
     })
     
     norm_input2 <- reactive({
@@ -3432,7 +3453,7 @@ server <- shinyServer(function(input, output, session) {
       get_entrezlist(cludf_check_input(), input$species)
     })
     
-
+    
     GO_MF_report_input <- reactive({
       withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
         for (i in 1:100) {
@@ -3479,11 +3500,13 @@ server <- shinyServer(function(input, output, session) {
     output$table <- DT::renderDataTable({
       if (input$top_table_opt == TRUE){
         if (input$comp_type == "2 Rounds of comparisons"){get_results(dep2())}else{get_results(dep())}
-      }else{data_results()} #should be default
-      #pca_input()[[2]]
-      #heatmap_input()[[2]]
-      #norm_data()
-      #data() #to test data input
+      }else{
+        data_results() #should be default
+        #pca_input()[[2]]
+        #heatmap_input()[[2]]
+        #norm_data()
+        #data() #to test data input
+      }
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
     
@@ -3542,7 +3565,7 @@ server <- shinyServer(function(input, output, session) {
       saint_output()[[1]]
     })
     output$tablesaint_output2 <- DT::renderDataTable({
-     # validate(need(saint_output()[[2]] != "", " "))
+      # validate(need(saint_output()[[2]] != "", " "))
       
       saint_output()[[2]]
     }) 
@@ -3960,7 +3983,10 @@ server <- shinyServer(function(input, output, session) {
              #filter(significant) %>%
              #select(-significant),
              "full_dataset" = get_df_wide(dep()),
-             "Cluster_list" = cludf_check_input()
+             "Cluster_list" = cludf_check_input(),
+             "normalised_values"= norm_data_table(),
+             "imputed_values"= imp_data_table(),
+             
       )
     }
     )
@@ -3974,6 +4000,7 @@ server <- shinyServer(function(input, output, session) {
                     row.names = FALSE,
                     sep ="\t") 
       }
+      
     )
     
     #Abundance table
