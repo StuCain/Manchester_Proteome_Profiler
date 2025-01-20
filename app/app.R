@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.10.4-beta"
+Version = "0.11.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -426,18 +426,19 @@ ui <- fluidPage(
                                                       box(uiOutput("volcano_cntrst"), width = 6),
                                                       box(numericInput("fontsize",
                                                                        "Font size",
-                                                                       min = 0, max = 8, value = 4),
-                                                          width = 3),
-                                                      box(checkboxInput("check_names",
-                                                                        "Display names",
-                                                                        value = TRUE),
-                                                          checkboxInput("p_adj",
-                                                                        "Adjusted p values",
+                                                                       min = 0, max = 8, value = 3),
+                                                          checkboxInput("check_names",
+                                                                        "Selected names only",
                                                                         value = FALSE),
+                                                          width = 3),
+                                                      box(radioButtons("p_adj",
+                                                                       "Label type",
+                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values")
+                                                      ),
                                                           width = 3)
                                                     ),
                                                     fluidRow(
-                                                      plotOutput("volcano", height = 600),
+                                                      plotOutput("volcano", height = 700),
                                                       downloadButton('downloadVolcano', 'Save volcano', class = "btn-primary")
                                                     )
                                            ),
@@ -446,18 +447,19 @@ ui <- fluidPage(
                                                       box(uiOutput("volcano_cntrst_c2"), width = 6),
                                                       box(numericInput("fontsize_c2",
                                                                        "Font size",
-                                                                       min = 0, max = 8, value = 4),
-                                                          width = 3),
-                                                      box(checkboxInput("check_names_c2",
-                                                                        "Display names",
-                                                                        value = TRUE),
-                                                          checkboxInput("p_adj_c2",
-                                                                        "Adjusted p values",
+                                                                       min = 0, max = 8, value = 3),
+                                                          checkboxInput("check_names_c2",
+                                                                        "Selected names only",
                                                                         value = FALSE),
-                                                          width = 3)
+                                                          width = 3),
+                                                      box(radioButtons("p_adj_c2",
+                                                                       "Label type",
+                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values")
+                                                      ),
+                                                      width = 3)
                                                     ),
                                                     fluidRow(
-                                                      plotOutput("volcano_c2", height = 600),
+                                                      plotOutput("volcano_c2", height = 700),
                                                       downloadButton('downloadVolcano_c2', 'Save volcano', class = "btn-primary")
                                                     )
                                            ),
@@ -848,7 +850,7 @@ ui <- fluidPage(
                                                                                  value = TRUE),
                                                                    width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_names",
-                                                                                 "Selected Names Only",
+                                                                                 "Selected names only",
                                                                                  value = FALSE),
                                                                    width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_connect",
@@ -888,7 +890,7 @@ ui <- fluidPage(
                                                                                  value = TRUE),
                                                                    width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_names2",
-                                                                                 "Selected Names Only",
+                                                                                 "Selected names only",
                                                                                  value = FALSE),
                                                                    width = 3, height = 90),
                                                                box(checkboxInput("enh_vol_connect2",
@@ -2746,21 +2748,57 @@ server <- shinyServer(function(input, output, session) {
     
     volcano_input <- reactive({
       if(!is.null(input$volcano_cntrst)) {
-        plot_volcano(dep(),
-                     input$volcano_cntrst,
-                     input$fontsize,
-                     input$check_names,
-                     input$p_adj)
+        if (input$comp_type == "2 Rounds of comparisons"){
+          if (input$top_table_opt == TRUE){GeneID <- get_results(dep2())[input$table_rows_selected,1]}
+          else{GeneID <- data_results()[input$table_rows_selected,1]}
+        }
+        else if (input$top_table_opt == TRUE){GeneID <- get_results(dep())[input$table_rows_selected,1]
+        }
+        else{GeneID <- data_results()[input$table_rows_selected,1]
+        }
+        
+        plot_enhanced_volcano_dep (data_results = get_results(dep()),
+                                   #get_results(dep()),
+                                   #cludf_check_input(),
+                                   comp_pick = input$volcano_cntrst,
+                                   FC=input$lfc,
+                                   pVal=input$p,
+                                   padj_check=input$p_adj,
+                                   mypal = colour_functions_input()[[2]],
+                                   colour_functions_input()[[3]],
+                                   #connect=input$enh_vol_connect,
+                                   selected=input$check_names, 
+                                   selected_names = GeneID,
+                                   label_size = input$fontsize
+        )
       }
     })
     
     volcano_c2_input <- reactive({
       if(!is.null(input$volcano_cntrst_c2)) {
-        plot_volcano(dep2(),
-                     contrast = input$volcano_cntrst_c2,
-                     label_size = input$fontsize_c2,
-                     add_names = input$check_names_c2,
-                     input$p_adj_c2)
+        if (input$comp_type == "2 Rounds of comparisons"){
+          if (input$top_table_opt == TRUE){GeneID <- get_results(dep2())[input$table_rows_selected,1]}
+          else{GeneID <- data_results()[input$table_rows_selected,1]}
+        }
+        else if (input$top_table_opt == TRUE){GeneID <- get_results(dep())[input$table_rows_selected,1]
+        }
+        else{GeneID <- data_results()[input$table_rows_selected,1]
+        }
+        
+        plot_enhanced_volcano_dep (data_results = get_results(dep2()),
+                                   #get_results(dep()),
+                                   #cludf_check_input(),
+                                   comp_pick = input$volcano_cntrst_c2,
+                                   FC=input$lfc2,
+                                   pVal=input$p2,
+                                   padj_check=input$p_adj_c2,
+                                   mypal = colour_functions_input()[[2]],
+                                   colour_functions_input()[[3]],
+                                   #connect=input$enh_vol_connect,
+                                   selected=input$check_names_c2, 
+                                   selected_names = GeneID,
+                                   label_size = input$fontsize_c2
+        )
       }
     })
     

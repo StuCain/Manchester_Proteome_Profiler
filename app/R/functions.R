@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 4.8
+Version = 5.0
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -1780,11 +1780,11 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
       selectLab = vol_names #show labels for significant padj proteins
     ))
   }
-#  name1 <- gsub("_vs_.*", "", comp_pick)
-#  name2 <- gsub(".*_vs_", "", comp_pick)
-#  enh_vol<- enh_vol + geom_text(data = data.frame(), aes(x = c(Inf, -Inf), y = c(-Inf, -Inf), 
-#                                                                     hjust = c(1, 0), vjust = c(-1, -1), label = c(name1, name2), size = 5, 
-#                                                                     fontface = "bold"))
+  name1 <- gsub("_vs_.*", "", comp_pick)
+  name2 <- gsub(".*_vs_", "", comp_pick)
+  enh_vol<- enh_vol + geom_text(data = data.frame(), aes(x = c(Inf, -Inf), y = c(-Inf, -Inf), 
+                                                                     hjust = c(1, 0), vjust = c(-1, -1), label = c(name1, name2),  
+                                                                     fontface = "bold"))
   
   return(enh_vol)
 }
@@ -1972,3 +1972,106 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
   return(box_plot)
   
 }
+
+#####Enhanced Volcano Function DEP####
+#choices ("p-adj sig.","p-Val sig.", "p-adj values")
+plot_enhanced_volcano_dep<- function(data_results, comp_pick,  FC=2, pVal=0.05, padj_check="p-adj sig.", mypal, alpha_input=10, connect=TRUE, selected=FALSE, selected_names="", label_size = 3)
+{
+  mypal<-as.character(mypal)
+  mypal_col<-c("grey", mypal[2], mypal[3], mypal[1])
+
+  FC_data <- data_results[, c(1,grep(paste(comp_pick, sep = ""),colnames(data_results)))]
+  colnames(FC_data) = gsub(paste(comp_pick,"_", sep = ""),"", colnames(FC_data))
+  FC_data<-data.frame(FC_data)
+  FC_data_sig<-FC_data %>% filter(significant)
+  
+  if (selected == TRUE){vol_names <- selected_names}else{vol_names<-FC_data_sig$name}
+  
+  #obtain minimum p_val number
+  p_val_min<-min(FC_data$p.val)
+  p_Val_min<- -log10(p_val_min)
+  p_adj_min<-min(FC_data$p.adj)
+  p_adj_min<- -log10(p_adj_min)
+  
+
+  if (padj_check =="p-adj sig."){
+    enh_vol<-plot(EnhancedVolcano(
+      FC_data,
+      lab = FC_data$name,
+      x = "ratio",
+      y = "p.val",
+      title = comp_pick,
+      #subtitle = mypal_col,
+      subtitle = paste("Fold change cutoff = ", FC ,", p-adj cutoff =  ", pVal, sep = ""),
+      pCutoff = pVal,
+      FCcutoff = log2(FC),
+      pointSize = 2.0,
+      labSize = label_size,
+      drawConnectors = connect,
+      widthConnectors = 0.5,
+      ylim = c(0, p_Val_min),
+      #maxoverlapsConnectors = Inf,
+      col = mypal_col,
+      #colCustom = keyvals.colour,
+      #colAlpha = (alpha_input/10)*0.5,
+      selectLab = vol_names #show labels for significant padj proteins
+    ))
+  }  
+  #Volcano plots with pVal significant labels
+  if (padj_check =="p-Val sig."){
+    enh_vol<-plot(EnhancedVolcano(
+      FC_data,
+      lab = FC_data$name,
+      x = "ratio",
+      y = "p.val",
+      title = comp_pick,
+      subtitle = paste("Fold change cutoff = ", FC ,", p-Val cutoff =  ", pVal, sep = ""),
+      pCutoff = pVal,
+      FCcutoff = log2(FC),
+      pointSize = 2.0,
+      labSize = label_size,
+      drawConnectors = connect,
+      widthConnectors = 0.5,
+      ylim = c(0, p_Val_min),
+      #maxoverlapsConnectors = Inf,
+      col = mypal_col,
+      #colCustom = keyvals.colour,
+      #colAlpha = (alpha_input/10)*0.5
+      #selectLab = FC_data_sig$name #show labels for significant padj proteins
+    ))
+  } 
+  
+  #Volcano plot with padj values and padj labels
+  
+  if (padj_check =="p-adj values"){
+    enh_vol<-plot(EnhancedVolcano(
+      FC_data,
+      lab = FC_data$name,
+      x = "ratio",
+      y = "p.adj",
+      title = comp_pick,
+      subtitle = paste("Fold change cutoff = ", FC ,", p-adj cutoff =  ", pVal, sep = ""),
+      ylab = bquote(~-Log[10] ~ italic(P) ~ adj), #shows padj
+      pCutoff = pVal,
+      FCcutoff = log2(FC),
+      pointSize = 2.0,
+      labSize = label_size,
+      drawConnectors = connect,
+      widthConnectors = 0.5,
+      ylim = c(0, p_adj_min),
+      #maxoverlapsConnectors = Inf,
+      col = mypal_col,
+      #colCustom = keyvals.colour,
+      #colAlpha = (alpha_input/10)*0.5,
+      selectLab = vol_names #show labels for significant padj proteins
+    ))
+  }
+  name1 <- gsub("_vs_.*", "", comp_pick)
+  name2 <- gsub(".*_vs_", "", comp_pick)
+  enh_vol<- enh_vol + geom_text(data = data.frame(), aes(x = c(Inf, -Inf), y = c(-Inf, -Inf), 
+                                                         hjust = c(1, 0), vjust = c(-1, -1), label = c(name1, name2),  
+                                                         fontface = "bold"))
+  
+  return(enh_vol)
+}
+
