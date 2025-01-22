@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.11.1-beta"
+Version = "0.11.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -210,26 +210,8 @@ ui <- fluidPage(
                        menuItemOutput("comparisons"),
                        actionButton("analyze", "Analyze", icon = icon("magnifying-glass-chart"), class="btn btn-primary btn-lg"),
                        menuItemOutput("imputation_options"),
-                       #menuItem("Imputation options",
-                       #          radioButtons("imputation",
-                       #                       "Imputation type",
-                       #                       choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
-                       #                       #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
-                       #                       selected = "man"),
-                       #          helpText("Manual (man) Imputation settings) "),
-                       #          numericInput("shift",
-                       #                       "Left-shifted Gaussian distribution",
-                       #                       min = 1.1, max = 2.9, value = 1.8, step = 0.1),
-                       #          numericInput("width",
-                       #                       "Width",
-                       #                       min = 0, max = 1, value = 0.3, step = 0.1),
-                       #          p(a("Detailed information link",
-                       #              href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
-                       #              target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
-                       #          checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
-                       #          checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE)
-                       # ),
                        menuItemOutput("normalisations"),
+                       menuItemOutput("padj_options"),
                        tags$hr(),
                        uiOutput("downloadTable"),
                        uiOutput("downloadButton"),
@@ -1234,6 +1216,23 @@ server <- shinyServer(function(input, output, session) {
     )
   })
   
+  output$padj_options <- renderMenu({
+    menuItem("p.adj method options",
+             radioButtons("padjust_method",
+                          "p.adj (FDR) Methods",#should be one of “holm”, “hochberg”, “hommel”, “bonferroni”, “BH”, “BY”, “fdr”, “none”
+                          choices = c("default (DEP)" = "default",
+                                      "Benjamini-Hochberg" = "BH",
+                                      "Benjamini-Yekutieli" = "BY",
+                                      "Bonferroni" = "bonferroni",
+                                      "Hochberg" = "hochberg",
+                                      "Holm" = "holm",
+                                      "Hommel" = "hommel",
+                                      "p.value" = "none"),
+                          selected = "default")
+    )
+  })
+  
+  
   #Hide/show Introduction Tab
   observeEvent(input$analyze, {
     if (input$analyze > 0) {
@@ -2033,17 +2032,23 @@ server <- shinyServer(function(input, output, session) {
   
   
   df <- reactive({
-    DEP::test_diff(imp(), type = "manual", test = comp())
+    if (input$padjust_method == "default"){
+    DEP::test_diff(imp(), type = "manual", test = comp())}
+    else{test_diff_custom(imp(), type = "manual", test = comp(), method = input$padjust_method)}
     
     
   })
   
   df2 <- reactive({
     if (input$comp_type == "2 Rounds of comparisons"){
-      DEP::test_diff(imp(), type = "manual", test = comp2())
+      if (input$padjust_method == "default"){
+        DEP::test_diff(imp(), type = "manual", test = comp2())}
+      else{test_diff_custom(imp(), type = "manual", test = comp2(), method = input$padjust_method)}
     }
     else{
-      DEP::test_diff(imp2(), type = "manual", test = comp2())
+      if (input$padjust_method == "default"){
+        DEP::test_diff(imp2(), type = "manual", test = comp2())}
+      else{test_diff_custom(imp2(), type = "manual", test = comp2(), method = input$padjust_method)}
     }
   })
   
@@ -2059,7 +2064,7 @@ server <- shinyServer(function(input, output, session) {
     )
     #validate(need(try(df() != "try-error"), base::stop(shiny::safeError(warning(test_diff(imp(), type = "manual", test = comp()))))))
     if(input$pval_use == FALSE){
-      add_rejections(df(), input$p, log2(input$lfc))
+      DEP::add_rejections(df(), input$p, log2(input$lfc))
     }else{add_rejections_pval(df(), input$p, log2(input$lfc))}
   }) 
   
@@ -2070,7 +2075,7 @@ server <- shinyServer(function(input, output, session) {
     validate(need(comp2() != "", "You need to select some 2nd round comparisons, or import a comparisons file. Use the Comp. template to assist you. ")
     )
     if(input$pval_use == FALSE){
-      add_rejections(df2(), input$p2, log2(input$lfc2))
+      DEP::add_rejections(df2(), input$p2, log2(input$lfc2))
     }else{add_rejections_pval(df2(), input$p2, log2(input$lfc2))}
     
   }) 
