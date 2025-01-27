@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.11.2-beta"
+Version = "0.11.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1202,12 +1202,12 @@ server <- shinyServer(function(input, output, session) {
   
   output$normalisations <- renderMenu({
     menuItem("Normalisation options",
-             radioButtons("nomalisation_choice",
+             radioButtons("normalisation_choice",
                           "Normalisation Method",
                           choices = c("vsn", "quantile", "none"),
                           selected = "vsn"),
              if (input$data_mode == TRUE) {
-               radioButtons("nomalisation_choice2",
+               radioButtons("normalisation_choice2",
                             "Normalisation Method Dataset 2)",
                             choices = c("vsn", "quantile", "none"),
                             selected = "vsn")
@@ -1226,9 +1226,21 @@ server <- shinyServer(function(input, output, session) {
                                       "Bonferroni" = "bonferroni",
                                       "Hochberg" = "hochberg",
                                       "Holm" = "holm",
-                                      "Hommel" = "hommel",
-                                      "p.value" = "none"),
-                          selected = "default")
+                                      "Hommel" = "hommel"),
+                          selected = "default"),
+             if (input$data_mode == TRUE) {
+               radioButtons("padjust_method2",
+                            "p.adj (FDR) Methods (Dataset 2",#should be one of “holm”, “hochberg”, “hommel”, “bonferroni”, “BH”, “BY”, “fdr”, “none”
+                            choices = c("default (DEP)" = "default",
+                                        "Benjamini-Hochberg" = "BH",
+                                        "Benjamini-Yekutieli" = "BY",
+                                        "Bonferroni" = "bonferroni",
+                                        "Hochberg" = "hochberg",
+                                        "Holm" = "holm",
+                                        "Hommel" = "hommel"),
+                            selected = "default")
+             }
+             
     )
   })
   
@@ -1894,20 +1906,20 @@ server <- shinyServer(function(input, output, session) {
   })
   
   norm <- reactive({
-    if (input$nomalisation_choice=="vsn")
+    if (input$normalisation_choice=="vsn")
     {normalize_vsn(filt())}
-    else if(input$nomalisation_choice=="quantile"){
+    else if(input$normalisation_choice=="quantile"){
       QFeatures::normalize(filt(), method = "quantiles")}
-    else if (input$nomalisation_choice=="none")
+    else if (input$normalisation_choice=="none")
     {norm<-filt()}
   })
   
   norm2 <- reactive({
-    if (input$nomalisation_choice2=="vsn")
+    if (input$normalisation_choice2=="vsn")
     {normalize_vsn(filt2())}
-    else if(input$nomalisation_choice2=="quantile"){
+    else if(input$normalisation_choice2=="quantile"){
       QFeatures::normalize(filt2(), method = "quantiles")}
-    else if (input$nomalisation_choice2=="none")
+    else if (input$normalisation_choice2=="none")
     {norm<-filt2()}
   })
   
@@ -2033,7 +2045,7 @@ server <- shinyServer(function(input, output, session) {
   
   df <- reactive({
     if (input$padjust_method == "default"){
-    DEP::test_diff(imp(), type = "manual", test = comp())}
+      DEP::test_diff(imp(), type = "manual", test = comp())}
     else{test_diff_custom(imp(), type = "manual", test = comp(), method = input$padjust_method)}
     
     
@@ -2046,9 +2058,9 @@ server <- shinyServer(function(input, output, session) {
       else{test_diff_custom(imp(), type = "manual", test = comp2(), method = input$padjust_method)}
     }
     else{
-      if (input$padjust_method == "default"){
+      if (input$padjust_method2 == "default"){
         DEP::test_diff(imp2(), type = "manual", test = comp2())}
-      else{test_diff_custom(imp2(), type = "manual", test = comp2(), method = input$padjust_method)}
+      else{test_diff_custom(imp2(), type = "manual", test = comp2(), method = input$padjust_method2)}
     }
   })
   
@@ -4616,6 +4628,8 @@ server <- shinyServer(function(input, output, session) {
                          p = input$p,
                          lfc = input$lfc,
                          p2 = input$p2,
+                         padjust_method = input$padjust_method,
+                         padjust_method2 = input$padjust_method2,
                          lfc2 = input$lfc2,
                          bfdr = input$bfdr,
                          bfdr_freq = input$bfdr_freq,
@@ -4624,6 +4638,7 @@ server <- shinyServer(function(input, output, session) {
                          comp= comp,
                          comp2= comp2,
                          imputation = input$imputation,
+                         imputation2 = input$imputation2,
                          shift = input$shift,
                          width = input$width,
                          #missval_input = missval_input,
@@ -4632,6 +4647,8 @@ server <- shinyServer(function(input, output, session) {
                          pca_c2_input = pca_c2_input,
                          norm_input = norm_input,
                          norm_input2 = norm_input2,
+                         normalisation_choice = input$normalisation_choice,
+                         normalisation_choice2 = input$normalisation_choice2,
                          numbers_input = numbers_input,
                          numbers_input2 = numbers_input2, 
                          #coverage_input = coverage_input,

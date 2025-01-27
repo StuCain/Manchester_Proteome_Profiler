@@ -16,6 +16,8 @@ params:
   p: NA
   lfc: NA
   p2: NA
+  padjust_method: NA
+  padjust_method2: NA
   lfc2: NA
   bfdr: NA
   bfdr_freq: NA
@@ -42,6 +44,8 @@ params:
   imputation_input2: NA
   norm_input: = NA
   norm_input2: = NA
+  normalisation_choice: = NA
+  normalisation_choice2: = NA
 #  missval_input: NA
   detect_input: NA
   density_input: NA
@@ -100,8 +104,8 @@ output:
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
-clust_height<-(params$dep_num()/8)+4
-if (clust_height<6){clust_height<-clust_height+1}
+
+#Data Type Txt
 if (params$data_type == "MaxQuant"){file_input<-"proteinGroups.txt file from MaxQuant"}
 if (params$data_type == "Proteome Discoverer"){file_input<-"protein abundances export from Proteome Discoverer"}
 if (params$data_type == "FragPipe"){if (params$exp == "LFQ"){file_input<-"combined_protein.tsv file from FragPipe"}else {file_input<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
@@ -109,15 +113,44 @@ if (params$data_type == "MaxQuant"){int_type<-"LFQ intensities"}
 if (params$data_type == "Proteome Discoverer"){int_type<-"protein abundances"}
 if (params$data_type == "FragPipe"){if (params$lfq_type == "MaxLFQ intensities") {int_type<-"Intensities"} else {int_type<-"Intensities"}}
 if (params$data_mode == TRUE){
-if (params$data_type2 == "MaxQuant"){file_input2<-"proteinGroups.txt file from MaxQuant"}
-if (params$data_type2 == "Proteome Discoverer"){file_input2<-"protein abundances export from Proteome Discoverer"}
-if (params$data_type2 == "FragPipe"){if (params$exp2 == "LFQ"){file_input2<-"combined_protein.tsv file from FragPipe"}else {file_input2<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
-if (params$data_type2 == "MaxQuant"){int_type2<-"LFQ intensities"}
-if (params$data_type2 == "Proteome Discoverer"){int_type2<-"protein abundances"}
-if (params$data_type2 == "FragPipe"){if (params$lfq_type2 == "MaxLFQ intensities") {int_type2<-"Intensities"} else {int_type2<-"Intensities"}}
+  if (params$data_type2 == "MaxQuant"){file_input2<-"proteinGroups.txt file from MaxQuant"}
+  if (params$data_type2 == "Proteome Discoverer"){file_input2<-"protein abundances export from Proteome Discoverer"}
+  if (params$data_type2 == "FragPipe"){if (params$exp2 == "LFQ"){file_input2<-"combined_protein.tsv file from FragPipe"}else {file_input2<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
+  if (params$data_type2 == "MaxQuant"){int_type2<-"LFQ intensities"}
+  if (params$data_type2 == "Proteome Discoverer"){int_type2<-"protein abundances"}
+  if (params$data_type2 == "FragPipe"){if (params$lfq_type2 == "MaxLFQ intensities") {int_type2<-"Intensities"} else {int_type2<-"Intensities"}}
 }
 
-if (params$pval_use == FALSE){pval_type <- " an _adjusted p-value_ of "} else {pval_type <- " a _p-value_ of "}
+padjusttxt<-switch(
+  params$padjust_method,
+  "default" = "(tail area-based FDR method)",
+  "BH" = "(Benjamini-Hochberg Method)",
+  "BY" = "(Benjamini-Yekutieli Method)",
+  "bonferroni" = "(Bonferroni Method)",
+  "hochberg" = "(Hochberg Method)",
+  "holm" = "(Holm Method)",
+  "hommel" = "(Hommel Method)",
+)
+if (params$data_mode == TRUE){
+  padjusttxt2<-switch(
+    params$padjust_method2,
+    "default" = "(tail area-based FDR method)",
+    "BH" = "(Benjamini-Hochberg Method)",
+    "BY" = "(Benjamini-Yekutieli Method)",
+    "bonferroni" = "(Bonferroni Method)",
+    "hochberg" = "(Hochberg Method)",
+    "holm" = "(Holm Method)",
+    "hommel" = "(Hommel Method)",
+  )
+}else {padjusttxt2<-""}
+
+if (params$pval_use == FALSE){
+  pval_type <- " an _adjusted p-value_ of "
+  padjmethod <-padjusttxt
+} else {
+  pval_type <- " a _p-value_ of "
+  padjmethod <-""
+}
 
 if (params$pval_use == FALSE){pval_type_2 <- "adjusted p-value"} else {pval_type_2 <- "p-value"}
 
@@ -127,55 +160,55 @@ if (params$data_mode == TRUE){second_round_txt<-paste("For this analysis two dat
 
 if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
 
+#Imputation Text
+if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
+if (params$imputation == "knn"){imputation_text <- "and missing values were imputed using the ‘Nearest neighbour averaging’ (knn) method. "}
+if (params$imputation == "QRILC"){imputation_text <- "and missing values were imputed using an imputation method (QRILC) that performs the imputation of left-censored missing data using random draws from a truncated distribution with parameters estimated using quantile regression. "}
+if (params$imputation == "MinDet"){imputation_text <- "and missing values were imputed using the 'MinDet' imputation method.  MinDet: Performs the imputation of left-censored missing data using a deterministic minimal value approach. Considering a expression data with n samples and p features, for each sample, the missing entries are replaced with a minimal value observed in that sample. "} 
+if (params$imputation == "MinProb"){imputation_text <- "and missing values were imputed using the 'MinProb' imputation method.  MinProb: Performs the imputation of left-censored missing data by random draws from a Gaussian distribution centred to a minimal value.  "}
+if (params$imputation == "min"){imputation_text <- "and missing values were replaced with the smallest non-missing value in the dataset (min method).  "}
+if (params$imputation == "zero"){imputation_text <- "and missing values were replaced with zeroes (min method).  "}
+if (params$imputation == "bpca"){imputation_text <- "and missing values were imputed by an  iterative method using a Bayesian model to handle missing values (bpca method).  "}
 
-#Cluster tables
-clust1_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[1]])
-clust1_table<-clust1_table[, 1:3]
+#Normalisation Text
+if (params$normalisation_choice == "vsn"){norm_text <- "Normalization was performed using the variance stabilizing transformation method (vsn) "}
+if (params$normalisation_choice == "quantile"){norm_text <- "Normalization was performed using the quantile method "}
+if (params$normalisation_choice == "none"){norm_text <- "Protein Intensisty values were not normalised "}
+```
+```{r app_logo, echo=FALSE,message=FALSE, warning=FALSE}
+knitr::include_graphics("app_logo.png")
+```
 
-if(params$k1>1){
-clust2_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[2]])
-clust2_table<-clust2_table[, 1:3]
-}
+# Manchester Proteome Profiler Report (Long)
+## `r format(Sys.time(), '%d %B, %Y')`
 
-if(params$k1>2){
-clust3_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[3]])
-clust3_table<-clust3_table[, 1:3]
-}
+Version:0.4.0
 
-if(params$k1>3){
-clust4_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[4]])
-clust4_table<-clust4_table[, 1:3]
-}
+## Method details
+ 
+Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-if(params$k1>4){
-clust5_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[5]])
-clust5_table<-clust5_table[, 1:3]
-}
+The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. `r norm_text` `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` `r padjmethod`, along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. 
 
-if(params$k1>5){
-clust6_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[6]])
-clust6_table<-clust6_table[, 1:3]
-}
+`r second_round_txt`
 
-if(params$k1>6){
-clust7_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[7]])
-clust7_table<-clust7_table[, 1:3]
-}
+To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
+ 
+\textsuperscript{1} Cain SA and Humphries MJ (2025) "Manchester Proteome Profiler: An easy to use tool for Analyzing Quantitative Proteomic Data" (Manuscript in preparation)
+\textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550. DOI: 10.1038/nprot.2017.147
+\textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022. DOI: 10.1002/imt2.43
+\textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016. DOI: 10.1093/bioinformatics/btw313
+\textsuperscript{5} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
+\textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. DOI: 10.1016/j.xinn.2021.100141. `r saint_ref_txt`
 
-if(params$k1>7){
-clust8_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[8]])
-clust8_table<-clust8_table[, 1:3]
-}
+\pagebreak
 
-if(params$k1>8){
-clust9_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[9]])
-clust9_table<-clust9_table[, 1:3]
-}
-
-if(params$k1>9){
-clust10_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[10]])
-clust10_table<-clust10_table[, 1:3]
-}
+```{r results_text_block, echo=FALSE, message=FALSE, warning=FALSE}
+sample_no <- nrow(params$expdesign())
+#num_signif_c1<-1
+#num_signif_c2<-1
+num_signif_bfdr<-1
+num_signif <-as.numeric(params$dep_num())
 
 #Cluster dimensions
 comp1<-paste(as.character(params$comp()),collapse=' : ')
@@ -195,65 +228,6 @@ fig_width_cluster=(comp_no/2)+3
 out_height_cluster<-rep("1%", 10)
 out_width_cluster<-rep("1%", 10)
 
-for (i in 1:params$k1){
-  fig_height_cluster[i]<-(as.numeric(params$cluster_heatmap_input()[[2]][[i]])/8)+4
-  if (fig_height_cluster[i]>fig_width_cluster){
-    out_height_cluster[i]<-paste0(100,"%")
-    out_width_cluster[i]<-paste0((fig_width_cluster/fig_height_cluster[i])*100,"%")
-
-  }else{out_width_cluster[i]<-paste0(100,"%")
-  out_height_cluster[i]<-paste0((fig_height_cluster[i]/fig_width_cluster)*100,"%")
-  }
-  
-}
-
-
-
-#Imputation Text
-if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
-if (params$imputation == "knn"){imputation_text <- "and missing values were imputed using the ‘Nearest neighbour averaging’ (knn) method. "}
-if (params$imputation == "QRILC"){imputation_text <- "and missing values were imputed using an imputation method (QRILC) that performs the imputation of left-censored missing data using random draws from a truncated distribution with parameters estimated using quantile regression. "}
-if (params$imputation == "MinDet"){imputation_text <- "and missing values were imputed using the 'MinDet' imputation method.  MinDet: Performs the imputation of left-censored missing data using a deterministic minimal value approach. Considering a expression data with n samples and p features, for each sample, the missing entries are replaced with a minimal value observed in that sample. "} 
-if (params$imputation == "MinProb"){imputation_text <- "and missing values were imputed using the 'MinProb' imputation method.  MinProb: Performs the imputation of left-censored missing data by random draws from a Gaussian distribution centred to a minimal value.  "}
-if (params$imputation == "min"){imputation_text <- "and missing values were replaced with the smallest non-missing value in the dataset (min method).  "}
-if (params$imputation == "zero"){imputation_text <- "and missing values were replaced with zeroes (min method).  "}
-if (params$imputation == "bpca"){imputation_text <- "and missing values were imputed by an  iterative method using a Bayesian model to handle missing values (bpca method).  "}
-
-```
-```{r app_logo, echo=FALSE,message=FALSE, warning=FALSE}
-knitr::include_graphics("app_logo.png")
-```
-
-# Manchester Proteome Profiler Report (Long)
-## `r format(Sys.time(), '%d %B, %Y')`
-
-Version:0.3.7
-
-## Method details
- 
-Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
-
-The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. Normalization was performed using the variance stabilizing transformation method (vsn) `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` (Benjamini-Hochberg method) along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. 
-
-`r second_round_txt`
-
-To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
- 
-\textsuperscript{1} Manchester Proteome Profiler by Stuart Cain (Manuscript in preparation)
-\textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550. DOI: 10.1038/nprot.2017.147
-\textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022. DOI: 10.1002/imt2.43
-\textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016. DOI: 10.1093/bioinformatics/btw313
-\textsuperscript{5} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
-\textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. DOI: 10.1016/j.xinn.2021.100141. `r saint_ref_txt`
-
-\pagebreak
-
-```{r results_text_block, echo=FALSE, message=FALSE, warning=FALSE}
-sample_no = nrow(params$expdesign())
-#num_signif_c1<-1
-#num_signif_c2<-1
-num_signif_bfdr<-1
-num_signif <-as.numeric(params$dep_num())
 
 
 if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){
@@ -265,36 +239,6 @@ if (params$comp_type == "Use SAINTexpress"){
 num_signif_c1 <-as.numeric(params$dep_num_c1())
 num_signif_bfdr <-as.numeric(params$dep_num_bfdr())
 }
-
-#Abundance Heatmap
-abund_heatmap_no<-nrow(params$heatmap_input()[[2]])
-abund_heatmap_col<-ncol(params$heatmap_input()[[2]])
-if (params$data_mode == TRUE){
-abund_heatmap2_no<-nrow(params$heatmap_input2()[[2]])
-abund_heatmap2_col<-ncol(params$heatmap_input2()[[2]])
-}else{abund_heatmap2_no<-0
-abund_heatmap2_col<-0}
-
-abund_height<-(abund_heatmap_no/9)+3
-abund_width<-(abund_heatmap_col/3)+2
-if (abund_height>abund_width){
-  abund_out_height<-paste0(100,"%")
-  abund_out_width<-paste0((abund_width/abund_height)*100,"%")
-}else{abund_out_width<-paste0(100,"%")
-abund_out_height<-paste0((abund_height/abund_width)*100,"%")
-}
-
-abund_height2<-(abund_heatmap2_no/9)+3
-abund_width2<-(abund_heatmap2_col/3)+2
-if (abund_height2>abund_width2){
-  abund_out_height2<-paste0(100,"%")
-  abund_out_width2<-paste0((abund_width2/abund_height2)*100,"%")
-}else{abund_out_width2<-paste0(100,"%")
-abund_out_height2<-paste0((abund_height2/abund_width2)*100,"%")
-}
-
-
-
 
 #For comparisons text
 if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
@@ -320,6 +264,12 @@ if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){if
 }}else{p2_text<-""}
 if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress BFDR cut-off <= \\textbf{", params$bfdr, "}")}else{bfdr_text<-""}
 if (params$comp_type == "Use SAINTexpress"){bfdr_freq_text<-paste0 ("* SAINTexpress BFDR Frequency >= \\textbf{", params$bfdr_freq, "}")}else{bfdr_freq_text<-""}
+if (params$data_mode == TRUE){norm2txt<-paste0 ("* Normalisation method (Dataset 2) = \\textbf{", params$normalisation_choice2, "}")}else{norm2txt<-""}
+if (params$data_mode == TRUE){imp2txt<-paste0 ("* Imputation method (Dataset 2) = \\textbf{", params$imputation2, "}")}else{imp2txt<-""}
+
+padjusttxt <- gsub('[()]','',padjusttxt)
+padjusttxt2 <- gsub('[()]','',padjusttxt2)
+if (params$data_mode == TRUE){padjtxt<-paste0 ("* Adjusted _p-value_ cut-off method (Dataset 2) = \\textbf{", padjusttxt2, "}")}else{padjtxt<-""}
 
 ```
 
@@ -346,6 +296,12 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 `r bfdr_text`
 `r bfdr_freq_text`
 * No. of Samples= \textbf{`r sample_no`}
+* Normalisation method = \textbf{`r params$normalisation_choice`}
+`r norm2txt`
+* Imputation method = \textbf{`r params$imputation`}
+`r imp2txt`
+* Adjusted _p-value_ cut-off method = \textbf{`r padjusttxt`}
+`r padjtxt`
 
 
 
@@ -419,7 +375,36 @@ if(params$data_mode == TRUE){print(params$imputation_input2())}
 \pagebreak
 
 ## Abundance Heatmap Plot
+```{r abundance_heatmap, echo=FALSE, fig.show='hide', message=FALSE, warning=FALSE}
+#Abundance Heatmap
+abund_heatmap_no<-nrow(params$heatmap_input()[[2]])
+abund_heatmap_col<-ncol(params$heatmap_input()[[2]])
+if (params$data_mode == TRUE){
+abund_heatmap2_no<-nrow(params$heatmap_input2()[[2]])
+abund_heatmap2_col<-ncol(params$heatmap_input2()[[2]])
+}else{abund_heatmap2_no<-0
+abund_heatmap2_col<-0}
 
+abund_height<-(abund_heatmap_no/9)+3
+abund_width<-(abund_heatmap_col/3)+2
+if (abund_height>abund_width){
+  abund_out_height<-paste0(100,"%")
+  abund_out_width<-paste0((abund_width/abund_height)*100,"%")
+}else{abund_out_width<-paste0(100,"%")
+abund_out_height<-paste0((abund_height/abund_width)*100,"%")
+}
+
+abund_height2<-(abund_heatmap2_no/9)+3
+abund_width2<-(abund_heatmap2_col/3)+2
+if (abund_height2>abund_width2){
+  abund_out_height2<-paste0(100,"%")
+  abund_out_width2<-paste0((abund_width2/abund_height2)*100,"%")
+}else{abund_out_width2<-paste0(100,"%")
+abund_out_height2<-paste0((abund_height2/abund_width2)*100,"%")
+}
+
+
+```
 ```{r abundance_heatmap_plot, echo=FALSE, fig.height=abund_height, fig.width=abund_width, out.height=abund_out_height, out.width=abund_out_width, message=FALSE, warning=FALSE}
 print(params$heatmap_input()[[1]])
 ```
@@ -583,6 +568,8 @@ if (params$data_mode == TRUE){ht_text<-"## Differential Expression Analysis (Res
 ### Combined Heatmap
 The Heatmap indicates the log2 fold change (log2FC) values of each of the significantly expressed proteins for the Dataset 1, using a list which has the overlapping proteins that were significantly expressed for both Dataset 1 and Dataset 2. Shown above, is the mean log2FC value for each comparison and also a violin plot which indicates the distribution of the log2FC values. On the right hand side (Sig. Freq) is the number of times each protein has passed the cut off values (fold change (FC) and p.adj) for each dataset which are indicated above the Heatmap. The Sig. Freq maximum is equal to the number of comparisons.
 "}
+clust_height<-(params$dep_num()/8)+4
+if (clust_height<6){clust_height<-clust_height+1}
 
 ```
 
@@ -597,6 +584,72 @@ if (params$rendered_by_shiny)
 shiny::setProgress(0.25)  # set progress to 25%
 ```
 
+\pagebreak
+
+```{r cluster_params, echo=FALSE, fig.show='hide', message=FALSE, warning=FALSE}
+
+#Cluster tables
+clust1_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[1]])
+clust1_table<-clust1_table[, 1:3]
+
+if(params$k1>1){
+clust2_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[2]])
+clust2_table<-clust2_table[, 1:3]
+}
+
+if(params$k1>2){
+clust3_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[3]])
+clust3_table<-clust3_table[, 1:3]
+}
+
+if(params$k1>3){
+clust4_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[4]])
+clust4_table<-clust4_table[, 1:3]
+}
+
+if(params$k1>4){
+clust5_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[5]])
+clust5_table<-clust5_table[, 1:3]
+}
+
+if(params$k1>5){
+clust6_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[6]])
+clust6_table<-clust6_table[, 1:3]
+}
+
+if(params$k1>6){
+clust7_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[7]])
+clust7_table<-clust7_table[, 1:3]
+}
+
+if(params$k1>7){
+clust8_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[8]])
+clust8_table<-clust8_table[, 1:3]
+}
+
+if(params$k1>8){
+clust9_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[9]])
+clust9_table<-clust9_table[, 1:3]
+}
+
+if(params$k1>9){
+clust10_table<-as.data.frame(params$cluster_heatmap_input()[[3]][[10]])
+clust10_table<-clust10_table[, 1:3]
+}
+
+for (i in 1:params$k1){
+  fig_height_cluster[i]<-(as.numeric(params$cluster_heatmap_input()[[2]][[i]])/8)+4
+  if (fig_height_cluster[i]>fig_width_cluster){
+    out_height_cluster[i]<-paste0(100,"%")
+    out_width_cluster[i]<-paste0((fig_width_cluster/fig_height_cluster[i])*100,"%")
+
+  }else{out_width_cluster[i]<-paste0(100,"%")
+  out_height_cluster[i]<-paste0((fig_height_cluster[i]/fig_width_cluster)*100,"%")
+  }
+  
+}
+
+```
 \pagebreak
 
 ### Cluster Heatmaps

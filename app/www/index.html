@@ -88,7 +88,7 @@
 			</div>
 			<div class="text">
 				<h3>Two dataset comparison mode</h3>
-				<p>If the Two Dataset comparison mode toggle is activated, this now allows two separate data files to be loaded. They can be from the same data-type or different (eg. MaxQuant and FragPipe analysis, or FragPipe DDA and DIA data). Each must have is own Experimental Design file, which can be generated from its specific template file. The comparison template file will now have a sixth column containing the list of the conditions from the second Experimental Template, which must be used to generate the conditions for the second round of comparisons (4th and 5th columns). This option can also be used to assess the affect on the significant protein list of different imputation or normalisation options, by loading the same datafile and experimental template in twice and generating two identical comparison lists (see "Imputation" instructions). </p> 
+				<p>If the Two Dataset comparison mode toggle is activated, this now allows two separate data files to be loaded. They can be from the same data-type or different (eg. MaxQuant and FragPipe analysis, or FragPipe DDA and DIA data). Each must have is own Experimental Design file, which can be generated from its specific template file. The comparison template file will now have a sixth column containing the list of the conditions from the second Experimental Template, which must be used to generate the conditions for the second round of comparisons (4th and 5th columns). This option can also be used to assess the affect on the significant protein list of different imputation,  normalisation or p.adjust options, by loading the same datafile and experimental template in twice and generating two identical comparison lists (see "Imputation" instructions). </p> 
 			</div>
 		</div>
 
@@ -240,7 +240,7 @@
 		<h3><FONT COLOR="#2297E6">QC Plots</h3>
 		<div class="flex-container">
 			<div class="image">
-				<img src="numbers.jpg" width=200px>
+				<img src="numbers.jpg" width=300px>
 			</div>
 			<div class="text">
 				<h3><FONT COLOR="#000000">Protein Numbers</h3>
@@ -254,6 +254,9 @@
 			<div class="text">
 				<h3><FONT COLOR="#000000">Normalisation</h3>
 					<p>The data is background corrected and normalised by variance stabilizing transformation (vsn). The distribution of the protein intensities is indicated for each sample before and after normalisation. The normalisation method can be switched to quantile normalisation using the radio button on the "Normalisation options" drop down menu on the sidebar. Comparisons between the normalisation methods can be investigated using the two dataset comparison method described in the imputation section below.</p>
+			</div>
+			<div class="image">
+				<img src="norm_method.jpg" width=150px>
 			</div>
 		</div>
 			
