@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.11.4-beta"
+Version = "0.11.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1225,7 +1225,7 @@ server <- shinyServer(function(input, output, session) {
                                       "Benjamini-Yekutieli" = "BY",
                                       "Bonferroni" = "bonferroni",
                                       "Hochberg" = "hochberg",
-                                      "Holm" = "holm",
+                                      #"Holm" = "holm", # Hochberg and Holm give same result
                                       "Hommel" = "hommel"),
                           selected = "default"),
              if (input$data_mode == TRUE) {
@@ -1236,7 +1236,7 @@ server <- shinyServer(function(input, output, session) {
                                         "Benjamini-Yekutieli" = "BY",
                                         "Bonferroni" = "bonferroni",
                                         "Hochberg" = "hochberg",
-                                        "Holm" = "holm",
+                                        #"Holm" = "holm",
                                         "Hommel" = "hommel"),
                             selected = "default")
              }
@@ -3393,11 +3393,10 @@ server <- shinyServer(function(input, output, session) {
     
     #Enhanced Volcano Input 1
     enhanced_volcano_1_input <- reactive({
-      if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
+      if (input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
-        if(input$enh_vol_data==FALSE){if (input$data_mode == TRUE){vol_data<-get_results(dep())}
-          else{vol_data<-get_results(dep2())}}
+        if(input$enh_vol_data==FALSE){vol_data<-get_results(dep2())}
         else{vol_data<-data_results()}
       }else{lfc<-input$lfc
       p<-input$p
@@ -3426,11 +3425,10 @@ server <- shinyServer(function(input, output, session) {
     
     #Enhanced Volcano Input 2
     enhanced_volcano_2_input <- reactive({
-      if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
+      if (input$comp_type == "2 Rounds of comparisons"){
         lfc<-input$lfc2
         p<-input$p2
-        if(input$enh_vol_data2==FALSE){if (input$data_mode == TRUE){vol_data<-get_results(dep())}
-          else{vol_data<-get_results(dep2())}}
+        if(input$enh_vol_data2==FALSE){vol_data<-get_results(dep2())}
         else{vol_data<-data_results()}
       }else{lfc<-input$lfc
       p<-input$p
