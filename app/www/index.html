@@ -2,8 +2,17 @@
 <html>
 <head>
 	<title>Manchester Proteomics Profiler</title>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <style>
+	* {
+	font-family: 'Open Sans', sans-serif;
+	}
+	h1, h2, h3 {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	color: #004085;
+	}
 	.flex-container {
 	display: flex;
 	flex-direction: row;
@@ -22,6 +31,7 @@
 
 	
 	.text {
+	font-family: 'Open Sans', sans-serif;
 	font-size: 15px;
 	padding-left: 20px;
 	padding-right: 20px;
@@ -37,28 +47,28 @@
 	
 </style>
 <body>
-<h1><FONT COLOR="#DF536B">Quick Instructions</h1>
-<h3><FONT COLOR="#000000">1. Load data (Pick Data File type first)</h3>
-<h3><FONT COLOR="#000000">2. Save Exp. Template</h3>
-<h3><FONT COLOR="#000000">3. Modify Exp. Template (Use a spreadsheet editor)</h3>
-<h3><FONT COLOR="#000000">4. Load modified Exp. Template</h3>
-<h3><FONT COLOR="#000000">5. Pick Comparisons or Generate comparison file from Comp. template and upload</h3>
-<h3><FONT COLOR="#000000">6. Press "Analyse"</h3>
+<h1><FONT COLOR="#DF536B">Quick Instructions<FONT COLOR="#000000"></h1>
+<h3>1. Load data (Pick Data File type first)</h3>
+<h3>2. Save Exp. Template</h3>
+<h3>3. Modify Exp. Template (Use a spreadsheet editor)</h3>
+<h3>4. Load modified Exp. Template</h3>
+<h3>5. Pick Comparisons or Generate comparison file from Comp. template and upload</h3>
+<h3>6. Press "Analyse"</h3>
 <h1><FONT COLOR="#61D04F">Instructions</h1>
-<h2><FONT COLOR="#2297E6">Sidebar Menu</h2>
+<h2><FONT COLOR="#2297E6">Sidebar Menu<FONT COLOR="#000000"></h2>
 	<div class="flex-container">
 		<div class="image">
 			<img src="file_all.jpg" width=200px>
 		</div>
 		<div class="text">
-			<h3><FONT COLOR="#000000">Choose data type</h3>
+			<h3>Choose data type</h3>
 				<p>You can load either the proteinGroups.txt output from MaxQuant, the Abundance data from Proteome Discovery, or the combined_protein.tsv (LFQ) or protein group matrix.tsv (DIA) from FragPipe.</p>
 				<h3>Load Data</h3>
 				<p>Use the browse button to upload data file, the input box will change depending on the Data File type selected.</p>
 				<h3>Load Experimental Design template</h3>
 				<p>The Experimental template matches the column titles from your data file to the sample conditions of your data. It consists of five columns (label, condition, replicate, condition_type and bait_id). The <strong>label column</strong> must match the column titles, the <strong>condition column</strong> can be any (short) description, <FONT COLOR="#DF536B"><strong>it should not start with a number, e.g. use "drug_4h" not "4h_drug" </strong><FONT COLOR="#000000">(use only _ or . special characters). The <strong>replicate column</strong> just contains a replicate number (see example below). The last two columns are needed for SAINTexpress analysis. SAINTexpress processing allows identification of proteins that were enriched compared with the control samples. The <strong>bait_id column</strong> must contain either "T" for tested samples or "C" for control samples. If are different experimental conditions which have different matching controls, the matching samples for each of the conditions should be labelled in the <strong>condition_type column</strong>. The condition_type can be labelled with any label, e.g. "1", "2" and "3" of "24hr", "48hr" or "72hr". <strong>If SAINTexpress analysis is not needed these columns can be left unaltered</strong></p>
 				<h3>Generate Experimental template</h3>
-				<p>To simplify the process a template for the experimental design file can be generated using the "Save Exp. Template" button. Upload the data file first, this will then allow the label column to be automatically filled in from the column titles of the intensity columns. The replicate column is also filled in with the last character, (usually the replicate number). The <strong>condition_type</strong> and <strong>bait_id</strong> are also filled in, however the "T" will needed to changed to a "C" for the control samples for SAINTexpress analysis to be performed. If SAINTexpress analysis is not needed, these columns may be left as they are. Use a spreadsheet editor to modify the Exp. Template, make sure you you save it in the same format (tab-separated txt. file).</p>
+				<p>To simplify the process a template for the experimental design file can be generated using the "Save Exp. Template" button. Upload the data file first, this will then allow the label column to be automatically filled in from the column titles of the intensity columns. The replicate column is also filled in with the last character, (usually the replicate number). The <strong>condition_type</strong> and <strong>bait_id</strong> are also filled in, however the "T" will needed to changed to a "C" for the control samples for SAINTexpress analysis to be performed. If SAINTexpress analysis is not needed, these columns may be left as they are. However the <strong>condition_type</strong> column can also be use to divide the conditions into groups to generate split PCA plots (see below). Use a spreadsheet editor to modify the Exp. Template, make sure you you save it in the same format (tab-separated txt. file).</p>
 			</div>
 		</div>
 		<div class="image2">
@@ -93,17 +103,17 @@
 		</div>
 
 			<div class="text">
-		<h3><FONT COLOR="#000000">Start Analysis</h3>
+		<h3>Start Analysis</h3>
 			<p>After the comparisons have been selected press the "Analyse" button to begin the calculations.</p>
-			
+			<br>
 		</div>
-		<h2><FONT COLOR="#2297E6">Main Dashboard</h2>
+			<h2><FONT COLOR="#2297E6">Main Dashboard<FONT COLOR="#000000"></h2>
 		<div class="flex-container">
 			<div class="image">
 				<img src="miss_val.jpg" width=200px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Missing Values</h3>
+				<h3>Missing Values</h3>
 				<p>Filters out proteins that contain too many missing values. A value of 1 = protein identified in all or all but one replicate for at least one condition. Value of 0 (most stringent) protein identified in all replicates for at least one condition.</p>
 				</div>
 			</div>
@@ -113,9 +123,17 @@
 			</div>
 			<div class="text">
 				<h3>Set Fold-change and p-adj. cut off values</h3>
-				<p>Fold-change cut off values will be converted to log2Fold-Change when used to calculate the number of significant proteins. </p>
-				<p>For an identified protein to be included in the significant list the pairwise log2Fold-Change value must be >= to log2 of the chosen fold change value and the p.adj value must be <= to the chosen p.adj value for at least one of the chosen comparisons. p-adj values should normally be used for selecting cut-off values, however the cut-off values can be changed to using non-adjusted p.Val by selecting the "Use p.Val" box.</p>
+				<p>Fold-change cut off values will be converted to log<sub>2</sub>(Fold Change) values when used to calculate the number of significant proteins. </p>
+				<p>For an identified protein to be included in the significant list the pairwise log<sub>2</sub>Fold-Change value must be >= to log<sub>2</sub> of the chosen fold change value and the p.adj value must be <= to the chosen p.adj value for at least one of the chosen comparisons. p-adj values should normally be used for selecting cut-off values, however the cut-off values can be changed to using non-adjusted p.Val by selecting the "Use p.Val" box.</p>
 				<p>Fold-change and p-adj values for the 2 round of comparisons or the second dataset can be specified in the second set of boxes  </p>
+				<h3>Adjusted p values methods</h3>
+				<p>The method used to calculate adjusted p-values (p.adj) can be selected from the sidebar. The default method (<strong>default (DEP)</strong>) using <i>limma</i> and <i>fdrtool</i> packages, while all the other methods use <i>limma</i> only. Trying other methods can be particularly useful if only a small number of significant proteins are found, which can due to the adjusted p values being adjusted to 1. Check the "Volcano plots" using the <strong>p-adj values</strong> option to see if the plots have been "flattened". The choices are:</p>
+				<p><strong>default (DEP)</strong> Uses the <i>fdrtool</i> package for estimating the tail area-based false discovery rate (Fdr)</p>
+				<p><strong>Benjamini-Hochberg (BH)</strong> Also known as "False Discovery Rate (FDR)" adjustment, aiming to control the expected proportion of false discoveries among the rejected hypotheses.</p>
+				<p><strong>Benjamini-Yekutieli (BY)</strong> Another FDR controlling method, more robust under dependent test conditions.</p>
+				<p><strong>Bonferroni</strong> A conservative method, multiplying p-values by the number of comparisons.</p>
+				<p><strong>Hochberg</strong> A step-up method, slightly more powerful than Bonferroni, suitable for independent or positively correlated hypotheses.</p>
+				<p><strong>Hommel</strong> A sequentially rejective Bonferroni adjustment that is slightly less conservative.</p>
 			</div>
 		</div>
 		<div class="flex-container">
@@ -142,7 +160,7 @@
 		
 		
 		<h2><FONT COLOR="#2297E6">DEP Tab</h2>  
-		<h3><FONT COLOR="#2297E6">Result Plots</h3>
+		<h3><FONT COLOR="#2297E6">Result Plots<FONT COLOR="#000000"></h3>
 		<div class="flex-container">
 			<div class="image">
 				<img src="Selected_plot_con.jpg" width=200px>
@@ -151,12 +169,12 @@
 				<img src="Selected_plot_cen.jpg" width=200px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Selected Protein</h3>
-				<p>This shows box plots for proteins that are selected in the "Top Table" on the left hand side, gene names can be searched either from the final significant protein list, or the total protein list (if "Show all proteins" is selected). The plots can be displayed in 4 types. Each plot can be downloaded as a pdf using the "Save plot" button, and can be resized using the "PDF Width" and "PDF Height" inputs below</p>
-				<p><i>contrast: </i>Shows the log2 Fold Change values for the selected comparisons</p>
-				<p><i>centrered: </i>Shows the log2 centered intensities (after imputation) for each of the samples, indicating replicates</p>
-				<p><i>normalised: </i>Shows the log2 intensities for each of the proteins after normalisation for each of the samples, indicating replicates</p>
-				<p><i>imputed: </i>Shows the log2 intensities for each of the proteins after normalisation and imputation for each of the samples, indicating replicates</p>
+				<h3>Selected Protein</h3>
+				<p>This shows box plots for proteins that are selected in the "Top Table" on the left hand side, gene names can be searched either from the final significant protein list, or the total protein list (if "Show all proteins" is selected). The plots can be displayed in 4 types. Each plot can be downloaded as a pdf using the "Save plot" button, and can be resized using the "PDF Width" and "PDF Height" inputs below.</p>
+				<p><strong>contrast: </strong>Shows the log<sub>2</sub>(Fold Change) values for the selected comparisons (needs more than one comparison).</p>
+				<p><strong>centrered: </strong>Shows the log<sub>2</sub> centered intensities (after imputation) for each of the samples, indicating replicates</p>
+				<p><strong>normalised:</strong>Shows the log<sub>2</sub> intensities for each of the proteins after normalisation for each of the samples, indicating replicates</p>
+				<p><strong>imputed: </strong>Shows the log<sub>2</sub> intensities for each of the proteins after normalisation and imputation for each of the samples, indicating replicates</p>
 			</div>
 			<div class="image">
 				<img src="Selected_plot_norm.jpg" width=400px>
@@ -167,8 +185,8 @@
 				<img src="abund_heatmap.jpg" width=250px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Abundance Heatmap</h3>
-				<p>This shows a heatmap of the log2 Intensity values of the most abundant proteins as ranked by their average log2 intensity over all the samples. The number of most abundant proteins can be changed using the input box, and the values can be switched from <i>imputed</i> to <i>normalised</i> values. Normalised values will contain missing values indicated by grey boxes. The heatmap can also be switched to show just the proteins from the significant protein list. The top annotation shows a violin plot indicating the log2 intensity values for each sample, for the proteins shown. The right annotation shown the mean intensity value for each protein, if normalised values are chosen the missing values are excluded from mean calculation.  The plot can be downloaded using the "Save heatmap" button. It can be can be resized using the "PDF Width" and "PDF Height" inputs. Below the the heatmap is a table containing the heatmap values along with information on the protein name and accession ID. This can be downloaded using the "Save Abundance Table" button. If a second dataset is loaded a second Abundance Heatmap will be available. </p>
+				<h3>Abundance Heatmap</h3>
+				<p>This shows a heatmap of the log<sub>2</sub> Intensity values of the most abundant proteins as ranked by their average log<sub>2</sub> intensity over all the samples. The number of most abundant proteins can be changed using the input box, and the values can be switched from <i>imputed</i> to <i>normalised</i> values. Normalised values will contain missing values indicated by grey boxes. The heatmap can also be switched to show just the proteins from the significant protein list. The top annotation shows a violin plot indicating the log<sub>2</sub> intensity values for each sample, for the proteins shown. The right annotation shown the mean intensity value for each protein, if normalised values are chosen the missing values are excluded from mean calculation.  The plot can be downloaded using the "Save heatmap" button. It can be can be resized using the "PDF Width" and "PDF Height" inputs. Below the the heatmap is a table containing the heatmap values along with information on the protein name and accession ID. This can be downloaded using the "Save Abundance Table" button. If a second dataset is loaded a second Abundance Heatmap will be available. </p>
 				
 			</div>
 		</div>
@@ -178,11 +196,11 @@
 				<img src="volcano_plot.jpg" width=250px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Volcano Plot</h3>
+				<h3>Volcano Plot</h3>
 				<p>A standard Volcano plot can be displayed for each of the comparisons, which are selected using the Contrast drop box. This contains points for all the filtered proteins, with the significant proteins indicated, that pass either fold change or p value cut-offs, or both. There are three different types of plots:</p>
-				<p><strong>p-adj sig.</strong> This plots the p-values against Log2FC and labels the proteins from the significant protein list which by default uses p.adj values.</p>
-				<p><strong>p-Val sig.</strong> This plots the p-values against Log2FC and labels the proteins that pass the p.val and log2Fc values are labelled  (Recommended if "Use p.Val" is selected).</p>
-				<p><strong>p-adj values</strong> This plots the p. adj values against Log2FC and labels proteins from the significant protein list This plot is a better representation of the data if the default option of using p.adj values is used.</p>
+				<p><strong>p-adj sig.</strong> This plots the p-values against log<sub>2</sub>(Fold Change) values and labels the proteins from the significant protein list which by default uses p.adj values.</p>
+				<p><strong>p-Val sig.</strong> This plots the p-values against log<sub>2</sub>(Fold Change) values and labels the proteins that pass the p.val and log<sub>2</sub>(Fold Change) values are labelled  (Recommended if "Use p.Val" is selected).</p>
+				<p><strong>p-adj values</strong> This plots the p. adj values against log<sub>2</sub>(Fold Change) values and labels proteins from the significant protein list This plot is a better representation of the data if the default option of using p.adj values is used.</p>
 				<p>Only selected proteins of interest can be shown by choosing from the "Top Table" on the left hand side, gene names can be searched either from the final significant protein list, or the total protein list (if "Show all proteins" is selected). Text size in the app can be changed using the "Font size" input.  If two rounds of comparisons or a second dataset is used, the plots are shown for the second set of comparisons in a separate tab. All volcano plots can be saved as pdf files and resized using the "PDF Width" and "PDF Height" inputs below the plot.</p>
 			</div>
 			<div class="image">
@@ -196,19 +214,19 @@
 				<img src="sign_count.jpg" width=250px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Significance Count Plot</h3>
-				<p>The Significance Count Plot shows the number of significant proteins for each fold change value up to the "Maxiumum Cut-of value" chosen in the box above. For an identified protein to be included in the significant list the pairwise log2Fold-Change value must be >= to log2 of the tested fold change value and the p.adj value must be <= to the tested p.adj value for at least one of the chosen comparisons.  The significant protein count is calculated for three different p.adj values (0.05, 0.1 and 0.5). If the "Use p.Val" box is ticked, the calculation switches to three different p values instead. The Significant Count plot can be saved as a pdf file and resized using the "PDF Width" and "PDF Height" inputs.</p>
+				<h3>Significance Count Plot</h3>
+				<p>The Significance Count Plot shows the number of significant proteins for each fold change value up to the "Maxiumum Cut-of value" chosen in the box above. For an identified protein to be included in the significant list the pairwise log<sub>2</sub>Fold-Change value must be >= to log<sub>2</sub>log<sub>2</sub> of the tested fold change value and the p.adj value must be <= to the tested p.adj value for at least one of the chosen comparisons.  The significant protein count is calculated for three different p.adj values (0.05, 0.1 and 0.5). If the "Use p.Val" box is ticked, the calculation switches to three different p values instead. The Significant Count plot can be saved as a pdf file and resized using the "PDF Width" and "PDF Height" inputs.</p>
 			</div>
 		</div>
 
 
-		<h3><FONT COLOR="#2297E6">Correlation Plots</h3>
+		<h3><FONT COLOR="#2297E6">Correlation Plots<FONT COLOR="#000000"></h3>
 		<div class="flex-container">
 			<div class="image">
 				<img src="PCA.jpg" width=250px>
 			</div>
 			<div class="text">
-			<h3><FONT COLOR="#000000">PCA</h3>
+			<h3>PCA</h3>
 				<p>The Principle Component Analysis plot shows similarities between groups of samples in a data set. Each point on a PCA plot represents a correlation between an initial variable and the first and second principal components. Ideally the points should be grouped together for each of the conditions (as shown), rather than grouped by replicate, or grouped randomly. The plot can be saved as a pdf file and resized using the "PDF Width" and "PDF Height" inputs. The values used to generate the plot can also be downloaded for plotting in another application using the "Save Values" button. If two datasets are loaded a second PCA plot will be available.  It is also possible to split the PCA plots into groups, groups can be assigned in the ExperimentalTemplate.txt file using the "condition_type" column. By default the plots show the Principle Component values with the most variation (PC1 and PC2), other Principle Component values can be plotted on the X or Y axis using the numeric value boxes above the plot.  To see what percentage of the total variance the other components have, use the "PCA Scree Plot" in the adjacent tab.</p>
 			</div>
 			<div class="image">
@@ -222,7 +240,7 @@
 				<img src="correlation.jpg" width=250px>
 			</div>
 			<div class="text">
-			<h3><FONT COLOR="#000000">Correlation</h3>
+			<h3>Correlation</h3>
 				<p>The correlation tab shows heatmap showing the Pearson correlations between the different samples, using ratio data from the chosen comparisons. Ideally the sample replicates should be grouped together for each condition. If the plot is uniformly coloured over the entire plot this indicated there is only small differences between the samples. If two rounds of comparisons are chosen a second correlation plot is shown in a separate tab, based on the ratios from the second set of comparisons. The plots can be saved as a pdf files and resized using the "PDF Width" and "PDF Height" inputs. If two datasets are loaded a second Correlation plot will be available.</p>
 			</div>
 		</div>
@@ -232,31 +250,32 @@
 				<img src="frequency.jpg" width=250px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Frequency Plot</h3>
+				<h3>Frequency Plot</h3>
 					<p>The frequency tab shows a histogram showing proteins that are differentially enriched/expressed in multiple comparisons. It indicates the distribution of significant conditions per protein and the overlap between conditions. If two rounds of comparisons are shown a second frequency plot is shown in a separate tab, based on the significant proteins from the second set of comparisons. The plots can be saved as a pdf files and resized using the "PDF Width" and "PDF Height" inputs.</p>
 				</div>
 			</div>
-			
-		<h3><FONT COLOR="#2297E6">QC Plots</h3>
+			<br>
+			<br>
+		<h3><FONT COLOR="#2297E6">QC Plots<FONT COLOR="#000000"></h3>
 		<div class="flex-container">
 			<div class="image">
 				<img src="numbers.jpg" width=300px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Protein Numbers</h3>
-					<p>This plot shows the number of identified proteins per sample after filtering. Filtering can be controlled using the "Missing value threshold as described earlier. </p>
+				<h3>Protein Numbers</h3>
+					<p>This plot shows the number of identified proteins per sample after filtering. Filtering can be controlled using the "Missing value threshold" as described earlier. </p>
 			</div>
 		</div>
 		<div class="flex-container">
 			<div class="image">
-				<img src="norm.jpg" width=200px>
+				<img src="norm.jpg" width=350px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Normalisation</h3>
+				<h3>Normalisation</h3>
 					<p>The data is background corrected and normalised by variance stabilizing transformation (vsn). The distribution of the protein intensities is indicated for each sample before and after normalisation. The normalisation method can be switched to quantile normalisation using the radio button on the "Normalisation options" drop down menu on the sidebar. Comparisons between the normalisation methods can be investigated using the two dataset comparison method described in the imputation section below.</p>
 			</div>
 			<div class="image">
-				<img src="norm_method.jpg" width=150px>
+				<img src="norm_method.jpg" width=200px>
 			</div>
 		</div>
 			
@@ -265,7 +284,7 @@
 				<img src="imputation.jpg" width=350px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Imputation</h3>
+				<h3>Imputation</h3>
 					<p>The imputation plot shows the effect on the protein intensities of imputation of missing values. The default method ("man") imputes missing values using random draws from a manually defined left-shifted Gaussian distribution centred around a minimal value (used for missing not at random data (MNAR)). This results in a peak  appearing on the left side of the intensity distribution on the lower plot. This peak can be adjusted to be closer or further away from the main distribution using the "Left-shifted Gaussian distribution" input box on the "Imputation options" section of the sidebar. Other imputation options can also be selected using the radio buttons. Usually the default settings are sufficient, if different imputation setting are needed, more detailed information on the other imputation options can be found by clicking on the "Detailed information link".</p>
 					<p><strong>Imputation Analysis Tools</strong> </p>
 					<p>As some of the imputation methods use a degree of randomisation in the calculation process (man, QRILC, MinProb), this can lead to some proteins having a greater fold-change between comparisons, due to artefacts of the randomly assigned missing values. This is especially true if the fold change cut-off value is low. To overcome this problem it is possible to impute the missing values with 3 different random seeds, and then use the average imputed value. The original non-missing values will be unchanged. To use the averaged value select the "Average Imputation of 3 different random seeds (1st Dataset)" box in the "Imputation options" menu. Another option is to use methods not affected by random seed values such as Nearest neighbour averaging (knn) or Bayesian missing value imputation (bpca). </p>
@@ -278,23 +297,23 @@
 
 			</div>
 		<div class="text">
-				<h3><FONT COLOR="#000000">Sample Coverage, Missing values-Quant and Missing Values - Heatmap plots</h3>
+				<h3>Sample Coverage, Missing values-Quant and Missing Values - Heatmap plots</h3>
 					<p>For a detailed description of the other QC plots, a detailed explanation can be found at the <a href="https://bioconductor.riken.jp/packages/3.8/bioc/vignettes/DEP/inst/doc/DEP.html" target="_blank">"Introduction to DEP"</a> web pages. </p>
 				</div>
 
-	<h2><FONT COLOR="#2297E6">Cluster Analysis Tab</h2>  
+	<h2><FONT COLOR="#2297E6">Cluster Analysis Tab<FONT COLOR="#000000"></h2>  
 		<div class="flex-container">
 			<div class="image">
 				<img src="comp_heatmap.jpg" width=300px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Complex Heatmap</h3>
+				<h3>Complex Heatmap</h3>
 					<p>The Complex Heatmap is generated from either the Significant Proteins from the 1st Round of comparisons (COMP1), or either the overlapping proteins from the 1st and 2nd rounds of comparisons (2 Rounds of Comparisons) or the overlapping proteins from the SAINTexpress analysis and the 1st round of comparisons. The title pain above the heatmap will indicate which option has been chosen, along with the fold change and p.adj/p.val cut-off values chosen. If SAINTexpress analysis is used the BFDR Cut-off and BFDR Freq values are indicated. </p>
-					<p><strong>Top Annotation</strong> Violin plots indicate the range and distribution of the log2FC values for each of the comparisons. The FC_means shows the colour and intensity of the mean of the log2FC values for each comparison. </p>
+					<p><strong>Top Annotation</strong> Violin plots indicate the range and distribution of the log<sub>2</sub> values for each of the comparisons. The FC_means shows the colour and intensity of the mean of the log<sub>2</sub> values for each comparison. </p>
 					<p><strong>Right Annotation</strong> Gene names are indicated on the right hand side along with  histograms indicating the number of times that protein has passed the significance cut-off values (FC and p.adj/p.val) This will range from 1 up to the number of pairwise comparisons chosen. If 2 rounds of comparisons are chosen there will be a histogram for each set of comparisons. If SAINTexpress analysis is chosen the histograms will indicate the pairwise comparison frequency and the number of times the protein has passed the SAINTexpress cut-off values (BFDR and BFDR_Freq). </p>
 					<p><strong>Left Annotation</strong> The colour of the Cluster boxes can be changed with the "Choose palette" selector box. The colour of the cluster boxes is replicated in the Enhanced Volcano Plots.</p>
 					<p><strong>Kmeans cluster</strong> The number of Kmeans clustered can be altered using the input box above, up to a maximum of 6 clusters. The number of clusters needed is best assessed by observing the block patterns generated by the data. You can also choose whether to perform hierarchical clustering on the comparisons using the "Cluster columns" toggle. If a specific ordering of the comparisons is wanted, this can be controlled by the order of the comparisons in the comparisons file.</p>
-					<p><strong>Heatmap customisation</strong> The high and low colours can be changed using the "High Colour" and "Low Colour" input boxes. The intensity of the log2FC values in the heatmap can be altered using the "Colour Limit (log2)" input box. This can be using if the heatmap is either under or over saturated. Finally a range of palettes is available, which will give different colours. The intensities of the colours can be reduced using the "Alpha" input box. (Values between 0 and 10).</p>
+					<p><strong>Heatmap customisation</strong> The high and low colours can be changed using the "High Colour" and "Low Colour" input boxes. The intensity of the log<sub>2</sub> values in the heatmap can be altered using the "Colour Limit (log<sub>2</sub>)" input box. This can be using if the heatmap is either under or over saturated. Finally a range of palettes is available, which will give different colours. The intensities of the colours can be reduced using the "Alpha" input box. (Values between 0 and 10).</p>
 					<p>The complex heatmap can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" inputs.</p>
 			</div>
 		</div>
@@ -304,7 +323,7 @@
 				<img src="cluster_heatmap.jpg" width=300px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Cluster Heatmap</h3>
+				<h3>Cluster Heatmap</h3>
 				<p>Each individual cluster can be rendered as a heatmap by selecting the "Cluster" tab on the right hand side. The cluster heatmap to be displayed can be selected using the "Cluster No." input box. The resulting heatmap is rendered with a top annotation using fold change data from the protein displayed in that cluster only. The colour scheme of the heatmap will match the initial complex heatmap.  </p>
 				<p>The cluster heatmap can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" inputs. </p>
 				<p><strong>Cluster table</strong> The Gene symbol name, protein name and Uniprot ID for each of the protein in the chosen cluster is displayed at the right hand side of the cluster heatmap. This can be downloaded using the "Save Cluster Table" button.  </p>
@@ -316,11 +335,11 @@
 				<img src="enh_volcano.jpg" width=300px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Enhanced Volcano</h3>
+				<h3>Enhanced Volcano</h3>
 				<p>Enhanced volcano plots can be generated for all the comparisons chosen. By default these plots show the positions on the volcano plot for the significant protein list only. The colour of the points is dependent on the cluster group it belongs to. The colour scheme will also match the palette chosen in the complex heatmap. There are three different types of plots:</p>
-				<p><strong>p-adj sig.</strong> This plots the p-values against Log2FC and labels the proteins from the significant protein list which by default uses p.adj values. </p>
-				<p><strong>p-Val sig.</strong> This plots the p-values against Log2FC and labels the proteins that pass the p.val and log2Fc values are labelled (Recommended if "Use p.Val" is selected).</p>
-				<p><strong>p-adj values</strong> This plots the p. adj values against Log2FC and labels proteins from the significant protein list This plot is a better representation of the data if the default option of using p.adj values is used.</p>
+				<p><strong>p-adj sig.</strong> This plots the p-values against log<sub>2</sub>(Fold Change) values and labels the proteins from the significant protein list which by default uses p.adj values. </p>
+				<p><strong>p-Val sig.</strong> This plots the p-values against log<sub>2</sub>(Fold Change) values and labels the proteins that pass the p.val and log<sub>2</sub>(Fold Change) values are labelled (Recommended if "Use p.Val" is selected).</p>
+				<p><strong>p-adj values</strong> This plots the p. adj values against log<sub>2</sub>(Fold Change) values and labels proteins from the significant protein list This plot is a better representation of the data if the default option of using p.adj values is used.</p>
 				<p>The enhanced volcano plots can be further customised to show the names of selected proteins only using the "Selected Names only " check box. You can search for the required names from the significant protein list in the table below, it is also possible to search by cluster number, use shift+click to select multiple entries. To show the data points for all the proteins uncheck the "Significant proteins only" check box, the non-significant proteins will be indicated in grey. The customised options selected in the left hand volcano plot will be carried over to the report, to allow easier generation of multiple plots.</p>
 				<p>The enhanced volcano plot can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" inputs.</p>
 			</div>
@@ -334,8 +353,8 @@
 				<img src="box_plots.jpg" width=300px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Box plots</h3>
-				<p>Box plots showing the log2 intensity values for each condition for all the proteins from chosen cluster are shown. The intensity values can be switched between imputed values or normalised only values, and the chosen cluster number can be changed. These plots can be used to asses the effect of imputation on the data and to identify which values were missing. It can also be used to evaluate the quality of each the replicates to observe if any set of replicates were consistent outliers.</p>
+				<h3>Box plots</h3>
+				<p>Box plots showing the log<sub>2</sub> intensity values for each condition for all the proteins from chosen cluster are shown. The intensity values can be switched between imputed values or normalised only values, and the chosen cluster number can be changed. These plots can be used to asses the effect of imputation on the data and to identify which values were missing. It can also be used to evaluate the quality of each the replicates to observe if any set of replicates were consistent outliers.</p>
 				<p>The box plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" inputs.</p>
 			</div>
 		</div>
@@ -344,7 +363,7 @@
 				<img src="cell_comp_plot.jpg" width=300px>
 			</div>
 			<div class="text">
-				<h3><FONT COLOR="#000000">Gene Ontology plots</h3>
+				<h3>Gene Ontology plots</h3>
 				<p>The Gene Ontology plots are generated from the proteins listed in each cluster of the complex Heatmap, and uses the clusterProfiler package. Each cluster is used to calculate enriched functional profiles using enrichGO, which are then aggregated to generate a single plot. All three GO domains can be tested, "Molecular Function", "Cellular Component" and "Biological Process" and the enrichment results are displayed as a "Dot plot" and a "Network plot". The "GO level" input box can be used to show either more global GO terms (lower number) or more granular GO terms (higher number). Before generating the Gene Ontology plots, the correct option must be selected from the "GO species" radio buttons in the top right corner of app. </p>
 				<p>Both plots can be saved as a pdf file and resized using the adjacent "PDF Width" and "PDF Height" inputs and a table of Go enrichment result data can be downloaded.</p>
 			</div>

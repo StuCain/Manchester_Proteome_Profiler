@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.11.5-beta"
+Version = "0.11.6-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -48,6 +48,21 @@ if(tt_check != "TRUE"){tinytex::install_tinytex()}
 
 ####UI####
 ui <- fluidPage(
+  tags$style(HTML("
+    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap'); /* Example Google Font */
+    body {
+      font-family: 'Open Sans', sans-serif; /* Apply the font to the entire body */
+      /* Other body styles if needed */
+    }
+    h1, h2, h3 { /* Apply to headings */
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+    }
+    .custom-class { /* Apply to specific elements */
+      font-family: 'Open Sans', sans-serif;
+    }
+  ")), # Close tags$style
+  
   tags$head(includeHTML(("google-analytics.html"))),
   theme = shinytheme("spacelab"),
   tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
@@ -1384,7 +1399,9 @@ server <- shinyServer(function(input, output, session) {
                               blank.lines.skip = F,
                               check.names = T)
         colnames(temp_data) <- make.unique(colnames(temp_data), "_")
+        if ("Protein" %in% colnames(temp_data)) {
         temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+        }
         data<-temp_data %>% 
           dplyr::rename(
             Gene.names=Gene,
@@ -1508,7 +1525,9 @@ server <- shinyServer(function(input, output, session) {
                               blank.lines.skip = F,
                               check.names = T)
         colnames(temp_data) <- make.unique(colnames(temp_data), "_")
-        temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+        if ("Protein" %in% colnames(temp_data)) {
+          temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+        }
         data<-temp_data %>% 
           dplyr::rename(
             Gene.names=Gene,
