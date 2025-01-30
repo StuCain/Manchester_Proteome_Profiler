@@ -49,7 +49,7 @@ if(tt_check != "TRUE"){tinytex::install_tinytex()}
 ####UI####
 ui <- fluidPage(
   tags$style(HTML("
-    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap'); /* Example Google Font */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&family=Open+Sans:wght@300;400&display=swap'); /* Example Google Font */
     body {
       font-family: 'Open Sans', sans-serif; /* Apply the font to the entire body */
       /* Other body styles if needed */
@@ -62,7 +62,6 @@ ui <- fluidPage(
       font-family: 'Open Sans', sans-serif;
     }
   ")), # Close tags$style
-  
   tags$head(includeHTML(("google-analytics.html"))),
   theme = shinytheme("spacelab"),
   tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
@@ -337,9 +336,6 @@ ui <- fluidPage(
                                         DT::dataTableOutput("table"), width = 12),
                                     box(title = "Exp Table",
                                         DT::dataTableOutput("exp_des"), width = 12), #exp_design
-                                    #                          box(title = "Test",
-                                    #                              DT::dataTableOutput("test"), width = 12), #test
-                                    #                          downloadButton('downloadtesttable', 'Save Test Table', class = "btn-primary")
                              ),
                              column(width = 6,
                                     tabBox(id = "result_plots",
