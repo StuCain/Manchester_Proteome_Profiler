@@ -109,9 +109,12 @@ knitr::opts_chunk$set(opts.label="kill_prefix", fig.pos = "!H", out.extra = "")
 if (params$data_type == "MaxQuant"){file_input<-"proteinGroups.txt file from MaxQuant"}
 if (params$data_type == "Proteome Discoverer"){file_input<-"protein abundances export from Proteome Discoverer"}
 if (params$data_type == "FragPipe"){if (params$exp == "LFQ"){file_input<-"combined_protein.tsv file from FragPipe"}else {file_input<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
+if (params$data_type == "Other (Experimental)"){file_input<-"user intensity file"}
 if (params$data_type == "MaxQuant"){int_type<-"LFQ intensities"}
 if (params$data_type == "Proteome Discoverer"){int_type<-"protein abundances"}
 if (params$data_type == "FragPipe"){if (params$lfq_type == "MaxLFQ intensities") {int_type<-"Intensities"} else {int_type<-"Intensities"}}
+if (params$data_type == "Other (Experimental)"){int_type<-"intensities"}
+
 if (params$data_mode == TRUE){
   if (params$data_type2 == "MaxQuant"){file_input2<-"proteinGroups.txt file from MaxQuant"}
   if (params$data_type2 == "Proteome Discoverer"){file_input2<-"protein abundances export from Proteome Discoverer"}
@@ -182,7 +185,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Medium)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.4.0
+Version:0.4.1
 
 ## Method details
  

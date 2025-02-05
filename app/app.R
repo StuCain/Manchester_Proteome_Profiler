@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.11.6-beta"
+Version = "0.12.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -45,6 +45,8 @@ set.seed(123) #random seed to give consistent kmeans clustering and imputation
 options(shiny.sanitize.errors = FALSE)
 tt_check<-tinytex:::is_tinytex()
 if(tt_check != "TRUE"){tinytex::install_tinytex()}
+data_other <- reactiveVal(NULL)
+
 
 ####UI####
 ui <- fluidPage(
@@ -93,7 +95,7 @@ ui <- fluidPage(
                        
                        radioButtons("data_type",
                                     "Data File type",
-                                    choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
+                                    choices = c("MaxQuant", "Proteome Discoverer", "FragPipe", "Other (Experimental)"),
                                     #selected = "MaxQuant"
                        ),
                        conditionalPanel(
@@ -138,6 +140,16 @@ ui <- fluidPage(
                                         selected = "Human"),
                          ),
                        ),
+                       conditionalPanel(
+                         condition = "input.data_type == 'Other (Experimental)'",
+                         fileInput('file_other',
+                                   'Tab seperated text file',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv')),
+                         menuItemOutput("columns")
+                       ),
+                       
                        
                        #                                menuItemOutput("file_input"),
                        #                                infoBoxOutput("ibox"), #Info box for testing
@@ -1068,6 +1080,7 @@ ui <- fluidPage(
 
 server <- shinyServer(function(input, output, session) {
   options(shiny.maxRequestSize=200*1024^2)
+  # Initialise the function variable as NULL
   
   #### UI functions --------------------------------------------------------
   #### Side bar menu items ####
@@ -1113,27 +1126,41 @@ server <- shinyServer(function(input, output, session) {
       style="border: none")
   })
   
-  
-  #Side menu for picking comparisons
+  #Side menu for picking other data catergories
   output$columns <- renderMenu({
-    menuItem("Columns",
-             selectizeInput("name",
-                            "Name column",
-                            choices=colnames(data()),
-                            selected = "Gene.names"),
-             selectizeInput("id",
-                            "ID column",
-                            choices=colnames(data()),
-                            selected = "Protein.IDs"),
-             if (input$data_type == "MaxQuant"){
-               selectizeInput("filt",
-                              "Filter on columns" ,
-                              colnames(data()),
-                              multiple = TRUE,
-                              selected = c("Reverse","Potential.contaminant"))
-             }
-    )
+    if (!is.null(data_other())) {
+      col_names<-c("",colnames(data_other()))
+      menuItem("Columns",
+               startExpanded = TRUE,
+               selectizeInput("name_other",
+                              "Name column",
+                              choices=col_names
+               ),
+               selectizeInput("id_other",
+                              "ID column",
+                              choices=col_names
+               ),
+               selectizeInput("description_other",
+                              "Description",
+                              choices=col_names
+               ),
+               selectizeInput("aa_other",
+                              "aa length",
+                              choices=col_names
+               ),
+               selectizeInput("int_col_start",
+                              "1st Intensity Column",
+                              choices=col_names
+               ),
+               selectizeInput("int_col_last",
+                              "Last Intensity Column",
+                              choices=col_names
+               ),
+               helpText("Load Comparisons file")
+               
+      )}
   })
+  
   
   output$comparisons <- renderMenu({
     menuItem("Comparisons",
@@ -1340,6 +1367,54 @@ server <- shinyServer(function(input, output, session) {
   #)
   #})
   
+  data_other <- reactive({
+    inFile <- input$file_other
+    if (is.null(inFile))
+      return(NULL)
+    line<-paste(Sys.time(),"Other")
+    write(line,file="count.txt",append=TRUE)
+    data<-read.csv(inFile$datapath, header = TRUE,
+                   sep = "\t", stringsAsFactors = FALSE) %>%
+      mutate(id = row_number())
+    return(data)
+  })
+  
+  data_other_choice <- reactive({
+    if (is.null(data_other()))
+      return(NULL)
+    tempdata1<-data_other()
+    tempdata2<-tempdata1 %>% dplyr::rename(Gene.names=input$name_other)
+    tempdata2<- tempdata2[tempdata2$Gene.names != "", ]
+    tempdata2$Gene.names  <- sub('\\;.*', '', tempdata2$Gene.names)
+    
+    if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+    if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+    tempdata3<-merge(tempdata2, uniprot, by.x = "Gene.names", by.y = "uniprot_gene", all.x = TRUE, all.y = FALSE)
+    
+    if (input$id_other!= ""){tempdata4<-tempdata3 %>% dplyr::rename(Protein.IDs=input$id_other)}else{tempdata4<-tempdata3 %>% dplyr::rename(Protein.IDs=uniprot_entry)}
+    if (input$description_other!= ""){tempdata5<-tempdata4 %>% dplyr::rename(Protein.names=input$description_other)}else{tempdata5<-tempdata4 %>% dplyr::rename(Protein.names=uniprot_description)}
+    if (input$aa_other!= ""){tempdata6<-tempdata5 %>% dplyr::rename(Sequence.length=input$aa_other)}else{tempdata6<-tempdata5 %>% dplyr::rename(Sequence.length=uniprot_length)}
+    
+    col_num_start <- which(names(tempdata6) == input$int_col_start)
+    col_num_end <- which(names(tempdata6) == input$int_col_last)
+    lfq_columns <- col_num_start:col_num_end
+    #if (input$id_other)
+    data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("Sequence.length", colnames(tempdata6)),lfq_columns)]
+    
+    return(data1)
+  })
+  #  selectizeInput("id_other",
+  #  selectizeInput("description_other",
+  #  selectizeInput("aa_other",
+  #  data<-pd %>% 
+  #    dplyr::rename(
+  #      Gene.names=Gene.Symbol,
+  #      Protein.IDs=Accession,
+  #      Protein.names=Description,
+  #      Sequence.length=..AAs
+  #    ) 
+  
+  
   
   data <- reactive({
     if (input$data_type == "MaxQuant"){
@@ -1396,7 +1471,7 @@ server <- shinyServer(function(input, output, session) {
                               check.names = T)
         colnames(temp_data) <- make.unique(colnames(temp_data), "_")
         if ("Protein" %in% colnames(temp_data)) {
-        temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
+          temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
         }
         data<-temp_data %>% 
           dplyr::rename(
@@ -1464,6 +1539,13 @@ server <- shinyServer(function(input, output, session) {
         
       } # end of DIA
     }
+    
+    else if (input$data_type == "Other (Experimental)"){
+      if (is.null(data_other()))
+        return(NULL)
+      data1<-data_other_choice()
+    }
+    
     return(data1)
   })
   
@@ -1654,7 +1736,23 @@ server <- shinyServer(function(input, output, session) {
         exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
         
       }
+    }else if (input$data_type == "Other (Experimental)")
+    {
+      end<-ncol(data())
+      LFQ_columns<- 5:end
+      label<-colnames(data()[LFQ_columns])
+      #label <- gsub('.MaxLFQ.Intensity', '', label)
+      #label <- gsub('.Intensity', '', label)
+      condition<-""
+      #substrRight <- function(x, n){
+      #  substr(x, nchar(x)-n+1, nchar(x))
+      #}
+      replicate<-""
+      condition_type<-"1"
+      bait_id<-"T"
+      exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
     }
+    
     
     return(exp_template_new)
   })
@@ -1866,6 +1964,13 @@ server <- shinyServer(function(input, output, session) {
       }
       
     }
+    
+    else if (input$data_type == "Other (Experimental)"){
+      end<-ncol(data())
+      cols<- 5:end
+      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
     #Check for Experimental Design File
     validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
     Use the Experimental template to assist you. ")
@@ -3573,7 +3678,8 @@ server <- shinyServer(function(input, output, session) {
         #pca_input()[[2]]
         #heatmap_input()[[2]]
         #norm_data()
-        #data() #to test data input
+        #data_other_choice() #to test data input
+        #data()
       }
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
