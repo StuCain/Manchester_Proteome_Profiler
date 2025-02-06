@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.12.0-beta"
+Version = "0.12.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1399,23 +1399,11 @@ server <- shinyServer(function(input, output, session) {
     col_num_end <- which(names(tempdata6) == input$int_col_last)
     lfq_columns <- col_num_start:col_num_end
     #if (input$id_other)
-    data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("Sequence.length", colnames(tempdata6)),lfq_columns)]
+    data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("\\Sequence.length\\b", colnames(tempdata6)),lfq_columns)]
     
     return(data1)
   })
-  #  selectizeInput("id_other",
-  #  selectizeInput("description_other",
-  #  selectizeInput("aa_other",
-  #  data<-pd %>% 
-  #    dplyr::rename(
-  #      Gene.names=Gene.Symbol,
-  #      Protein.IDs=Accession,
-  #      Protein.names=Description,
-  #      Sequence.length=..AAs
-  #    ) 
-  
-  
-  
+
   data <- reactive({
     if (input$data_type == "MaxQuant"){
       inFile <- input$file1
@@ -1524,16 +1512,16 @@ server <- shinyServer(function(input, output, session) {
         lfq_columns<- 6:ncol(data)
         if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
         if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "Entry", all.x = TRUE, all.y = FALSE)
+        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "uniprot_entry", all.x = TRUE, all.y = FALSE)
         data<-data_m %>% 
           dplyr::rename(
-            Sequence.length=Length
+            Sequence.length=uniprot_length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
         data1<-data_2 %>% 
           dplyr::rename(
-            Protein.names=Protein.names.y)
-        #data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
+            Protein.names=uniprot_description)
+        data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
         
         
         
@@ -1650,27 +1638,27 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Gene.names=Genes,
             Protein.IDs=Protein.Group,
-            #Protein.names=First.Protein.Description,
+            Protein.names=First.Protein.Description,
             #  Sequence.length=Protein.Length
           )
         data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
         lfq_columns<- 6:ncol(data)
-        if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "Entry", all.x = TRUE, all.y = FALSE)
+        if(input$dia_species2 == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+        if(input$dia_species2 == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "uniprot_entry", all.x = TRUE, all.y = FALSE)
         data<-data_m %>% 
           dplyr::rename(
-            Sequence.length=Length
+            Sequence.length=uniprot_length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names.y", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
-        data<-data_2 %>% 
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data1<-data_2 %>% 
           dplyr::rename(
-            Protein.names=Protein.names.y)
-        data$Protein.names  <- gsub("\\(.*", "", data$Protein.names)
+            Protein.names=uniprot_description)
+        data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
         
       } # end of DIA
     }
-    #    return(data1)
+        return(data1)
   })
   
   
@@ -3679,7 +3667,7 @@ server <- shinyServer(function(input, output, session) {
         #heatmap_input()[[2]]
         #norm_data()
         #data_other_choice() #to test data input
-        #data()
+        #data2()
       }
     }, options = list(pageLength = 25, scrollX = T),
     selection = list(selected = c(1)))
