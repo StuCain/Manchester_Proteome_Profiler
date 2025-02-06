@@ -119,9 +119,13 @@ if (params$data_mode == TRUE){
   if (params$data_type2 == "MaxQuant"){file_input2<-"proteinGroups.txt file from MaxQuant"}
   if (params$data_type2 == "Proteome Discoverer"){file_input2<-"protein abundances export from Proteome Discoverer"}
   if (params$data_type2 == "FragPipe"){if (params$exp2 == "LFQ"){file_input2<-"combined_protein.tsv file from FragPipe"}else {file_input2<-"protein group (PG) matrix *.tsv' file from FragPipe (DIA-NN)"}}
+  if (params$data_type2 == "Other (Experimental)"){file_input2<-"user intensity file"}
+
   if (params$data_type2 == "MaxQuant"){int_type2<-"LFQ intensities"}
   if (params$data_type2 == "Proteome Discoverer"){int_type2<-"protein abundances"}
   if (params$data_type2 == "FragPipe"){if (params$lfq_type2 == "MaxLFQ intensities") {int_type2<-"Intensities"} else {int_type2<-"Intensities"}}
+  if (params$data_type2 == "Other (Experimental)"){int_type2<-"intensities"}
+
 }
 
 padjusttxt<-switch(
@@ -185,7 +189,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.4.1
+Version:0.4.2
 
 ## Method details
  

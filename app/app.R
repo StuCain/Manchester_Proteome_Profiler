@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.12.1-beta"
+Version = "0.12.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -175,7 +175,7 @@ ui <- fluidPage(
                          condition = "input.data_mode == true",
                          radioButtons("data_type2",
                                       "Data File type 2",
-                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe"),
+                                      choices = c("MaxQuant", "Proteome Discoverer", "FragPipe", "Other (Experimental)"),
                          ),
                        ),
                        conditionalPanel(
@@ -219,6 +219,15 @@ ui <- fluidPage(
                                         choices = c("Human", "Mouse"),
                                         selected = "Human"),
                          ),
+                       ),
+                       conditionalPanel(
+                         condition = "input.data_type2 == 'Other (Experimental)'",
+                         fileInput('file_other2',
+                                   'Tab seperated text file',
+                                   accept=c('text/csv',
+                                            'text/comma-separated-values,text/plain',
+                                            '.csv')),
+                         menuItemOutput("columns2")
                        ),
                        conditionalPanel(
                          condition = "input.data_mode == true",
@@ -1156,10 +1165,59 @@ server <- shinyServer(function(input, output, session) {
                               "Last Intensity Column",
                               choices=col_names
                ),
-               helpText("Load Comparisons file")
+               radioButtons("other_species",
+                            "Choose Species",
+                            choices = c("Human", "Mouse"),
+                            selected = "Human"),
+               
+               helpText("Select matching column headings from the"),
+               helpText("data table, none selected columns will be"),
+               helpText("filled from Uniprot data of the chosen species")
                
       )}
   })
+  
+  output$columns2 <- renderMenu({
+    if (!is.null(data_other2())) {
+      col_names<-c("",colnames(data_other2()))
+      menuItem("Columns",
+               startExpanded = TRUE,
+               selectizeInput("name_other2",
+                              "Name column",
+                              choices=col_names
+               ),
+               selectizeInput("id_other2",
+                              "ID column",
+                              choices=col_names
+               ),
+               selectizeInput("description_other2",
+                              "Description",
+                              choices=col_names
+               ),
+               selectizeInput("aa_other2",
+                              "aa length",
+                              choices=col_names
+               ),
+               selectizeInput("int_col_start2",
+                              "1st Intensity Column",
+                              choices=col_names
+               ),
+               selectizeInput("int_col_last2",
+                              "Last Intensity Column",
+                              choices=col_names
+               ),
+               radioButtons("other_species2",
+                            "Choose Species",
+                            choices = c("Human", "Mouse"),
+                            selected = "Human"),
+               
+               helpText("Select matching column headings from the"),
+               helpText("data table, none selected columns will be"),
+               helpText("filled from Uniprot data of the chosen species")
+               
+      )}
+  })
+  
   
   
   output$comparisons <- renderMenu({
@@ -1379,6 +1437,19 @@ server <- shinyServer(function(input, output, session) {
     return(data)
   })
   
+  data_other2 <- reactive({
+    inFile <- input$file_other2
+    if (is.null(inFile))
+      return(NULL)
+    line<-paste(Sys.time(),"Other (Dataset 2")
+    write(line,file="count.txt",append=TRUE)
+    data<-read.csv(inFile$datapath, header = TRUE,
+                   sep = "\t", stringsAsFactors = FALSE) %>%
+      mutate(id = row_number())
+    return(data)
+  })
+  
+  
   data_other_choice <- reactive({
     if (is.null(data_other()))
       return(NULL)
@@ -1387,8 +1458,8 @@ server <- shinyServer(function(input, output, session) {
     tempdata2<- tempdata2[tempdata2$Gene.names != "", ]
     tempdata2$Gene.names  <- sub('\\;.*', '', tempdata2$Gene.names)
     
-    if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-    if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+    if(input$other_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+    if(input$other_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
     tempdata3<-merge(tempdata2, uniprot, by.x = "Gene.names", by.y = "uniprot_gene", all.x = TRUE, all.y = FALSE)
     
     if (input$id_other!= ""){tempdata4<-tempdata3 %>% dplyr::rename(Protein.IDs=input$id_other)}else{tempdata4<-tempdata3 %>% dplyr::rename(Protein.IDs=uniprot_entry)}
@@ -1403,6 +1474,32 @@ server <- shinyServer(function(input, output, session) {
     
     return(data1)
   })
+  
+  data_other_choice2 <- reactive({
+    if (is.null(data_other2()))
+      return(NULL)
+    tempdata1<-data_other2()
+    tempdata2<-tempdata1 %>% dplyr::rename(Gene.names=input$name_other2)
+    tempdata2<- tempdata2[tempdata2$Gene.names != "", ]
+    tempdata2$Gene.names  <- sub('\\;.*', '', tempdata2$Gene.names)
+    
+    if(input$other_species2 == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+    if(input$other_species2 == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
+    tempdata3<-merge(tempdata2, uniprot, by.x = "Gene.names", by.y = "uniprot_gene", all.x = TRUE, all.y = FALSE)
+    
+    if (input$id_other2!= ""){tempdata4<-tempdata3 %>% dplyr::rename(Protein.IDs=input$id_other2)}else{tempdata4<-tempdata3 %>% dplyr::rename(Protein.IDs=uniprot_entry)}
+    if (input$description_other2!= ""){tempdata5<-tempdata4 %>% dplyr::rename(Protein.names=input$description_other2)}else{tempdata5<-tempdata4 %>% dplyr::rename(Protein.names=uniprot_description)}
+    if (input$aa_other2!= ""){tempdata6<-tempdata5 %>% dplyr::rename(Sequence.length=input$aa_other2)}else{tempdata6<-tempdata5 %>% dplyr::rename(Sequence.length=uniprot_length)}
+    
+    col_num_start <- which(names(tempdata6) == input$int_col_start2)
+    col_num_end <- which(names(tempdata6) == input$int_col_last2)
+    lfq_columns <- col_num_start:col_num_end
+    #if (input$id_other)
+    data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("\\Sequence.length\\b", colnames(tempdata6)),lfq_columns)]
+    
+    return(data1)
+  })
+  
 
   data <- reactive({
     if (input$data_type == "MaxQuant"){
@@ -1658,6 +1755,13 @@ server <- shinyServer(function(input, output, session) {
         
       } # end of DIA
     }
+    
+    else if (input$data_type2 == "Other (Experimental)"){
+      if (is.null(data_other2()))
+        return(NULL)
+      data1<-data_other_choice2()
+    }
+    
         return(data1)
   })
   
@@ -2004,6 +2108,13 @@ server <- shinyServer(function(input, output, session) {
       }
       
     }
+    
+    else if (input$data_type2 == "Other (Experimental)"){
+      end<-ncol(data2())
+      cols<- 5:end
+      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
     #Check for Experimental Design File
     validate(need(!is.null(expdesign2()), "You need to upload an Experimental Design File for 2nd dataset.
     Use the Experimental template to assist you. ")
