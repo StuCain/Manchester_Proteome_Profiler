@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.12.3-beta"
+Version = "0.12.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
