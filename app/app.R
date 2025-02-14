@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.12.4-beta"
+Version = "0.12.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -4791,23 +4791,23 @@ server <- shinyServer(function(input, output, session) {
           # Copy the report file to a temporary directory before processing it, in
           # case we don't have write permissions to the current working dir (which
           # can happen when deployed).
-          
+          if (input$pval_use == TRUE){padj_method <- "pval"}else{padj_method <- input$padjust_method}
           if(input$report_type=="Short"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_short_report.Rmd")
             file.copy(paste0("SAINT_DEP_short_report.Rmd"), tempReport, overwrite = TRUE)
-            line<-paste(Sys.time(), input$comp_type, input$data_mode, input$pval_use, input$report_type, sep = ";")
+            line<-paste(Sys.time(), input$comp_type, input$data_mode, padj_method, input$report_type,"",input$imputation, sep = ";")
             write(line,file="report.txt",append=TRUE)
           }
           if(input$report_type=="with Box Plots"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_med_report.Rmd")
             file.copy(paste0("SAINT_DEP_med_report.Rmd"), tempReport, overwrite = TRUE)
-            line<-paste(Sys.time(), input$comp_type, input$data_mode, input$pval_use, input$report_type, sep = ";")
+            line<-paste(Sys.time(), input$comp_type, input$data_mode, padj_method, input$report_type,"",input$imputation, sep = ";")
             write(line,file="report.txt",append=TRUE)
           }
           if(input$report_type=="Long"){
             tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
-            line<-paste(Sys.time(), input$comp_type, input$data_mode, input$pval_use, input$report_type, input$species, sep = ";")
+            line<-paste(Sys.time(), input$comp_type, input$data_mode, padj_method, input$report_type, input$species,input$imputation, sep = ";")
             write(line,file="report.txt",append=TRUE)
           }
           templogo <- file.path(tempdir(), "logo.png")
