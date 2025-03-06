@@ -37,7 +37,7 @@ library(QFeatures)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.12.5-beta"
+Version = "0.12.7-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1088,6 +1088,9 @@ ui <- fluidPage(
 ####Server####
 
 server <- shinyServer(function(input, output, session) {
+  # Allow reconnect if the session is interrupted
+  session$allowReconnect("force")
+  
   options(shiny.maxRequestSize=200*1024^2)
   # Initialise the function variable as NULL
   
