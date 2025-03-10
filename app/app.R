@@ -30,14 +30,16 @@ library("RColorBrewer")
 library(readxl)
 library(rmarkdown)
 library(SummarizedExperiment)
-library(VennDetail)
 library(QFeatures)
+library(promises)
+library(future)
+library(VennDetail)
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.12.7-beta"
+Version = "0.13.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -47,6 +49,9 @@ tt_check<-tinytex:::is_tinytex()
 if(tt_check != "TRUE"){tinytex::install_tinytex()}
 data_other <- reactiveVal(NULL)
 
+# Use multicore processing for Linux
+#plan(multicore)  # <---- Best for Linux deployment
+plan(multisession)
 
 ####UI####
 ui <- fluidPage(
@@ -1094,6 +1099,10 @@ server <- shinyServer(function(input, output, session) {
   options(shiny.maxRequestSize=200*1024^2)
   # Initialise the function variable as NULL
   
+  GO_MF_report_input <- reactiveVal(NULL)  # Store async result
+  GO_CC_report_input <- reactiveVal(NULL)  # Store async result
+  GO_BP_report_input <- reactiveVal(NULL)  # Store async result
+  
   #### UI functions --------------------------------------------------------
   #### Side bar menu items ####
   #CRUK Logo
@@ -1503,7 +1512,7 @@ server <- shinyServer(function(input, output, session) {
     return(data1)
   })
   
-
+  
   data <- reactive({
     if (input$data_type == "MaxQuant"){
       inFile <- input$file1
@@ -1765,7 +1774,7 @@ server <- shinyServer(function(input, output, session) {
       data1<-data_other_choice2()
     }
     
-        return(data1)
+    return(data1)
   })
   
   
@@ -3729,44 +3738,45 @@ server <- shinyServer(function(input, output, session) {
     })
     
     
-    GO_MF_report_input <- reactive({
-      withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
-        for (i in 1:100) {
-          incProgress(1/100)
-          Sys.sleep(0.5)
-        }
-        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
-        )
-        
-        plot_GO_MF(entrezlist_input(), input$species)
-      })
-    })
     
-    GO_CC_report_input <- reactive({
-      withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
-        for (i in 1:100) {
-          incProgress(1/100)
-          Sys.sleep(0.5)
-        }
-        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
-        )
-        
-        plot_GO_CC(entrezlist_input(), input$species)
-      })
-    })
+    #    GO_MF_report_input <- reactive({
+    #      withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
+    #        for (i in 1:100) {
+    #          incProgress(1/100)
+    #          Sys.sleep(0.5)
+    #        }
+    #        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
+    #        )
+    #        
+    #        plot_GO_MF(entrezlist_input(), input$species)
+    #      })
+    #    })
     
-    GO_BP_report_input <- reactive({
-      withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
-        for (i in 1:100) {
-          incProgress(1/100)
-          Sys.sleep(0.5)
-        }
-        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
-        )
-        
-        plot_GO_BP(entrezlist_input(), input$species)
-      })
-    })
+    #    GO_CC_report_input <- reactive({
+    #      withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
+    #        for (i in 1:100) {
+    #          incProgress(1/100)
+    #          Sys.sleep(0.5)
+    #        }
+    #        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
+    #        )
+    #        
+    #        plot_GO_CC(entrezlist_input(), input$species)
+    #      })
+    #   })
+    
+    #    GO_BP_report_input <- reactive({
+    #      withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
+    #        for (i in 1:100) {
+    #          incProgress(1/100)
+    #          Sys.sleep(0.5)
+    #        }
+    #        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
+    #        )
+    #        
+    #        plot_GO_BP(entrezlist_input(), input$species)
+    #      })
+    #    })
     
     
     
@@ -4051,9 +4061,13 @@ server <- shinyServer(function(input, output, session) {
         
         if(input$report_type=="Long"){
           box<-box_plot_report_input()
-          GO_MF<-GO_MF_report_input()
-          GO_CC<-GO_CC_report_input()
-          GO_BP<-GO_BP_report_input()
+          updateActionButton(session, "analyze_MF")  # Simulates pressing the button
+          updateActionButton(session, "analyze_CC")  # Simulates pressing the button
+          updateActionButton(session, "analyze_BP")  # Simulates pressing the button
+          
+          #GO_MF<-GO_MF_report_input()
+          #GO_CC<-GO_CC_report_input()
+          #GO_BP<-GO_BP_report_input()
         }
         downloadButton('downloadReport', 'Download Report', )
       }
@@ -4115,14 +4129,44 @@ server <- shinyServer(function(input, output, session) {
     #Observe GO Plots
     #Observe MF
     observeEvent(input$analyze_MF,{
+      
+      sendSweetAlert(session, title = "Plotting Mol. Func.", text = "This may take a while...", type = "info")
+      
+      # ✅ Correct way to get reactive values
+      entrez_list <- isolate(entrezlist_input())  # Extract reactive value
+      species <- isolate(input$species)  # Capture input value
+      
+      future_promise({
+        # Validate input inside async process
+        validate(need(try(entrez_list != "try-error"), 
+                      "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+        
+        plot_GO_MF(entrez_list, species)  # Call function with extracted values
+      }) %...>% GO_MF_report_input %...!% (function(e) {
+        GO_MF_report_input(NULL)
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+      
       #Plot output
       output$GOMF_plot <- renderPlot({
-        GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-        print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+        if (is.null(GO_MF_report_input())) {
+          # Show a text message while waiting for the plot data
+          plot.new()  # Create an empty plot
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        } else {
+          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+          print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+        }
       })
       output$GOMF_cnet <- renderPlot({
-        GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-        print(GOMF_cnetplot<- cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+        if (is.null(GO_MF_report_input())) {
+          # Show a text message while waiting for the plot data
+          plot.new()  # Create an empty plot
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        } else {
+          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+          print(GOMF_cnetplot<- cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+        }
       })
       
       #PDF Output
@@ -4158,15 +4202,43 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe CC
     observeEvent(input$analyze_CC,{
+      sendSweetAlert(session, title = "Plotting Cellular Component", text = "This may take a while...", type = "info")
+      
+      # ✅ Correct way to get reactive values
+      entrez_list <- isolate(entrezlist_input())  # Extract reactive value
+      species <- isolate(input$species)  # Capture input value
+      
+      future_promise({
+        # Validate input inside async process
+        validate(need(try(entrez_list != "try-error"), 
+                      "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+        
+        plot_GO_CC(entrez_list, species)  # Call function with extracted values
+      }) %...>% GO_CC_report_input %...!% (function(e) {
+        GO_CC_report_input(NULL)
+        showNotification(paste("Error:", e$message), type = "error")
+      })
       
       #Plot output
       output$GOCC_plot <- renderPlot({
-        GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-        print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+        if (is.null(GO_CC_report_input())) {
+          # Show a text message while waiting for the plot data
+          plot.new()  # Create an empty plot
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        } else {
+          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+          print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+        }
       })
       output$GOCC_cnet <- renderPlot({
-        GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-        print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+        if (is.null(GO_CC_report_input())) {
+          # Show a text message while waiting for the plot data
+          plot.new()  # Create an empty plot
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        } else {
+          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+          print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+        }
       })
       #PDF Output
       output$download_CC_plot <- downloadHandler(
@@ -4202,15 +4274,45 @@ server <- shinyServer(function(input, output, session) {
     #Observe BP
     observeEvent(input$analyze_BP,{
       
+      sendSweetAlert(session, title = "Plotting Biological Function", text = "This may take a while...", type = "info")
+      
+      # ✅ Correct way to get reactive values
+      entrez_list <- isolate(entrezlist_input())  # Extract reactive value
+      species <- isolate(input$species)  # Capture input value
+      
+      future_promise({
+        # Validate input inside async process
+        validate(need(try(entrez_list != "try-error"), 
+                      "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+        
+        plot_GO_BP(entrez_list, species)  # Call function with extracted values
+      }) %...>% GO_BP_report_input %...!% (function(e) {
+        GO_BP_report_input(NULL)
+        showNotification(paste("Error:", e$message), type = "error")
+      })
+      
+      
       #Plot output
       output$GOBP_plot <- renderPlot({
-        GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-        print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+        if (is.null(GO_BP_report_input())) {
+          # Show a text message while waiting for the plot data
+          plot.new()  # Create an empty plot
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        } else {
+          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+          print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+        }
       })
       
       output$GOBP_cnet <- renderPlot({
-        GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-        print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+        if (is.null(GO_BP_report_input())) {
+          # Show a text message while waiting for the plot data
+          plot.new()  # Create an empty plot
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        } else {
+          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+          print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+        }
       })
       
       #PDF Output
