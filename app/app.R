@@ -39,7 +39,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.13.0-beta"
+Version = "0.13.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -50,8 +50,12 @@ if(tt_check != "TRUE"){tinytex::install_tinytex()}
 data_other <- reactiveVal(NULL)
 
 # Use multicore processing for Linux
-#plan(multicore)  # <---- Best for Linux deployment
-plan(multisession)
+if (.Platform$OS.type == "unix") {
+  plan(multicore)
+} else if (.Platform$OS.type == "windows") {
+  plan(multisession)
+}
+
 
 ####UI####
 ui <- fluidPage(
@@ -1097,11 +1101,20 @@ server <- shinyServer(function(input, output, session) {
   session$allowReconnect("force")
   
   options(shiny.maxRequestSize=200*1024^2)
-  # Initialise the function variable as NULL
   
+  # Reactive trigger for programmatic start
+  trigger_GO_MF <- reactiveVal(FALSE)
+  trigger_GO_CC <- reactiveVal(FALSE)
+  trigger_GO_BP <- reactiveVal(FALSE)
+  
+  
+  
+  # Initialise the function variable as NULL
   GO_MF_report_input <- reactiveVal(NULL)  # Store async result
   GO_CC_report_input <- reactiveVal(NULL)  # Store async result
   GO_BP_report_input <- reactiveVal(NULL)  # Store async result
+  
+  
   
   #### UI functions --------------------------------------------------------
   #### Side bar menu items ####
@@ -3737,7 +3750,7 @@ server <- shinyServer(function(input, output, session) {
       get_entrezlist(cludf_check_input(), input$species)
     })
     
-    
+
     
     #    GO_MF_report_input <- reactive({
     #      withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
@@ -4054,26 +4067,54 @@ server <- shinyServer(function(input, output, session) {
         #Check for single protein clusters
         #        validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
         #       )
-        
+        if(input$report_type=="Short"){
+        }
+
         if(input$report_type=="with Box Plots"){
           box<-box_plot_report_input()
+          
         }
         
         if(input$report_type=="Long"){
           box<-box_plot_report_input()
-          updateActionButton(session, "analyze_MF")  # Simulates pressing the button
-          updateActionButton(session, "analyze_CC")  # Simulates pressing the button
-          updateActionButton(session, "analyze_BP")  # Simulates pressing the button
-          
-          #GO_MF<-GO_MF_report_input()
-          #GO_CC<-GO_CC_report_input()
-          #GO_BP<-GO_BP_report_input()
-        }
+          renderPlot({
+            if (is.null(GO_BP_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plots. Please wait...", cex = 1.5)
+            } else { downloadButton('downloadReport', 'Download Report', )
+            }
+          })        }
         downloadButton('downloadReport', 'Download Report', )
+        
       }
     })
     
+    
+    
     ####Observe####
+    # Auto-trigger only when 'long' is selected
+    observeEvent(input$report_type, {
+      if (input$report_type == "Long") {
+        #trigger_GO_MF <- reactiveVal(TRUE)
+        trigger_GO_MF(TRUE)
+        trigger_GO_CC(TRUE)
+        trigger_GO_BP(TRUE)
+      }
+    })
+    
+    observeEvent(input$analyze_MF, {
+        trigger_GO_MF(TRUE)
+    })
+
+    observeEvent(input$analyze_CC, {
+      trigger_GO_CC(TRUE)
+    })
+    
+    observeEvent(input$analyze_BP, {
+      trigger_GO_BP(TRUE)
+    })
+    
     observe({
       output$plot <- renderUI({
         ht_height<-((input$size*12)+270)
@@ -4128,8 +4169,8 @@ server <- shinyServer(function(input, output, session) {
     
     #Observe GO Plots
     #Observe MF
-    observeEvent(input$analyze_MF,{
-      
+    observeEvent(trigger_GO_MF(),{
+      if (trigger_GO_MF() == TRUE) {
       sendSweetAlert(session, title = "Plotting Mol. Func.", text = "This may take a while...", type = "info")
       
       # ✅ Correct way to get reactive values
@@ -4198,13 +4239,17 @@ server <- shinyServer(function(input, output, session) {
                       sep ="\t") 
         }
       )
+      
+      trigger_GO_MF(FALSE)
+      }
     })
     
     #Observe CC
-    observeEvent(input$analyze_CC,{
-      sendSweetAlert(session, title = "Plotting Cellular Component", text = "This may take a while...", type = "info")
-      
-      # ✅ Correct way to get reactive values
+    observeEvent(trigger_GO_CC(),{
+      if (trigger_GO_CC() == TRUE) {
+        sendSweetAlert(session, title = "Plotting Cellular Component", text = "This may take a while...", type = "info")
+        
+        # ✅ Correct way to get reactive values
       entrez_list <- isolate(entrezlist_input())  # Extract reactive value
       species <- isolate(input$species)  # Capture input value
       
@@ -4269,13 +4314,15 @@ server <- shinyServer(function(input, output, session) {
                       sep ="\t") 
         }
       )
+      trigger_GO_CC(FALSE)
+      }
     })
     
     #Observe BP
-    observeEvent(input$analyze_BP,{
-      
-      sendSweetAlert(session, title = "Plotting Biological Function", text = "This may take a while...", type = "info")
-      
+    observeEvent(trigger_GO_BP(),{
+      if (trigger_GO_BP() == TRUE) {
+        sendSweetAlert(session, title = "Plotting Biological Function", text = "This may take a while...", type = "info")
+        
       # ✅ Correct way to get reactive values
       entrez_list <- isolate(entrezlist_input())  # Extract reactive value
       species <- isolate(input$species)  # Capture input value
@@ -4346,7 +4393,8 @@ server <- shinyServer(function(input, output, session) {
                       sep ="\t") 
         }
       )
-      
+      trigger_GO_BP(FALSE)
+      }
     })
     
     

@@ -37,6 +37,8 @@ RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-thre
 RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"
 RUN Rscript -e "BiocManager::install('org.At.tair.db', ask=F, dependencies=TRUE)"
 
+RUN Rscript -e 'install.packages(c("promises", "future", "ggtangle"), dependencies=TRUE)'
+
 #fetch TinyTeX installer and run it
 RUN apt-get install perl wget -y  
 RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
@@ -51,8 +53,8 @@ RUN cp -r /root/.TinyTeX /home/shiny
 
 RUN sudo rm /srv/shiny-server/index.html
 
-# Make the ShinyApp available at port 80
-EXPOSE 80
+# Make the ShinyApp available at port 3838
+EXPOSE 3838
 COPY ./ /srv/shiny-server/shiny-mpp
 COPY shiny-server.conf /etc/shiny-server/shiny-server.conf
 
