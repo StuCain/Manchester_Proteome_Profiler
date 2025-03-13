@@ -33,13 +33,14 @@ library(SummarizedExperiment)
 library(QFeatures)
 library(promises)
 library(future)
+library(ggtangle)
 library(VennDetail)
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.13.1-beta"
+Version = "0.13.3-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -339,7 +340,7 @@ ui <- fluidPage(
           condition = "input.analyze >= 1",
           box(
             uiOutput("downloadreport"),
-            helpText("Long report takes several minutes to generate"),
+            helpText("Long report takes several minutes to generate, check GO plots have completed before downloding report"),
             #helpText("Check Heatmap has no single protein clusters"),
             width = 2, height = 120)
         ),
@@ -4077,14 +4078,7 @@ server <- shinyServer(function(input, output, session) {
         
         if(input$report_type=="Long"){
           box<-box_plot_report_input()
-          renderPlot({
-            if (is.null(GO_BP_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plots. Please wait...", cex = 1.5)
-            } else { downloadButton('downloadReport', 'Download Report', )
-            }
-          })        }
+        }
         downloadButton('downloadReport', 'Download Report', )
         
       }
@@ -4100,6 +4094,10 @@ server <- shinyServer(function(input, output, session) {
         trigger_GO_MF(TRUE)
         trigger_GO_CC(TRUE)
         trigger_GO_BP(TRUE)
+     #   while (is.null(GO_BP_report_input())) {
+    #      Sys.sleep(1)  # Wait for 1 second before checking again
+    #    }
+        
       }
     })
     
@@ -4206,7 +4204,7 @@ server <- shinyServer(function(input, output, session) {
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
         } else {
           GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-          print(GOMF_cnetplot<- cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+          print(GOMF_cnetplot<- enrichplot::cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
         }
       })
       
@@ -4225,7 +4223,7 @@ server <- shinyServer(function(input, output, session) {
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
           GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-          print(GOMF_cnetplot<- cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+          print(GOMF_cnetplot<- enrichpolt::cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
           dev.off()
         }
       )
@@ -4282,7 +4280,7 @@ server <- shinyServer(function(input, output, session) {
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
         } else {
           GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-          print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+          print(GOCC_cnetplot<-  enrichplot::cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
         }
       })
       #PDF Output
@@ -4300,7 +4298,7 @@ server <- shinyServer(function(input, output, session) {
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
           GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-          print(GOCC_cnetplot<- cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+          print(GOCC_cnetplot<- enrichplot::cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
           dev.off()
         }
       )
@@ -4358,7 +4356,7 @@ server <- shinyServer(function(input, output, session) {
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
         } else {
           GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-          print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+          print(GOBP_cnetplot<- enrichplot::cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
         }
       })
       
@@ -4378,7 +4376,7 @@ server <- shinyServer(function(input, output, session) {
         content = function(file) {
           cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
           GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-          print(GOBP_cnetplot<- cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+          print(GOBP_cnetplot<- enrichplot::cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
           dev.off()
         }
       )
@@ -4958,10 +4956,14 @@ server <- shinyServer(function(input, output, session) {
             write(line,file="report.txt",append=TRUE)
           }
           if(input$report_type=="Long"){
+            if (is.null(GO_BP_report_input())) {
+              showNotification("GO plots not ready, please check before dowloading", type = "message", duration = 20)
+            } else {
             tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
             file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
             line<-paste(Sys.time(), input$comp_type, input$data_mode, padj_method, input$report_type, input$species,input$imputation, sep = ";")
             write(line,file="report.txt",append=TRUE)
+            }
           }
           templogo <- file.path(tempdir(), "logo.png")
           file.copy(paste0("logo.png"), templogo, overwrite = TRUE)

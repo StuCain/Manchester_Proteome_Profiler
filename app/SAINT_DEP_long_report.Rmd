@@ -905,7 +905,7 @@ shiny::setProgress(prog)
 if (!is.null(params$GO_MF_report_input())){
   tryCatch({
 GOMFtitle<-paste("Molecular Function up to level ", params$gomf_level, sep="")
-print(GOMF_dotplot<- dotplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
+print(dotplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -922,7 +922,7 @@ shiny::setProgress(0.6)  # set progress to 60%
 if (!is.null(params$GO_MF_report_input())){
   tryCatch({
 GOMFtitle<-paste("Molecular Function up to level ", params$gomf_level, sep="")
-print(GOMF_cnetplot<- cnetplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
+print(enrichplot::cnetplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -940,7 +940,7 @@ shiny::setProgress(0.65)  # set progress to 70%
 if (!is.null(params$GO_CC_report_input())){
   tryCatch({
 GOCCtitle<-paste("Cellular Component up to level ", params$gocc_level, sep="")
-print(GOCC_dotplot<- dotplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
+print(dotplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -957,7 +957,7 @@ shiny::setProgress(0.7)  # set progress to 70%
 if (!is.null(params$GO_CC_report_input())){
   tryCatch({
     GOCCtitle<-paste("Cellular Component up to level ", params$gocc_level, sep="")
-    print(cnetplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
+    print(enrichplot::cnetplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -974,7 +974,7 @@ if (params$rendered_by_shiny)
 if (!is.null(params$GO_BP_report_input())){
   tryCatch({
 GOBPtitle<-paste("Biological Process up to level ", params$gobp_level, sep="")
-print(GOBP_dotplot<- dotplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
+print(dotplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -991,7 +991,7 @@ shiny::setProgress(0.8)  # set progress to 80%
 if (!is.null(params$GO_BP_report_input())){
   tryCatch({
 GOBPtitle<-paste("Biological Process up to level ", params$gobp_level, sep="")
-print(GOBP_cnetplot<- cnetplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
+print(enrichplot::cnetplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
   }, error = function(e) {
     # Ignore plot errors
   })
