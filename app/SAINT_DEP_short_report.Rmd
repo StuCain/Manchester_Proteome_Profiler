@@ -80,8 +80,11 @@ params:
   entrezlist_input: NA
   rendered_by_shiny: NA
   GO_MF_report_input: NA
+  GOMF_cnet_input: NA
   GO_CC_report_input: NA
+  GOCC_cnet_input: NA
   GO_BP_report_input: NA
+  GOBP_cnet_input: NA
   gomf_level: NA
   gocc_level: NA
   gobp_level: NA
@@ -189,7 +192,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.4.2
+Version:0.5.0
 
 ## Method details
  

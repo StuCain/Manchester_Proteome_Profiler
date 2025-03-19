@@ -40,7 +40,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.13.3-beta"
+Version = "0.13.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -3751,7 +3751,59 @@ server <- shinyServer(function(input, output, session) {
       get_entrezlist(cludf_check_input(), input$species)
     })
     
-
+    GOMF_cnet_input <- reactive({
+      if (is.null(GO_MF_report_input())) {
+        # Show a text message while waiting for the plot data
+        plot.new()  # Create an empty plot
+        text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+      } else {
+        GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+        cnet_MF<-enrichplot::cnetplot(GO_MF_report_input(), 
+                                      showCategory = input$gomf_level,
+                                      cex.params = list(
+                                        category_node = 2,  # Increase category node size
+                                        category_label = 1.5,  # Increase category node text size
+                                        gene_node = 1.5,      # Increase gene node size
+                                        gene_label = 1)  # Increase category node text size
+        ) + ggtitle(GOMFtitle)
+      }
+    })
+    
+    GOCC_cnet_input <- reactive({
+      if (is.null(GO_CC_report_input())) {
+        # Show a text message while waiting for the plot data
+        plot.new()  # Create an empty plot
+        text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+      } else {
+        GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+        cnet_CC<-enrichplot::cnetplot(GO_CC_report_input(), 
+                                      showCategory = input$gocc_level,
+                                      cex.params = list(
+                                        category_node = 2,  # Increase category node size
+                                        category_label = 1.5,  # Increase category node text size
+                                        gene_node = 1.5,      # Increase gene node size
+                                        gene_label = 1)  # Increase category node text size
+        ) + ggtitle(GOCCtitle)
+      }
+    })
+    
+    GOBP_cnet_input <- reactive({
+      if (is.null(GO_BP_report_input())) {
+        # Show a text message while waiting for the plot data
+        plot.new()  # Create an empty plot
+        text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+      } else {
+        GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+        cnet_BP<-enrichplot::cnetplot(GO_BP_report_input(), 
+                                      showCategory = input$gobp_level,
+                                      cex.params = list(
+                                        category_node = 2,  # Increase category node size
+                                        category_label = 1.5,  # Increase category node text size
+                                        gene_node = 1.5,      # Increase gene node size
+                                        gene_label = 1)  # Increase category node text size
+        ) + ggtitle(GOBPtitle)
+      }
+    })
     
     #    GO_MF_report_input <- reactive({
     #      withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
@@ -4070,7 +4122,7 @@ server <- shinyServer(function(input, output, session) {
         #       )
         if(input$report_type=="Short"){
         }
-
+        
         if(input$report_type=="with Box Plots"){
           box<-box_plot_report_input()
           
@@ -4094,17 +4146,17 @@ server <- shinyServer(function(input, output, session) {
         trigger_GO_MF(TRUE)
         trigger_GO_CC(TRUE)
         trigger_GO_BP(TRUE)
-     #   while (is.null(GO_BP_report_input())) {
-    #      Sys.sleep(1)  # Wait for 1 second before checking again
-    #    }
+        #   while (is.null(GO_BP_report_input())) {
+        #      Sys.sleep(1)  # Wait for 1 second before checking again
+        #    }
         
       }
     })
     
     observeEvent(input$analyze_MF, {
-        trigger_GO_MF(TRUE)
+      trigger_GO_MF(TRUE)
     })
-
+    
     observeEvent(input$analyze_CC, {
       trigger_GO_CC(TRUE)
     })
@@ -4169,76 +4221,86 @@ server <- shinyServer(function(input, output, session) {
     #Observe MF
     observeEvent(trigger_GO_MF(),{
       if (trigger_GO_MF() == TRUE) {
-      sendSweetAlert(session, title = "Plotting Mol. Func.", text = "This may take a while...", type = "info")
-      
-      # ✅ Correct way to get reactive values
-      entrez_list <- isolate(entrezlist_input())  # Extract reactive value
-      species <- isolate(input$species)  # Capture input value
-      
-      future_promise({
-        # Validate input inside async process
-        validate(need(try(entrez_list != "try-error"), 
-                      "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+        sendSweetAlert(session, title = "Plotting Mol. Func.", text = "This may take a while...", type = "info")
         
-        plot_GO_MF(entrez_list, species)  # Call function with extracted values
-      }) %...>% GO_MF_report_input %...!% (function(e) {
-        GO_MF_report_input(NULL)
-        showNotification(paste("Error:", e$message), type = "error")
-      })
-      
-      #Plot output
-      output$GOMF_plot <- renderPlot({
-        if (is.null(GO_MF_report_input())) {
-          # Show a text message while waiting for the plot data
-          plot.new()  # Create an empty plot
-          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-        } else {
-          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-          print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
-        }
-      })
-      output$GOMF_cnet <- renderPlot({
-        if (is.null(GO_MF_report_input())) {
-          # Show a text message while waiting for the plot data
-          plot.new()  # Create an empty plot
-          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-        } else {
-          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-          print(GOMF_cnetplot<- enrichplot::cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
-        }
-      })
-      
-      #PDF Output
-      output$download_MF_plot <- downloadHandler(
-        filename = function() { paste("Molecular_Function_Plot_level_",input$gomf_level, ".pdf", sep = "") },
-        content = function(file) {
-          cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
-          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-          print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
-          dev.off()
-        }
-      )
-      output$download_MF_cnet <- downloadHandler(
-        filename = function() { paste("Molecular_Function_Map_level_",input$gomf_level, ".pdf", sep = "") },
-        content = function(file) {
-          cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
-          GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-          print(GOMF_cnetplot<- enrichpolt::cnetplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
-          dev.off()
-        }
-      )
-      output$download_MF_all <- downloadHandler(
-        filename = function() { paste("Molecular_Function_Data.txt", sep = "") },
-        content = function(file) {
-          write.table(GO_MF_report_input(),
-                      file,
-                      col.names = TRUE,
-                      row.names = FALSE,
-                      sep ="\t") 
-        }
-      )
-      
-      trigger_GO_MF(FALSE)
+        # ✅ Correct way to get reactive values
+        entrez_list <- isolate(entrezlist_input())  # Extract reactive value
+        species <- isolate(input$species)  # Capture input value
+        
+        future_promise({
+          # Validate input inside async process
+          validate(need(try(entrez_list != "try-error"), 
+                        "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+          
+          plot_GO_MF(entrez_list, species)  # Call function with extracted values
+        }) %...>% GO_MF_report_input %...!% (function(e) {
+          GO_MF_report_input(NULL)
+          showNotification(paste("Error:", e$message), type = "error")
+        })
+        
+        GOMF_plot_input <- reactive({
+          if (is.null(GO_MF_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+                 GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level)
+          }
+        })
+
+
+        #Plot output
+        output$GOMF_plot <- renderPlot({
+          if (is.null(GO_MF_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+            print(GOMF_plot_input() + ggtitle(GOMFtitle))
+          }
+        })
+        
+        output$GOMF_cnet <- renderPlot({
+          if (is.null(GO_MF_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(GOMF_cnet_input())
+          }
+        })
+        
+        #PDF Output
+        output$download_MF_plot <- downloadHandler(
+          filename = function() { paste("Molecular_Function_Plot_level_",input$gomf_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
+            GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+            print(GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level) + ggtitle(GOMFtitle))
+            dev.off()
+          }
+        )
+        output$download_MF_cnet <- downloadHandler(
+          filename = function() { paste("Molecular_Function_Map_level_",input$gomf_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_MF, width = input$pdfwidth_MF)
+            print(GOMF_cnet_input())
+            dev.off()
+          }
+        )
+        output$download_MF_all <- downloadHandler(
+          filename = function() { paste("Molecular_Function_Data.txt", sep = "") },
+          content = function(file) {
+            write.table(GO_MF_report_input(),
+                        file,
+                        col.names = TRUE,
+                        row.names = FALSE,
+                        sep ="\t") 
+          }
+        )
+        
+        trigger_GO_MF(FALSE)
       }
     })
     
@@ -4248,71 +4310,69 @@ server <- shinyServer(function(input, output, session) {
         sendSweetAlert(session, title = "Plotting Cellular Component", text = "This may take a while...", type = "info")
         
         # ✅ Correct way to get reactive values
-      entrez_list <- isolate(entrezlist_input())  # Extract reactive value
-      species <- isolate(input$species)  # Capture input value
-      
-      future_promise({
-        # Validate input inside async process
-        validate(need(try(entrez_list != "try-error"), 
-                      "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+        entrez_list <- isolate(entrezlist_input())  # Extract reactive value
+        species <- isolate(input$species)  # Capture input value
         
-        plot_GO_CC(entrez_list, species)  # Call function with extracted values
-      }) %...>% GO_CC_report_input %...!% (function(e) {
-        GO_CC_report_input(NULL)
-        showNotification(paste("Error:", e$message), type = "error")
-      })
-      
-      #Plot output
-      output$GOCC_plot <- renderPlot({
-        if (is.null(GO_CC_report_input())) {
-          # Show a text message while waiting for the plot data
-          plot.new()  # Create an empty plot
-          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-        } else {
-          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-          print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
-        }
-      })
-      output$GOCC_cnet <- renderPlot({
-        if (is.null(GO_CC_report_input())) {
-          # Show a text message while waiting for the plot data
-          plot.new()  # Create an empty plot
-          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-        } else {
-          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-          print(GOCC_cnetplot<-  enrichplot::cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
-        }
-      })
-      #PDF Output
-      output$download_CC_plot <- downloadHandler(
-        filename = function() { paste("Cellular_Component_Plot_level_",input$gocc_level, ".pdf", sep = "") },
-        content = function(file) {
-          cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
-          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-          print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
-          dev.off()
-        }
-      )
-      output$download_CC_cnet <- downloadHandler(
-        filename = function() { paste("Cellular_Component_Map_level_",input$gocc_level, ".pdf", sep = "") },
-        content = function(file) {
-          cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
-          GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-          print(GOCC_cnetplot<- enrichplot::cnetplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
-          dev.off()
-        }
-      )
-      output$download_CC_all <- downloadHandler(
-        filename = function() { paste("Cellular_Component_Data.txt", sep = "") },
-        content = function(file) {
-          write.table(GO_CC_report_input(),
-                      file,
-                      col.names = TRUE,
-                      row.names = FALSE,
-                      sep ="\t") 
-        }
-      )
-      trigger_GO_CC(FALSE)
+        future_promise({
+          # Validate input inside async process
+          validate(need(try(entrez_list != "try-error"), 
+                        "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+          
+          plot_GO_CC(entrez_list, species)  # Call function with extracted values
+        }) %...>% GO_CC_report_input %...!% (function(e) {
+          GO_CC_report_input(NULL)
+          showNotification(paste("Error:", e$message), type = "error")
+        })
+        
+        #Plot output
+        output$GOCC_plot <- renderPlot({
+          if (is.null(GO_CC_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+            print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+          }
+        })
+        output$GOCC_cnet <- renderPlot({
+          if (is.null(GO_CC_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(GOCC_cnet_input())
+          }
+        })
+        #PDF Output
+        output$download_CC_plot <- downloadHandler(
+          filename = function() { paste("Cellular_Component_Plot_level_",input$gocc_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
+            GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+            print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+            dev.off()
+          }
+        )
+        output$download_CC_cnet <- downloadHandler(
+          filename = function() { paste("Cellular_Component_Map_level_",input$gocc_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_CC, width = input$pdfwidth_CC)
+            print(GOCC_cnet_input())
+            dev.off()
+          }
+        )
+        output$download_CC_all <- downloadHandler(
+          filename = function() { paste("Cellular_Component_Data.txt", sep = "") },
+          content = function(file) {
+            write.table(GO_CC_report_input(),
+                        file,
+                        col.names = TRUE,
+                        row.names = FALSE,
+                        sep ="\t") 
+          }
+        )
+        trigger_GO_CC(FALSE)
       }
     })
     
@@ -4321,77 +4381,75 @@ server <- shinyServer(function(input, output, session) {
       if (trigger_GO_BP() == TRUE) {
         sendSweetAlert(session, title = "Plotting Biological Function", text = "This may take a while...", type = "info")
         
-      # ✅ Correct way to get reactive values
-      entrez_list <- isolate(entrezlist_input())  # Extract reactive value
-      species <- isolate(input$species)  # Capture input value
-      
-      future_promise({
-        # Validate input inside async process
-        validate(need(try(entrez_list != "try-error"), 
-                      "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+        # ✅ Correct way to get reactive values
+        entrez_list <- isolate(entrezlist_input())  # Extract reactive value
+        species <- isolate(input$species)  # Capture input value
         
-        plot_GO_BP(entrez_list, species)  # Call function with extracted values
-      }) %...>% GO_BP_report_input %...!% (function(e) {
-        GO_BP_report_input(NULL)
-        showNotification(paste("Error:", e$message), type = "error")
-      })
-      
-      
-      #Plot output
-      output$GOBP_plot <- renderPlot({
-        if (is.null(GO_BP_report_input())) {
-          # Show a text message while waiting for the plot data
-          plot.new()  # Create an empty plot
-          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-        } else {
-          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-          print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
-        }
-      })
-      
-      output$GOBP_cnet <- renderPlot({
-        if (is.null(GO_BP_report_input())) {
-          # Show a text message while waiting for the plot data
-          plot.new()  # Create an empty plot
-          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-        } else {
-          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-          print(GOBP_cnetplot<- enrichplot::cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
-        }
-      })
-      
-      #PDF Output
-      output$download_BP_plot <- downloadHandler(
-        filename = function() { paste("Biological _Process_Plot_level_",input$gobp_level, ".pdf", sep = "") },
-        content = function(file) {
-          cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
-          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-          print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
-          dev.off()
-        }
-      )
-      
-      output$download_BP_cnet <- downloadHandler(
-        filename = function() { paste("Biological _Process_Map_level_",input$gobp_level, ".pdf", sep = "") },
-        content = function(file) {
-          cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
-          GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-          print(GOBP_cnetplot<- enrichplot::cnetplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
-          dev.off()
-        }
-      )
-      
-      output$download_BP_all <- downloadHandler(
-        filename = function() { paste("Biological _Process_Data.txt", sep = "") },
-        content = function(file) {
-          write.table(GO_BP_report_input(),
-                      file,
-                      col.names = TRUE,
-                      row.names = FALSE,
-                      sep ="\t") 
-        }
-      )
-      trigger_GO_BP(FALSE)
+        future_promise({
+          # Validate input inside async process
+          validate(need(try(entrez_list != "try-error"), 
+                        "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+          
+          plot_GO_BP(entrez_list, species)  # Call function with extracted values
+        }) %...>% GO_BP_report_input %...!% (function(e) {
+          GO_BP_report_input(NULL)
+          showNotification(paste("Error:", e$message), type = "error")
+        })
+        
+        
+        #Plot output
+        output$GOBP_plot <- renderPlot({
+          if (is.null(GO_BP_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+            print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+          }
+        })
+        
+        output$GOBP_cnet <- renderPlot({
+          if (is.null(GO_BP_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(GOBP_cnet_input())
+          }
+        })
+        
+        #PDF Output
+        output$download_BP_plot <- downloadHandler(
+          filename = function() { paste("Biological _Process_Plot_level_",input$gobp_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
+            GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+            print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+            dev.off()
+          }
+        )
+        
+        output$download_BP_cnet <- downloadHandler(
+          filename = function() { paste("Biological _Process_Map_level_",input$gobp_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
+            print(GOBP_cnet_input())
+            dev.off()
+          }
+        )
+        
+        output$download_BP_all <- downloadHandler(
+          filename = function() { paste("Biological _Process_Data.txt", sep = "") },
+          content = function(file) {
+            write.table(GO_BP_report_input(),
+                        file,
+                        col.names = TRUE,
+                        row.names = FALSE,
+                        sep ="\t") 
+          }
+        )
+        trigger_GO_BP(FALSE)
       }
     })
     
@@ -4959,10 +5017,10 @@ server <- shinyServer(function(input, output, session) {
             if (is.null(GO_BP_report_input())) {
               showNotification("GO plots not ready, please check before dowloading", type = "message", duration = 20)
             } else {
-            tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
-            file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
-            line<-paste(Sys.time(), input$comp_type, input$data_mode, padj_method, input$report_type, input$species,input$imputation, sep = ";")
-            write(line,file="report.txt",append=TRUE)
+              tempReport <- file.path(tempdir(), "SAINT_DEP_long_report.Rmd")
+              file.copy(paste0("SAINT_DEP_long_report.Rmd"), tempReport, overwrite = TRUE)
+              line<-paste(Sys.time(), input$comp_type, input$data_mode, padj_method, input$report_type, input$species,input$imputation, sep = ";")
+              write(line,file="report.txt",append=TRUE)
             }
           }
           templogo <- file.path(tempdir(), "logo.png")
@@ -5058,8 +5116,11 @@ server <- shinyServer(function(input, output, session) {
                          imp_data = imp_data,
                          palette_choice = input$palette_choice,
                          GO_MF_report_input = GO_MF_report_input,
+                         GOMF_cnet_input = GOMF_cnet_input,
                          GO_CC_report_input = GO_CC_report_input,
+                         GOCC_cnet_input = GOCC_cnet_input,
                          GO_BP_report_input = GO_BP_report_input,
+                         GOBP_cnet_input = GOBP_cnet_input,
                          gomf_level = input$gomf_level,
                          gocc_level = input$gocc_level,
                          gobp_level = input$gobp_level,

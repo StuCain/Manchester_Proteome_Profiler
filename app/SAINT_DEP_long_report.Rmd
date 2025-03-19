@@ -80,8 +80,11 @@ params:
   entrezlist_input: NA
   rendered_by_shiny: NA
   GO_MF_report_input: NA
+  GOMF_cnet_input: NA
   GO_CC_report_input: NA
+  GOCC_cnet_input: NA
   GO_BP_report_input: NA
+  GOBP_cnet_input: NA
   gomf_level: NA
   gocc_level: NA
   gobp_level: NA
@@ -189,7 +192,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.4.2
+Version:0.5.0
 
 ## Method details
  
@@ -921,8 +924,7 @@ shiny::setProgress(0.6)  # set progress to 60%
 ```{r MF_cNET, echo=FALSE, fig.height=10, fig.width=10, out.width='90%', message=FALSE, warning=FALSE, comment=NA}
 if (!is.null(params$GO_MF_report_input())){
   tryCatch({
-GOMFtitle<-paste("Molecular Function up to level ", params$gomf_level, sep="")
-print(enrichplot::cnetplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + ggtitle(GOMFtitle))
+print(params$GOMF_cnet_input())
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -956,8 +958,7 @@ shiny::setProgress(0.7)  # set progress to 70%
 ```{r CC_cNET, echo=FALSE, fig.height=10, fig.width=10, out.width='90%', message=FALSE, warning=FALSE, comment=NA}
 if (!is.null(params$GO_CC_report_input())){
   tryCatch({
-    GOCCtitle<-paste("Cellular Component up to level ", params$gocc_level, sep="")
-    print(enrichplot::cnetplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + ggtitle(GOCCtitle))
+    print(params$GOCC_cnet_input())
   }, error = function(e) {
     # Ignore plot errors
   })
@@ -990,8 +991,7 @@ shiny::setProgress(0.8)  # set progress to 80%
 ```{r BP_cNET, echo=FALSE, fig.height=10, fig.width=10, out.width='90%', message=FALSE, warning=FALSE, comment=NA}
 if (!is.null(params$GO_BP_report_input())){
   tryCatch({
-GOBPtitle<-paste("Biological Process up to level ", params$gobp_level, sep="")
-print(enrichplot::cnetplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + ggtitle(GOBPtitle))
+print(params$GOBP_cnet_input())
   }, error = function(e) {
     # Ignore plot errors
   })
