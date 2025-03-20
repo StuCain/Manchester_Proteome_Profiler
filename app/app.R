@@ -40,7 +40,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.13.5-beta"
+Version = "0.13.7-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1098,6 +1098,9 @@ ui <- fluidPage(
 ####Server####
 
 server <- shinyServer(function(input, output, session) {
+  options(shiny.usecairo = TRUE)  # Force Cairo rendering in Shiny
+  
+  
   # Allow reconnect if the session is interrupted
   session$allowReconnect("force")
   
@@ -3757,15 +3760,41 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-        cnet_MF<-enrichplot::cnetplot(GO_MF_report_input(), 
-                                      showCategory = input$gomf_level,
-                                      cex.params = list(
-                                        category_node = 2,  # Increase category node size
-                                        category_label = 1.5,  # Increase category node text size
-                                        gene_node = 1.5,      # Increase gene node size
-                                        gene_label = 1)  # Increase category node text size
+        mypal <- colour_functions_input()[[2]]
+        cnet_data <- as.data.frame(GO_MF_report_input())  # Extract data as a dataframe
+        
+        # Get unique clusters from the data
+        cluster_names <- unique(cnet_data$Cluster)
+        
+        # Dynamically assign colors to clusters
+        cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
+        
+        # Ensure Cluster is a factor for consistent coloring
+        cnet_data$Cluster <- as.factor(cnet_data$Cluster)
+        
+        # Define fixed colors for specific clusters
+        if ("Cluster 1" %in% cluster_names) {cluster_colors["Cluster 1"] <- mypal[1]}
+        if ("Cluster 2" %in% cluster_names) {cluster_colors["Cluster 2"] <- mypal[2]}
+        if ("Cluster 3" %in% cluster_names) {cluster_colors["Cluster 3"] <- mypal[3]}
+        if ("Cluster 4" %in% cluster_names) {cluster_colors["Cluster 4"] <- mypal[4]}
+        if ("Cluster 5" %in% cluster_names) {cluster_colors["Cluster 5"] <- mypal[5]}
+        if ("Cluster 6" %in% cluster_names) {cluster_colors["Cluster 6"] <- mypal[6]}
+        if ("Cluster 7" %in% cluster_names) {cluster_colors["Cluster 7"] <- mypal[7]}
+        if ("Cluster 8" %in% cluster_names) {cluster_colors["Cluster 8"] <- mypal[8]}
+        
+        # Generate the Cnet Plot
+        GOMFtitle <- paste("Molecular Function up to level ", input$gomf_level, sep="")
+        cnet_MF <- enrichplot::cnetplot(GO_MF_report_input(), 
+                                        showCategory = input$gomf_level,
+                                        cex.params = list(
+                                          category_node = 2,  # Increase category node size
+                                          category_label = 1.5,  # Increase category node text size
+                                          gene_node = 1.5,  # Increase gene node size
+                                          gene_label = 1)  # Increase gene node text size
         ) + ggtitle(GOMFtitle)
+        
+        # Apply Cluster Colors Correctly
+        cnet_MF + scale_fill_manual(values = cluster_colors)
       }
     })
     
@@ -3775,15 +3804,41 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-        cnet_CC<-enrichplot::cnetplot(GO_CC_report_input(), 
-                                      showCategory = input$gocc_level,
-                                      cex.params = list(
-                                        category_node = 2,  # Increase category node size
-                                        category_label = 1.5,  # Increase category node text size
-                                        gene_node = 1.5,      # Increase gene node size
-                                        gene_label = 1)  # Increase category node text size
+        mypal <- colour_functions_input()[[2]]
+        cnet_data <- as.data.frame(GO_CC_report_input())  # Extract data as a dataframe
+        
+        # Get unique clusters from the data
+        cluster_names <- unique(cnet_data$Cluster)
+        
+        # Dynamically assign colors to clusters
+        cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
+        
+        # Ensure Cluster is a factor for consistent coloring
+        cnet_data$Cluster <- as.factor(cnet_data$Cluster)
+        
+        # Define fixed colors for specific clusters
+        if ("Cluster 1" %in% cluster_names) {cluster_colors["Cluster 1"] <- mypal[1]}
+        if ("Cluster 2" %in% cluster_names) {cluster_colors["Cluster 2"] <- mypal[2]}
+        if ("Cluster 3" %in% cluster_names) {cluster_colors["Cluster 3"] <- mypal[3]}
+        if ("Cluster 4" %in% cluster_names) {cluster_colors["Cluster 4"] <- mypal[4]}
+        if ("Cluster 5" %in% cluster_names) {cluster_colors["Cluster 5"] <- mypal[5]}
+        if ("Cluster 6" %in% cluster_names) {cluster_colors["Cluster 6"] <- mypal[6]}
+        if ("Cluster 7" %in% cluster_names) {cluster_colors["Cluster 7"] <- mypal[7]}
+        if ("Cluster 8" %in% cluster_names) {cluster_colors["Cluster 8"] <- mypal[8]}
+        
+        # Generate the Cnet Plot
+        GOCCtitle <- paste("Molecular Function up to level ", input$gocc_level, sep="")
+        cnet_CC <- enrichplot::cnetplot(GO_CC_report_input(), 
+                                        showCategory = input$gocc_level,
+                                        cex.params = list(
+                                          category_node = 2,  # Increase category node size
+                                          category_label = 1.5,  # Increase category node text size
+                                          gene_node = 1.5,  # Increase gene node size
+                                          gene_label = 1)  # Increase gene node text size
         ) + ggtitle(GOCCtitle)
+        
+        # Apply Cluster Colors Correctly
+        cnet_CC + scale_fill_manual(values = cluster_colors)
       }
     })
     
@@ -3793,15 +3848,41 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-        cnet_BP<-enrichplot::cnetplot(GO_BP_report_input(), 
-                                      showCategory = input$gobp_level,
-                                      cex.params = list(
-                                        category_node = 2,  # Increase category node size
-                                        category_label = 1.5,  # Increase category node text size
-                                        gene_node = 1.5,      # Increase gene node size
-                                        gene_label = 1)  # Increase category node text size
+        mypal <- colour_functions_input()[[2]]
+        cnet_data <- as.data.frame(GO_BP_report_input())  # Extract data as a dataframe
+        
+        # Get unique clusters from the data
+        cluster_names <- unique(cnet_data$Cluster)
+        
+        # Dynamically assign colors to clusters
+        cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
+        
+        # Ensure Cluster is a factor for consistent coloring
+        cnet_data$Cluster <- as.factor(cnet_data$Cluster)
+        
+        # Define fixed colors for specific clusters
+        if ("Cluster 1" %in% cluster_names) {cluster_colors["Cluster 1"] <- mypal[1]}
+        if ("Cluster 2" %in% cluster_names) {cluster_colors["Cluster 2"] <- mypal[2]}
+        if ("Cluster 3" %in% cluster_names) {cluster_colors["Cluster 3"] <- mypal[3]}
+        if ("Cluster 4" %in% cluster_names) {cluster_colors["Cluster 4"] <- mypal[4]}
+        if ("Cluster 5" %in% cluster_names) {cluster_colors["Cluster 5"] <- mypal[5]}
+        if ("Cluster 6" %in% cluster_names) {cluster_colors["Cluster 6"] <- mypal[6]}
+        if ("Cluster 7" %in% cluster_names) {cluster_colors["Cluster 7"] <- mypal[7]}
+        if ("Cluster 8" %in% cluster_names) {cluster_colors["Cluster 8"] <- mypal[8]}
+        
+        # Generate the Cnet Plot
+        GOBPtitle <- paste("Molecular Function up to level ", input$gobp_level, sep="")
+        cnet_BP <- enrichplot::cnetplot(GO_BP_report_input(), 
+                                        showCategory = input$gobp_level,
+                                        cex.params = list(
+                                          category_node = 2,  # Increase category node size
+                                          category_label = 1.5,  # Increase category node text size
+                                          gene_node = 1.5,  # Increase gene node size
+                                          gene_label = 1)  # Increase gene node text size
         ) + ggtitle(GOBPtitle)
+        
+        # Apply Cluster Colors Correctly
+        cnet_BP + scale_fill_manual(values = cluster_colors)
       }
     })
     
