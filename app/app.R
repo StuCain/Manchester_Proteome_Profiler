@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.13.8-beta"
+Version = "0.13.10-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -972,13 +972,10 @@ ui <- fluidPage(
                                                                        "GO Level",
                                                                        min = 1, max = 10, value = 5),
                                                           width = 2),
-                                                      box(numericInput("gomf_node",
-                                                                       "Node Size",
-                                                                       min = 1, max = 5, value = 1),
-                                                          width = 2),
-                                                      
-                                                      
-                                                      
+                                                      #box(numericInput("gomf_node",
+                                                      #                 "Node Size",
+                                                      #                 min = 1, max = 5, value = 1),
+                                                      #    width = 2),
                                                     ),
                                                     fluidRow(
                                                       column(width = 5,
@@ -3797,15 +3794,15 @@ server <- shinyServer(function(input, output, session) {
         cnet_MF <- enrichplot::cnetplot(GO_MF_report_input(), 
                                         showCategory = input$gomf_level,
                                         cex.params = list(
-                                          category_node = input$gomf_node*1.5,  # Increase category node size
+                                          category_node = 2,  # Increase category node size
                                           category_label = 1.5,  # Increase category node text size
-                                          gene_node = input$gomf_node,  # Increase gene node size
+                                          gene_node = 1.5,  # Increase gene node size
                                           gene_label = 1)  # Increase gene node text size
         ) + ggtitle(GOMFtitle)
         
         # Apply Cluster Colors Correctly
-        cnet_MF + 
-        scale_fill_manual(values = cluster_colors) 
+        print(cnet_MF + 
+        scale_fill_manual(values = cluster_colors)) 
       }
     })
     
@@ -3847,7 +3844,7 @@ server <- shinyServer(function(input, output, session) {
         ) + ggtitle(GOCCtitle)
         
         # Apply Cluster Colors Correctly
-        cnet_CC + scale_fill_manual(values = cluster_colors)
+        print(cnet_CC + scale_fill_manual(values = cluster_colors))
       }
     })
     
@@ -3889,7 +3886,7 @@ server <- shinyServer(function(input, output, session) {
         ) + ggtitle(GOBPtitle)
         
         # Apply Cluster Colors Correctly
-        cnet_BP + scale_fill_manual(values = cluster_colors)
+        print(cnet_BP + scale_fill_manual(values = cluster_colors))
       }
     })
     
