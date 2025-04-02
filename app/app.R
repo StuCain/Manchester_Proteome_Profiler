@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.13.10-beta"
+Version = "0.14.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1308,7 +1308,7 @@ server <- shinyServer(function(input, output, session) {
     menuItem("Imputation options",
              radioButtons("imputation",
                           "Imputation type (Dataset 1)",
-                          choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                          choices = c("man", "NIPALS", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
                           #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                           selected = "man"),
              helpText("Manual (man) Imputation settings"),
@@ -1326,7 +1326,7 @@ server <- shinyServer(function(input, output, session) {
              if (input$data_mode == TRUE) {
                radioButtons("imputation2",
                             "Imputation type (Dataset 2)",
-                            choices = c("man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                            choices = c("man", "NIPALS", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
                             #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                             selected = "man")
                
@@ -2203,20 +2203,20 @@ server <- shinyServer(function(input, output, session) {
     if(input$impute_ave == TRUE){
       set.seed(123)
       if (input$imputation == "man"){
-        imp1<-DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp1<-DEP::impute(norm(), input$imputation)}
+        imp1<-impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp1<-impute_custom(norm(), input$imputation)}
       imp1_data<-SummarizedExperiment::assay(imp1)
       
       set.seed(321)
       if (input$imputation == "man"){
-        imp2<-DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp2<-DEP::impute(norm(), input$imputation)}
+        imp2<-impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp2<-impute_custom(norm(), input$imputation)}
       imp2_data<-SummarizedExperiment::assay(imp2)
       
       set.seed(456)
       if (input$imputation == "man"){
-        imp3<-DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp3<-DEP::impute(norm(), input$imputation)}
+        imp3<-impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp3<-impute_custom(norm(), input$imputation)}
       imp3_data<-SummarizedExperiment::assay(imp3)
       
       imp_ave<-(imp1_data + imp2_data + imp3_data)/3
@@ -2225,16 +2225,16 @@ server <- shinyServer(function(input, output, session) {
       return(imp1)
     }else{set.seed(123)
       if (input$imputation == "man"){
-        DEP::impute(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          DEP::impute(norm(), input$imputation)}
+        impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
+          impute_custom(norm(), input$imputation)}
     }
   })
   
   imp2 <- reactive({
     if(input$impute_seed == TRUE) {set.seed(321)}else{set.seed(123)}
     if (input$imputation2 == "man"){
-      DEP::impute(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        DEP::impute(norm2(), input$imputation2)}
+      impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+        impute_custom(norm2(), input$imputation2)}
     #set.seed(123)
   })
   

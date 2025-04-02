@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.1
+Version = 5.2
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -74,6 +74,42 @@ colour_functions <- function( limit_comp=6, high_col="red", low_col="blue", pale
   
   return(col_fun_out)
 } 
+
+###Imputation with NIPALS
+impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet", 
+                                      "MinProb", "man", "min", "zero", "mixed", "nbavg", "NIPALS"), ...) 
+{
+  assertthat::assert_that(inherits(se, "SummarizedExperiment"), 
+                          is.character(fun))
+  fun <- match.arg(fun)
+  if (any(!c("name", "ID") %in% colnames(rowData(se, use.names = FALSE)))) {
+    stop("'name' and/or 'ID' columns are not present in '", 
+         deparse(substitute(se)), "'\nRun make_unique() and make_se() to obtain the required columns", 
+         call. = FALSE)
+  }
+  if (!any(is.na(assay(se)))) {
+    warning("No missing values in '", deparse(substitute(se)), 
+            "'. ", "Returning the unchanged object.", call. = FALSE)
+    return(se)
+  }
+  rowData(se)$imputed <- apply(is.na(assay(se)), 1, any)
+  rowData(se)$num_NAs <- rowSums(is.na(assay(se)))
+  if (fun == "man") {
+    se <- manual_impute(se, ...)
+  }
+  if (fun == "NIPALS") {
+    imp_nipals <-pcaMethods::pca(SummarizedExperiment::assay(se), method = "nipals", nPcs = 2)
+    assay(se) <- pcaMethods::completeObs(imp_nipals)
+  }
+  
+  else {
+    MSnSet_data <- as(se, "MSnSet")
+    MSnSet_imputed <- MSnbase::impute(MSnSet_data, method = fun, 
+                                      ...)
+    assay(se) <- MSnbase::exprs(MSnSet_imputed)
+  }
+  return(se)
+}
 
 
 ###custom limma tesst diff function
