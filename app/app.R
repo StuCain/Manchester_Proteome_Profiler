@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.1-beta"
+Version = "0.14.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1338,12 +1338,12 @@ server <- shinyServer(function(input, output, session) {
     menuItem("Normalisation options",
              radioButtons("normalisation_choice",
                           "Normalisation Method",
-                          choices = c("vsn", "quantile", "none"),
+                          choices = c("vsn", "median center", "quantile", "none"),
                           selected = "vsn"),
              if (input$data_mode == TRUE) {
                radioButtons("normalisation_choice2",
                             "Normalisation Method Dataset 2)",
-                            choices = c("vsn", "quantile", "none"),
+                            choices = c("vsn", "median center", "quantile", "none"),
                             selected = "vsn")
              }
              
@@ -2163,21 +2163,24 @@ server <- shinyServer(function(input, output, session) {
   })
   
   norm <- reactive({
-    if (input$normalisation_choice=="vsn")
-    {normalize_vsn(filt())}
-    else if(input$normalisation_choice=="quantile"){
-      QFeatures::normalize(filt(), method = "quantiles")}
-    else if (input$normalisation_choice=="none")
-    {norm<-filt()}
+    normalize_custom(filt(), method = input$normalisation_choice)
+#    if (input$normalisation_choice=="vsn")
+#    {normalize_vsn(filt())}
+#    else if(input$normalisation_choice=="quantile"){
+#      QFeatures::normalize(filt(), method = "quantiles")}
+#    else if (input$normalisation_choice=="none")
+#    {norm<-filt()}
   })
   
   norm2 <- reactive({
-    if (input$normalisation_choice2=="vsn")
-    {normalize_vsn(filt2())}
-    else if(input$normalisation_choice2=="quantile"){
-      QFeatures::normalize(filt2(), method = "quantiles")}
-    else if (input$normalisation_choice2=="none")
-    {norm<-filt2()}
+    normalize_custom(filt2(), method = input$normalisation_choice2)
+    
+#    if (input$normalisation_choice2=="vsn")
+#    {normalize_vsn(filt2())}
+#    else if(input$normalisation_choice2=="quantile"){
+#      QFeatures::normalize(filt2(), method = "quantiles")}
+#    else if (input$normalisation_choice2=="none")
+#    {norm<-filt2()}
   })
   
   #Get Normalized data

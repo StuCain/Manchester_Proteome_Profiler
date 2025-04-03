@@ -173,6 +173,7 @@ if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{
 #Imputation Text
 if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
 if (params$imputation == "knn"){imputation_text <- "and missing values were imputed using the ‘Nearest neighbour averaging’ (knn) method. "}
+if (params$imputation == "NIPALS"){imputation_text <- "and missing values were imputed using the Nonlinear Iterative Partial Least Squares (NIPALS) algorithm to iteratively estimate missing values by extracting principal components from incomplete data matrices."}
 if (params$imputation == "QRILC"){imputation_text <- "and missing values were imputed using an imputation method (QRILC) that performs the imputation of left-censored missing data using random draws from a truncated distribution with parameters estimated using quantile regression. "}
 if (params$imputation == "MinDet"){imputation_text <- "and missing values were imputed using the 'MinDet' imputation method.  MinDet: Performs the imputation of left-censored missing data using a deterministic minimal value approach. Considering a expression data with n samples and p features, for each sample, the missing entries are replaced with a minimal value observed in that sample. "} 
 if (params$imputation == "MinProb"){imputation_text <- "and missing values were imputed using the 'MinProb' imputation method.  MinProb: Performs the imputation of left-censored missing data by random draws from a Gaussian distribution centred to a minimal value.  "}
@@ -183,6 +184,7 @@ if (params$imputation == "bpca"){imputation_text <- "and missing values were imp
 #Normalisation Text
 if (params$normalisation_choice == "vsn"){norm_text <- "Normalization was performed using the variance stabilizing transformation method (vsn) "}
 if (params$normalisation_choice == "quantile"){norm_text <- "Normalization was performed using the quantile method "}
+if (params$normalisation_choice == "median center"){norm_text <- "Normalization was performed using the median centered method "}
 if (params$normalisation_choice == "none"){norm_text <- "Protein Intensisty values were not normalised "}
 ```
 ```{r app_logo, echo=FALSE,message=FALSE, warning=FALSE}
@@ -192,7 +194,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.5.0
+Version:0.5.1
 
 ## Method details
  
@@ -1011,7 +1013,7 @@ shiny::setProgress(1)  # set progress to 100%
 \pagebreak
 
 ### Swatch
-Use the swatch for colour matching for figures that do not use the palette colours such as the Go Ontology maps
+Use the swatch for colour matching for figures that do not use the palette colours.
 ```{r swatch, echo=FALSE, fig.height=4, fig.width=4, message=FALSE, warning=FALSE}
 print(scales::show_col(params$colour_functions_input()[[2]]))
 ```

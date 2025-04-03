@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.2
+Version = 5.3
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -75,6 +75,39 @@ colour_functions <- function( limit_comp=6, high_col="red", low_col="blue", pale
   return(col_fun_out)
 } 
 
+#Custom Normalisation function
+normalize_custom <- function(se, method = c("vsn", "median center", "quantile", "none")) {
+  assertthat::assert_that(inherits(se, "SummarizedExperiment"))
+  
+  method <- match.arg(method)  # Ensure the method is valid
+  se_norm <- se  # Copy input object
+  
+  if (method == "vsn") {
+    # Apply Variance Stabilizing Normalization (VSN)
+    vsn.fit <- vsn::vsnMatrix(2^assay(se_norm))  # Convert log2 data to raw scale
+    assay(se_norm) <- vsn::predict(vsn.fit, 2^assay(se_norm))  # Normalize
+    
+  } else if (method == "median center") {
+    # Apply Median Centering Normalization
+    assay_data <- assay(se_norm)  # Extract matrix
+    column_medians <- apply(assay_data, 2, median, na.rm = TRUE)  # Compute medians
+    column_medians[is.na(column_medians)] <- 0  # Replace NA medians with 0 (to prevent NA issues)
+    assay(se_norm) <- sweep(assay_data, 2, column_medians, "-")  # Subtract column medians
+    
+  } else if (method == "quantile") {
+    # Apply Quantile Normalization
+    se_norm <- QFeatures::normalize(se_norm, method = "quantiles")
+    
+  } else if (method == "none") {
+    # No Normalisation
+    return(se)
+  }
+  
+  return(se_norm)
+}
+
+
+
 ###Imputation with NIPALS
 impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet", 
                                       "MinProb", "man", "min", "zero", "mixed", "nbavg", "NIPALS"), ...) 
@@ -96,18 +129,18 @@ impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet",
   rowData(se)$num_NAs <- rowSums(is.na(assay(se)))
   if (fun == "man") {
     se <- manual_impute(se, ...)
-  }
-  if (fun == "NIPALS") {
+    
+  } else if (fun == "NIPALS") {
     imp_nipals <-pcaMethods::pca(SummarizedExperiment::assay(se), method = "nipals", nPcs = 2)
     assay(se) <- pcaMethods::completeObs(imp_nipals)
-  }
-  
-  else {
+
+  } else {
     MSnSet_data <- as(se, "MSnSet")
     MSnSet_imputed <- MSnbase::impute(MSnSet_data, method = fun, 
                                       ...)
     assay(se) <- MSnbase::exprs(MSnSet_imputed)
   }
+  
   return(se)
 }
 
