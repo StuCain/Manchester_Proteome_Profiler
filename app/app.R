@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.2-beta"
+Version = "0.14.3-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -4309,7 +4309,7 @@ server <- shinyServer(function(input, output, session) {
     #Observe MF
     observeEvent(trigger_GO_MF(),{
       if (trigger_GO_MF() == TRUE) {
-        sendSweetAlert(session, title = "Plotting Mol. Func.", text = "This may take a while...", type = "info")
+        sendSweetAlert(session, title = "Plotting Molecular Function", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
         
         # ✅ Correct way to get reactive values
         entrez_list <- isolate(entrezlist_input())  # Extract reactive value
@@ -4395,7 +4395,7 @@ server <- shinyServer(function(input, output, session) {
     #Observe CC
     observeEvent(trigger_GO_CC(),{
       if (trigger_GO_CC() == TRUE) {
-        sendSweetAlert(session, title = "Plotting Cellular Component", text = "This may take a while...", type = "info")
+        sendSweetAlert(session, title = "Plotting Cellular Component", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
         
         # ✅ Correct way to get reactive values
         entrez_list <- isolate(entrezlist_input())  # Extract reactive value
@@ -4467,7 +4467,7 @@ server <- shinyServer(function(input, output, session) {
     #Observe BP
     observeEvent(trigger_GO_BP(),{
       if (trigger_GO_BP() == TRUE) {
-        sendSweetAlert(session, title = "Plotting Biological Function", text = "This may take a while...", type = "info")
+        sendSweetAlert(session, title = "Plotting Biological Function", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
         
         # ✅ Correct way to get reactive values
         entrez_list <- isolate(entrezlist_input())  # Extract reactive value
