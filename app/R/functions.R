@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.3
+Version = 5.4
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -127,6 +127,16 @@ impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet",
   }
   rowData(se)$imputed <- apply(is.na(assay(se)), 1, any)
   rowData(se)$num_NAs <- rowSums(is.na(assay(se)))
+  
+  # Warn if any samples have all missing values
+  all_na_cols <- colnames(se)[colSums(!is.na(assay(se))) == 0]
+  if (length(all_na_cols) > 0) {
+    warning("The following sample(s) have all missing values and cannot be imputed: ",
+            paste(all_na_cols, collapse = ", "))
+    stop("Error: The following sample(s) have all missing values and cannot be imputed, please check the Protein Numbers plot: ",
+         paste(all_na_cols, collapse = ", "))
+  }
+  
   if (fun == "man") {
     se <- manual_impute(se, ...)
     

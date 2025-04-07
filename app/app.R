@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.3-beta"
+Version = "0.14.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -159,9 +159,9 @@ ui <- fluidPage(
                          condition = "input.data_type == 'Other (Experimental)'",
                          fileInput('file_other',
                                    'Tab seperated text file',
-                                   accept=c('text/csv',
-                                            'text/comma-separated-values,text/plain',
-                                            '.csv')),
+                                   accept=c('text/tsv',
+                                            'text/tab-separated-values,text/plain',
+                                            '.tsv')),
                          menuItemOutput("columns")
                        ),
                        
@@ -239,9 +239,9 @@ ui <- fluidPage(
                          condition = "input.data_type2 == 'Other (Experimental)'",
                          fileInput('file_other2',
                                    'Tab seperated text file',
-                                   accept=c('text/csv',
-                                            'text/comma-separated-values,text/plain',
-                                            '.csv')),
+                                   accept=c('text/tsv',
+                                            'text/tab-separated-values,text/plain',
+                                            '.tsv')),
                          menuItemOutput("columns2")
                        ),
                        conditionalPanel(
