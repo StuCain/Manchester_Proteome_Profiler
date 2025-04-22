@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.5-beta"
+Version = "0.14.6-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -3770,40 +3770,14 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        mypal <- colour_functions_input()[[2]]
-        cnet_data <- as.data.frame(GO_MF_report_input())  # Extract data as a dataframe
+        GOtitle <- paste("Molecular Function up to level ", input$gomf_level, sep="")
+
+        cnet_MF<-cnetplot_custom(cnet_data = GO_MF_report_input(), 
+                        mypal = colour_functions_input()[[2]], 
+                        GOtitle = GOtitle, 
+                        go_level = input$gomf_level)
         
-        # Get unique clusters from the data
-        cluster_names <- unique(cnet_data$Cluster)
-        
-        # Dynamically assign colors to clusters
-        cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
-        
-        # Ensure Cluster is a factor for consistent coloring
-        cnet_data$Cluster <- as.factor(cnet_data$Cluster)
-        
-        # Define fixed colors for specific clusters
-        fixed_clusters <- paste("Cluster", 1:8)
-        for (i in seq_along(fixed_clusters)) {
-          if (fixed_clusters[i] %in% cluster_names) {
-            cluster_colors[fixed_clusters[i]] <- mypal[i]
-          }
-        }
-        
-        # Generate the Cnet Plot
-        GOMFtitle <- paste("Molecular Function up to level ", input$gomf_level, sep="")
-        cnet_MF <- enrichplot::cnetplot(GO_MF_report_input(), 
-                                        showCategory = input$gomf_level,
-                                        cex.params = list(
-                                          category_node = 2,  # Increase category node size
-                                          category_label = 1.5,  # Increase category node text size
-                                          gene_node = 1.5,  # Increase gene node size
-                                          gene_label = 1)  # Increase gene node text size
-        ) + ggtitle(GOMFtitle)
-        
-        # Apply Cluster Colors Correctly
-        print(cnet_MF + 
-        scale_fill_manual(values = cluster_colors)) 
+        print(cnet_MF)
       }
     })
     
@@ -3813,39 +3787,14 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        mypal <- colour_functions_input()[[2]]
-        cnet_data <- as.data.frame(GO_CC_report_input())  # Extract data as a dataframe
+        GOtitle <- paste("Cellular Component up to level ", input$gocc_level, sep="")
         
-        # Get unique clusters from the data
-        cluster_names <- unique(cnet_data$Cluster)
+        cnet_CC<-cnetplot_custom(cnet_data = GO_CC_report_input(), 
+                                 mypal = colour_functions_input()[[2]], 
+                                 GOtitle = GOtitle, 
+                                 go_level = input$gocc_level)
         
-        # Dynamically assign colors to clusters
-        cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
-        
-        # Ensure Cluster is a factor for consistent coloring
-        cnet_data$Cluster <- as.factor(cnet_data$Cluster)
-        
-        # Define fixed colors for specific clusters
-        fixed_clusters <- paste("Cluster", 1:8)
-        for (i in seq_along(fixed_clusters)) {
-          if (fixed_clusters[i] %in% cluster_names) {
-            cluster_colors[fixed_clusters[i]] <- mypal[i]
-          }
-        }
-        
-        # Generate the Cnet Plot
-        GOCCtitle <- paste("Cellular Component up to level ", input$gocc_level, sep="")
-        cnet_CC <- enrichplot::cnetplot(GO_CC_report_input(), 
-                                        showCategory = input$gocc_level,
-                                        cex.params = list(
-                                          category_node = 2,  # Increase category node size
-                                          category_label = 1.5,  # Increase category node text size
-                                          gene_node = 1.5,  # Increase gene node size
-                                          gene_label = 1)  # Increase gene node text size
-        ) + ggtitle(GOCCtitle)
-        
-        # Apply Cluster Colors Correctly
-        print(cnet_CC + scale_fill_manual(values = cluster_colors))
+        print(cnet_CC)
       }
     })
     
@@ -3855,84 +3804,18 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        mypal <- colour_functions_input()[[2]]
-        cnet_data <- as.data.frame(GO_BP_report_input())  # Extract data as a dataframe
+        GOtitle <- paste("Biological Process up to level ", input$gobp_level, sep="")
         
-        # Get unique clusters from the data
-        cluster_names <- unique(cnet_data$Cluster)
+        cnet_BP<-cnetplot_custom(cnet_data = GO_BP_report_input(), 
+                                 mypal = colour_functions_input()[[2]], 
+                                 GOtitle = GOtitle, 
+                                 go_level = input$gobp_level)
         
-        # Dynamically assign colors to clusters
-        cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
-        
-        # Ensure Cluster is a factor for consistent coloring
-        cnet_data$Cluster <- as.factor(cnet_data$Cluster)
-        
-        # Define fixed colors for specific clusters
-        fixed_clusters <- paste("Cluster", 1:8)
-        for (i in seq_along(fixed_clusters)) {
-          if (fixed_clusters[i] %in% cluster_names) {
-            cluster_colors[fixed_clusters[i]] <- mypal[i]
-          }
-        }
-        
-        # Generate the Cnet Plot
-        GOBPtitle <- paste("Biological Process up to level ", input$gobp_level, sep="")
-        cnet_BP <- enrichplot::cnetplot(GO_BP_report_input(), 
-                                        showCategory = input$gobp_level,
-                                        cex.params = list(
-                                          category_node = 2,  # Increase category node size
-                                          category_label = 1.5,  # Increase category node text size
-                                          gene_node = 1.5,  # Increase gene node size
-                                          gene_label = 1)  # Increase gene node text size
-        ) + ggtitle(GOBPtitle)
-        
-        # Apply Cluster Colors Correctly
-        print(cnet_BP + scale_fill_manual(values = cluster_colors))
+        print(cnet_BP)
       }
     })
     
-    #    GO_MF_report_input <- reactive({
-    #      withProgress(message = 'Plotting Mol. Func.', detail = 'This may take a while...', max=10, value = 6.6,{
-    #        for (i in 1:100) {
-    #          incProgress(1/100)
-    #          Sys.sleep(0.5)
-    #        }
-    #        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
-    #        )
-    #        
-    #        plot_GO_MF(entrezlist_input(), input$species)
-    #      })
-    #    })
-    
-    #    GO_CC_report_input <- reactive({
-    #      withProgress(message = 'Plotting Cell. Comp.', detail = 'This may take a while...', max=10, value = 6.6,{
-    #        for (i in 1:100) {
-    #          incProgress(1/100)
-    #          Sys.sleep(0.5)
-    #        }
-    #        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
-    #        )
-    #        
-    #        plot_GO_CC(entrezlist_input(), input$species)
-    #      })
-    #   })
-    
-    #    GO_BP_report_input <- reactive({
-    #      withProgress(message = 'Plotting Biol. Proc.', detail = 'This may take a while...', max=10, value = 6.6,{
-    #        for (i in 1:100) {
-    #          incProgress(1/100)
-    #          Sys.sleep(0.5)
-    #        }
-    #        validate(need(try(entrezlist_input() != "try-error"), "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species")
-    #        )
-    #        
-    #        plot_GO_BP(entrezlist_input(), input$species)
-    #      })
-    #    })
-    
-    
-    
-    
+
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
       if (input$top_table_opt == TRUE){

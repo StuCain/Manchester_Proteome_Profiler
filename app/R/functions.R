@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.4
+Version = 5.5
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2281,4 +2281,49 @@ plot_enhanced_volcano_dep<- function(data_results, comp_pick,  FC=2, pVal=0.05, 
   
   return(enh_vol)
 }
+
+####cnet custom plot####
+cnetplot_custom <- function( cnet_data, mypal, GOtitle, go_level ) {
+  cnet_data_df <- as.data.frame(cnet_data)  # Extract data as a dataframe
+  
+  # Get unique clusters from the data
+  cluster_names <- unique(cnet_data_df$Cluster)
+  
+  # Dynamically assign colors to clusters
+  cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
+  
+  # Ensure Cluster is a factor for consistent coloring
+  cnet_data_df$Cluster <- as.factor(cnet_data_df$Cluster)
+  
+  # Define fixed colors for specific clusters
+  fixed_clusters <- paste("Cluster", 1:8)
+  for (i in seq_along(fixed_clusters)) {
+    if (fixed_clusters[i] %in% cluster_names) {
+      cluster_colors[fixed_clusters[i]] <- mypal[i]
+    }
+  }
+  
+  # Generate the Cnet Plot
+  #Layout of the map, e.g. 'star', 'circle', 'gem', 'dh', 'graphopt', 'grid', 'mds', 'randomly', 'fr', 'kk', 'drl' or 'lgl'.
+  cnet <- enrichplot::cnetplot(cnet_data, 
+                               showCategory = go_level,
+                               cex.params = list(
+                                 category_node = 2,  # Increase category node size
+                                 category_label = 1.5,  # Increase category node text size
+                                 gene_node = 1.5,  # Increase gene node size
+                                 gene_label = 1),  # Increase gene node text size
+                               shadowtext = "category",
+                               layout = "kk"
+  ) + ggtitle(GOtitle)
+  
+  # Apply Cluster Colors Correctly
+  # cnet_MF[["plot_env"]][["range_category_size"]]<-cnet_MF[["plot_env"]][["range_category_size"]]*5
+  
+  #cnet_MF<-cnet_MF + scale_size_manual(values = cnet_data$Count*5)
+  cnet_plot <- print(cnet + 
+                       scale_fill_manual(values = cluster_colors))
+  
+  return(cnet_plot)
+}
+
 
