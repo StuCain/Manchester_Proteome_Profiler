@@ -45,7 +45,7 @@ library(VennDetail)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.4-beta"
+Version = "0.14.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -84,7 +84,9 @@ ui <- fluidPage(
   tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
   #tags$head(tags$style(HTML('.navbar-default {background-color: #2297E6; border-color: #dddddd}'))),
   tags$head(tags$link(rel = "icon", type = "image/gif/png", href = "app_icon.png")), 
-  tags$head(tags$title("Manchester Proteome Profiler")),
+  tags$head(tags$title("Manchester Proteome Profiler"),
+            tags$meta(name = "description", content = "Manchester Proteome Profiler can take the output files from MaxQuant, FragPipe, Proteome Discoverer or any general grouped protein intensity data. MPP can then normalise, impute missing values and carry out pairwise comparisons. You can then check the data quality with PCA and correlation plots, generate heatmaps, volcano plots and box plots. The resulting significant proteins can be then clustered and subjected to Gene Ontology analysis.")
+            ),
   tags$head(tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
   autoWaiter(html = spin_dots(), color = "white"),
   dashboardPage(
@@ -92,11 +94,7 @@ ui <- fluidPage(
       title = tags$img(src='app_logo v7.jpg', width = "100%", height = "100%"),
       tags$li(class="dropdown", tags$img(src='CELL MATRIX RGB2.jpg', width = "40%", height = "40%", style="float:right")),
       titleWidth = 300
-      #tags$li(class="dropdown",tags$a(href="https://github.com/aagarw30/R-Shinyapp-Tutorial", icon("github"), "Source Code", target="_blank"))
-      #tags$li(class="dropdown",tags$a(tags$img(src='app_logo v7.jpg', width = "10%", height = "10%", style="float:right"), "", target="_blank"))
-      
     ),
-    #"SAINT_DEP + Cluster"),
     dashboardSidebar(width=300,#changed with of sidebar
                      sidebarMenu(
                        tags$hr(), #adds a line
