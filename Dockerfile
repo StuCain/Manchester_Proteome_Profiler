@@ -38,6 +38,9 @@ RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable
 RUN Rscript -e "BiocManager::install('org.At.tair.db', ask=F, dependencies=TRUE)"
 
 RUN Rscript -e 'install.packages(c("promises", "future", "ggtangle"), dependencies=TRUE)'
+#RUN Rscript -e 'install.packages(c("shinyWidgets"), dependencies=TRUE)'
+#RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE)"
+#RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE)"
 
 #fetch TinyTeX installer and run it
 RUN apt-get install perl wget -y  

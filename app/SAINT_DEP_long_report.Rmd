@@ -256,8 +256,8 @@ num_signif_bfdr <-as.numeric(params$dep_num_bfdr())
 if (params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){comp_data_text<-paste0 ("* Tested first round of pairwise comparisons = ", comp1,"
 * Tested second round of pairwise comparisons = ", comp2)}else{comp_data_text<-paste0 ("* Tested pairwise comparisons = ", comp1)}
 
-if (params$comp_type == "2 Rounds of comparisons"){results_text<-paste0 ("After two sets of pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons. There were \\textbf{", num_signif,"} protein that overlapped the two sets of comparisons that were then used in the downstream analysis." )}else{results_text<-paste0 ("After pairwise comparisons were performed \\textbf{",num_signif, "} proteins differ significantly between samples.")}
-if (params$data_mode == TRUE){results_text<-paste0 ("After pairwise comparisons from two datasets were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons from the first dataset, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons from the second dataset. There were \\textbf{", num_signif,"} protein that overlapped the two sets of comparisons from the two datasets that were then used in the downstream analysis." )}
+if (params$comp_type == "2 Rounds of comparisons"){results_text<-paste0 ("After two sets of pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons. There were \\textbf{", num_signif,"} proteins that overlapped the two sets of comparisons that were then used in the downstream analysis." )}else{results_text<-paste0 ("After pairwise comparisons were performed \\textbf{",num_signif, "} proteins differ significantly between samples.")}
+if (params$data_mode == TRUE){results_text<-paste0 ("After pairwise comparisons from two datasets were performed \\textbf{",num_signif_c1, "} proteins differ significantly for the first set of comparisons from the first dataset, and  \\textbf{" ,num_signif_c2,"} proteins differ in the second set of comparisons from the second dataset. There were \\textbf{", num_signif,"} proteins that overlapped the two sets of comparisons from the two datasets that were then used in the downstream analysis." )}
 
 if (params$comp_type == "Use SAINTexpress"){results_text<-paste0 ("After SAINTexpress processing an initial protein list was generated from proteins that had a Bayesian false-discovery rate (BFDR) of <= \\textbf{", params$bfdr, "}, in at least \\textbf{", params$bfdr_freq, "} of the experimental conditions were performed. This generated a list of  \\textbf{",num_signif_bfdr, "} proteins. After pairwise comparisons were performed \\textbf{",num_signif_c1, "} proteins differ significantly between samples. There were \\textbf{", num_signif,"} proteins that overlapped the SAINTexpress analysis and pairwise comparisons that were then used in the downstream analysis." )}
 
@@ -666,7 +666,7 @@ for (i in 1:params$k1){
 
 ### Cluster Heatmaps
 
-```{r heatmap_cluster1, echo=FALSE, fig.height= fig_height_cluster[1], fig.width=fig_width_cluster, out.height=out_height_cluster[1], out.width=out_width_cluster[1], warning=FALSE, results='hide'}
+```{r heatmap_cluster1, echo=FALSE, fig.height= fig_height_cluster[1], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>0){
   print(params$cluster_heatmap_input()[[1]][[1]])
  
@@ -675,7 +675,7 @@ if(params$k1>0){
 #  print(params$cluster_heatmap_input()[[13]])
 }
 if (params$rendered_by_shiny)
-shiny::setProgress(0.30)  # set progress to 30%
+shiny::setProgress(0.80)  # set progress to 80%
 ```
 \pagebreak
 
@@ -687,7 +687,7 @@ knitr::kable(clust1_table)
 
 \pagebreak
 
-```{r heatmap_cluster2, echo=FALSE, fig.height= fig_height_cluster[2], fig.width=fig_width_cluster, out.height=out_height_cluster[2], out.width=out_width_cluster[2], warning=FALSE, results='hide'}
+```{r heatmap_cluster2, echo=FALSE, fig.height= fig_height_cluster[2], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 
 if(params$k1>1){
   print(params$cluster_heatmap_input()[[1]][[2]])
@@ -725,7 +725,7 @@ knitr::kable(clust3_table)
 
 \pagebreak
 
-```{r heatmap_cluster4, echo=FALSE, fig.height= fig_height_cluster[4], fig.width=fig_width_cluster, out.height=out_height_cluster[4], out.width=out_width_cluster[4], warning=FALSE, results='hide'}
+```{r heatmap_cluster4, echo=FALSE, fig.height= fig_height_cluster[4], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 
 if(params$k1>3){
   print(params$cluster_heatmap_input()[[1]][[4]])
@@ -744,7 +744,7 @@ knitr::kable(clust4_table)
 
 \pagebreak
 
-```{r heatmap_cluster5, echo=FALSE, fig.height= fig_height_cluster[5], fig.width=fig_width_cluster, out.height=out_height_cluster[5], out.width=out_width_cluster[5], warning=FALSE, results='hide'}
+```{r heatmap_cluster5, echo=FALSE, fig.height= fig_height_cluster[5], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>4){
   print(params$cluster_heatmap_input()[[1]][[5]])
 }
@@ -761,7 +761,7 @@ knitr::kable(clust5_table)
 
 \pagebreak
 
-```{r heatmap_cluster6, echo=FALSE, fig.height= fig_height_cluster[6], fig.width=fig_width_cluster, out.height=out_height_cluster[6], out.width=out_width_cluster[6], warning=FALSE, results='hide'}
+```{r heatmap_cluster6, echo=FALSE, fig.height= fig_height_cluster[6], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>5){
   print(params$cluster_heatmap_input()[[1]][[6]])
 }
@@ -778,7 +778,7 @@ knitr::kable(clust6_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster7, echo=FALSE, fig.height= fig_height_cluster[7], fig.width=fig_width_cluster, out.height=out_height_cluster[7], out.width=out_width_cluster[7], warning=FALSE, results='hide'}
+```{r heatmap_cluster7, echo=FALSE, fig.height= fig_height_cluster[7], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>6){
   print(params$cluster_heatmap_input()[[1]][[7]])
 }
@@ -795,7 +795,7 @@ knitr::kable(clust7_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster8, echo=FALSE, fig.height= fig_height_cluster[8], fig.width=fig_width_cluster, out.height=out_height_cluster[8], out.width=out_width_cluster[8], warning=FALSE, results='hide'}
+```{r heatmap_cluster8, echo=FALSE, fig.height= fig_height_cluster[8], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>7){
   print(params$cluster_heatmap_input()[[1]][[8]])
 }
@@ -812,7 +812,7 @@ knitr::kable(clust8_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster9, echo=FALSE, fig.height= fig_height_cluster[9], fig.width=fig_width_cluster, out.height=out_height_cluster[9], out.width=out_width_cluster[9], warning=FALSE, results='hide'}
+```{r heatmap_cluster9, echo=FALSE, fig.height= fig_height_cluster[9], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>8){
   print(params$cluster_heatmap_input()[[1]][[9]])
 }
@@ -830,7 +830,7 @@ knitr::kable(clust9_table)
 ```
 \pagebreak
 
-```{r heatmap_cluster10, echo=FALSE, fig.height= fig_height_cluster[10], fig.width=fig_width_cluster, out.height=out_height_cluster[10], out.width=out_width_cluster[10], warning=FALSE, results='hide'}
+```{r heatmap_cluster10, echo=FALSE, fig.height= fig_height_cluster[10], fig.width=fig_width_cluster, out.height='90%', warning=FALSE, results='hide'}
 if(params$k1>9){
   print(params$cluster_heatmap_input()[[1]][[10]])
 }

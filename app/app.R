@@ -40,12 +40,13 @@ library(promises)
 library(future)
 library(ggtangle)
 library(VennDetail)
+library(ragg)
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.6-beta"
+Version = "0.14.7-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1105,7 +1106,9 @@ ui <- fluidPage(
 ####Server####
 
 server <- shinyServer(function(input, output, session) {
-  options(shiny.usecairo = TRUE)  # Force Cairo rendering in Shiny
+  #options(shiny.usecairo = TRUE)  # Force Cairo rendering in Shiny
+  options(shiny.useragg = TRUE)
+  options(shiny.graphics.device = ragg::agg_png)
   
   
   # Allow reconnect if the session is interrupted
