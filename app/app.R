@@ -46,7 +46,7 @@ library(ragg)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.7-beta"
+Version = "0.14.8-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -86,7 +86,7 @@ ui <- fluidPage(
   #tags$head(tags$style(HTML('.navbar-default {background-color: #2297E6; border-color: #dddddd}'))),
   tags$head(tags$link(rel = "icon", type = "image/gif/png", href = "app_icon.png")), 
   tags$head(tags$title("Manchester Proteome Profiler"),
-            tags$meta(name = "description", content = "Manchester Proteome Profiler can take the output files from MaxQuant, FragPipe, Proteome Discoverer or any general grouped protein intensity data. MPP can then normalise, impute missing values and carry out pairwise comparisons. You can then check the data quality with PCA and correlation plots, generate heatmaps, volcano plots and box plots. The resulting significant proteins can be then clustered and subjected to Gene Ontology analysis.")
+            tags$meta(name = "description", content = "Manchester Proteome Profiler is an esy to use tool to allow analysis of protein intensity data from MaxQuant, FragPipe,  Proteome Discoverer or any grouped protein intensity data. MPP can then normalise, impute missing values and carry out pairwise comparisons. You can then check the data quality with PCA and correlation plots, generate heatmaps, volcano plots and box plots. The resulting significant proteins can be then clustered and subjected to Gene Ontology analysis.")
             ),
   tags$head(tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
   autoWaiter(html = spin_dots(), color = "white"),
@@ -2477,7 +2477,7 @@ server <- shinyServer(function(input, output, session) {
       selectizeInput("dataset",
                      "Choose a dataset to save" ,
                      c("results","significant_proteins",
-                       "displayed_subset","full_dataset","Cluster_list", "normalised_values", "imputed_values"))
+                       "displayed_subset","full_dataset","Cluster_list", "normalised_values", "imputed_values", "results_long", "results_long_signif"))
     })
     
     output$downloadButton <- renderUI({
@@ -4440,6 +4440,8 @@ server <- shinyServer(function(input, output, session) {
              "Cluster_list" = cludf_check_input(),
              "normalised_values"= norm_data_table(),
              "imputed_values"= imp_data_table(),
+             "results_long"=get_df_long(dep()),
+             "results_long_signif" = get_df_long(dep())%>% filter(significant) %>% select(-significant)
              
       )
     }

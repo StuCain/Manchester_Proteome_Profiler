@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:latest
+FROM rocker/shiny-verse:4.4.3
 
 RUN apt-get update && apt-get install -y \
     sudo \
@@ -38,13 +38,19 @@ RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable
 RUN Rscript -e "BiocManager::install('org.At.tair.db', ask=F, dependencies=TRUE)"
 
 RUN Rscript -e 'install.packages(c("promises", "future", "ggtangle"), dependencies=TRUE)'
-#RUN Rscript -e 'install.packages(c("shinyWidgets"), dependencies=TRUE)'
-#RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE)"
-#RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE)"
 
 #fetch TinyTeX installer and run it
-RUN apt-get install perl wget -y  
-RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
+#RUN apt-get install perl wget -y  
+#RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh 
+# Install tinytex in R
+RUN Rscript -e "install.packages('tinytex', repos='https://cloud.r-project.org'); tinytex::install_tinytex((force = TRUE))"
+
+# Add TinyTeX to PATH
+ENV PATH="/root/.TinyTeX/bin/x86_64-linux:$PATH"
+
+# Verify installation
+RUN Rscript -e "tinytex::is_tinytex()"
+
 #add TinyTeX to PATH variable
 ENV PATH="$PATH:/root/.TinyTeX/bin/x86_64-linux"
 #Install extra TinyTEX packages
