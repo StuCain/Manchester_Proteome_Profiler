@@ -194,7 +194,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.5.1
+Version:0.5.2
 
 ## Method details
  
@@ -465,15 +465,23 @@ if(params$data_mode == TRUE){print(params$pca_c2_input()[[1]])}
 ### Sample Correlation matrix
 
 ```{r correlation_heatmap, echo=FALSE, fig.height=7, fig.width=7, warning=FALSE, fig.keep='first', out.height='70%', tidy=T}
-print(params$cor_input())
+  result <- tryCatch(params$cor_input(), error = function(e) NULL)
+  if (inherits(result, "gg") || inherits(result, "grob") || is.function(result) || is.null(result) == FALSE) {
+    print(result)
+	}
 if(params$data_mode == TRUE){cor_text<-"### Principle Component Analysis (PCA) plot (Dataset 2)"}else cor_text<-""
 ```
 \pagebreak
 
-`r pca_text`
+`r cor_text`
 
-```{r correlation_heatmap2, echo=FALSE, fig.height=7, fig.width=7, warning=FALSE, fig.keep='first', out.height='70%', tidy=T}
-if(params$data_mode == TRUE){print(params$cor_c2_input())}
+```{r correlation_heatmap2, echo=FALSE, fig.height=7, fig.width=7, warning=FALSE, fig.keep='first', out.height='70%', tidy=TRUE}
+if (params$data_mode == TRUE) {
+  result <- tryCatch(params$cor_c2_input(), error = function(e) NULL)
+  if (inherits(result, "gg") || inherits(result, "grob") || is.function(result) || is.null(result) == FALSE) {
+    print(result)
+  }
+}
 ```
 \pagebreak
 

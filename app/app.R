@@ -46,7 +46,7 @@ library(ragg)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.9-beta"
+Version = "0.14.10-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
