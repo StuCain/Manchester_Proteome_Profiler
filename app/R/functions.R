@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.5
+Version = 5.6
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2283,7 +2283,22 @@ plot_enhanced_volcano_dep<- function(data_results, comp_pick,  FC=2, pVal=0.05, 
 }
 
 ####cnet custom plot####
-cnetplot_custom <- function( cnet_data, mypal, GOtitle, go_level ) {
+cnetplot_custom <- function(
+    cnet_data, layout = igraph::layout_with_kk,
+    showCategory = 5,
+    color_category= "#E5C494", size_category = 1, 
+    color_item = "#B3B3B3", size_item = 1, 
+    color_edge = "grey", size_edge=.5,
+    node_label = "all", 
+    foldChange = NULL,
+    hilight = "none",
+    hilight_alpha = .3,
+    pie = "equal",
+    mypal,
+    GOtitle = "",
+    node_scale = 1,
+    ...) {
+  
   cnet_data_df <- as.data.frame(cnet_data)  # Extract data as a dataframe
   
   # Get unique clusters from the data
@@ -2303,27 +2318,92 @@ cnetplot_custom <- function( cnet_data, mypal, GOtitle, go_level ) {
     }
   }
   
-  # Generate the Cnet Plot
-  #Layout of the map, e.g. 'star', 'circle', 'gem', 'dh', 'graphopt', 'grid', 'mds', 'randomly', 'fr', 'kk', 'drl' or 'lgl'.
-  cnet <- enrichplot::cnetplot(cnet_data, 
-                               showCategory = go_level,
-                               cex.params = list(
-                                 category_node = 2,  # Increase category node size
-                                 category_label = 1.5,  # Increase category node text size
-                                 gene_node = 1.5,  # Increase gene node size
-                                 gene_label = 1),  # Increase gene node text size
-                               shadowtext = "category",
-                               layout = "kk"
-  ) + ggtitle(GOtitle)
   
-  # Apply Cluster Colors Correctly
-  # cnet_MF[["plot_env"]][["range_category_size"]]<-cnet_MF[["plot_env"]][["range_category_size"]]*5
+  #gene_cluster_df <-  cnet_data_df %>%
+  #  select(Cluster, geneID) %>%
+  #  separate_rows(geneID, sep = "/") %>%
+  #  distinct() %>% rename(clustergene = Cluster)
   
-  #cnet_MF<-cnet_MF + scale_size_manual(values = cnet_data$Count*5)
-  cnet_plot <- print(cnet + 
-                       scale_fill_manual(values = cluster_colors))
+  #if (!"Cluster" %in% colnames(cnet_data_df)) {
+  #  stop("The input data frame does not contain a 'Cluster' column.")
+  #}
   
-  return(cnet_plot)
+  #print(colnames(cnet_data_df))
+  
+  #Get Gene cluster ID info
+  gene_cluster_df <- cnet_data_df %>%
+    dplyr::select(Cluster, geneID) %>%
+    tidyr::separate_rows(geneID, sep = "/") %>%
+    dplyr::distinct() %>%
+    dplyr::rename(clustergene = Cluster)
+  
+
+  d <- fortify(cnet_data, showCategory = showCategory, includeAll = TRUE, split = NULL)
+  d$Cluster <- sub("\n.*", "", d$Cluster)
+  y <- split(d$geneID, d$Description)
+  gs <- lapply(y, function(item) unique(unlist(strsplit(item, split="/"))))
+  
+  if (node_label == "all") {
+    node_label = "item"
+    add_category_label <- TRUE
+  } else if (node_label == "category") {
+    node_label = "none"
+    add_category_label <- TRUE
+  } else {
+    add_category_label <- FALSE
+  }
+  
+  p <- ggtangle::cnetplot(gs, layout = layout, 
+                          showCategory=length(gs), 
+                          foldChange = foldChange, 
+                          color_category = color_category,
+                          size_category=0, 
+                          color_item = color_item,
+                          size_item = 0,
+                          color_edge = color_edge,
+                          size_edge = size_edge,
+                          node_label = node_label,
+                          hilight = hilight,
+                          hilight_alpha = hilight_alpha,        
+                          ...) + ggtitle(GOtitle)
+  
+  # Join gene cluster ID data with cnetplot internal data
+  p$data <- p$data %>%
+    left_join(gene_cluster_df, by = c("label" = "geneID"))
+  
+  # Plot with coloured gene nodes
+  p <- p + geom_point(aes(x = x, y = y, color = clustergene), size = 3, show.legend = FALSE)+ scale_color_manual(values = cluster_colors, guide = "none")
+  
+  #Add category piecharts
+  p <- add_node_pie(p, d, pie, pie_scale=size_category, node_scale = node_scale)
+  if (add_category_label) {
+    p <- p + ggtangle::geom_cnet_label(node_label='category')
+  }
+  
+  #Recolour pie charts to mypal
+  p <- p + scale_fill_manual(values = cluster_colors)
+  
+  return(p)
 }
 
 
+add_node_pie <- function(p, d, pie = "equal", pie_scale = 1, node_scale = 1) {
+  dd <- d[,c('Cluster', 'Description', 'Count')]
+  pathway_size <- sapply(split(dd$Count, dd$Description), sum)
+  if (pie == "equal") dd$Count <- 1
+  dd <- tidyr::pivot_wider(dd, names_from="Cluster", values_from="Count", values_fill=0)
+  dd$pathway_size <- pathway_size[dd$Description]/sum(pathway_size)
+  
+  
+  
+  p <- ggtangle::'%<+%'(p, dd) +
+    scatterpie::geom_scatterpie(aes(x=.data$x, y=.data$y, r=.data$pathway_size*node_scale), 
+                                cols=as.character(unique(d$Cluster)), 
+                                legend_name = "Cluster", color=NA, pie_scale = pie_scale) +
+    scatterpie::geom_scatterpie_legend(dd$pathway_size*node_scale, x=min(p$data$x), y=min(p$data$y), n=4,
+                                       labeller=function(x) round(x * sum(pathway_size/node_scale))) +
+    coord_fixed() +
+    guides(size = "none") 
+  
+  return(p)
+}

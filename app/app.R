@@ -46,7 +46,7 @@ library(ragg)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.8-beta"
+Version = "0.14.9-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -966,15 +966,23 @@ ui <- fluidPage(
                                                       box(
                                                       actionButton("analyze_MF", "Analyze Molecular Function", icon = icon("magnifying-glass-chart"), class = "btn-success"),
                                                       helpText("Warning: This can take a couple of minutes"),
-                                                      width = 3),
+                                                      width = 4, height = 90),
                                                       box(numericInput("gomf_level",
                                                                        "GO Level",
                                                                        min = 1, max = 10, value = 5),
-                                                          width = 2),
-                                                      #box(numericInput("gomf_node",
-                                                      #                 "Node Size",
-                                                      #                 min = 1, max = 5, value = 1),
-                                                      #    width = 2),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("gomf_node",
+                                                                       "Node Size",
+                                                                       min = 1, max = 5, value = 2, step = 0.5),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfwidth_MF",
+                                                                       "PDF Width",
+                                                                       min = 3, max = 30, value = 8),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfheight_MF",
+                                                                       "PDF Height",
+                                                                       min = 3, max = 30, value = 8),
+                                                          width = 2, height = 90),
                                                     ),
                                                     fluidRow(
                                                       column(width = 5,
@@ -994,25 +1002,31 @@ ui <- fluidPage(
                                                       ),
                                                     ),
                                                     fluidRow(
-                                                      box(numericInput("pdfwidth_MF",
-                                                                       "PDF Width",
-                                                                       min = 3, max = 30, value = 6),
-                                                          width = 3),
-                                                      box(numericInput("pdfheight_MF",
-                                                                       "PDF Height",
-                                                                       min = 3, max = 30, value = 8),
-                                                          width = 3),
                                                       downloadButton('download_MF_all', 'Download MF Data', class = "btn-success")
                                                     ),
                                            ),
                                            tabPanel(title = "Cellular Components",
                                                     fluidRow(
+                                                      box(
+                                                        actionButton("analyze_CC", "Analyze Cellular Components", icon = icon("magnifying-glass-chart"), class = "btn-info"),
+                                                        helpText("Warning: This can take a couple of minutes"),
+                                                        width = 4, height = 90),
                                                       box(numericInput("gocc_level",
                                                                        "GO Level",
                                                                        min = 1, max = 10, value = 5),
-                                                          width = 2),
-                                                      actionButton("analyze_CC", "Analyze Cellular Components", icon = icon("magnifying-glass-chart"), class = "btn-info"),
-                                                      helpText("Warning: This can take a couple of minutes"),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("gocc_node",
+                                                                       "Node Size",
+                                                                       min = 1, max = 5, value = 2, step = 0.5),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfwidth_CC",
+                                                                       "PDF Width",
+                                                                       min = 3, max = 30, value = 8),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfheight_CC",
+                                                                       "PDF Height",
+                                                                       min = 3, max = 30, value = 8),
+                                                          width = 2, height = 90),
                                                     ),
                                                     fluidRow(
                                                       column(width = 5,
@@ -1032,27 +1046,33 @@ ui <- fluidPage(
                                                       ),
                                                     ),
                                                     fluidRow(
-                                                      box(numericInput("pdfwidth_CC",
-                                                                       "PDF Width",
-                                                                       min = 3, max = 30, value = 6),
-                                                          width = 3),
-                                                      box(numericInput("pdfheight_CC",
-                                                                       "PDF Height",
-                                                                       min = 3, max = 30, value = 8),
-                                                          width = 3),
                                                       downloadButton('download_CC_all', 'Download CC Data', class = "btn-info")
-                                                      
                                                     ),
                                                     
                                            ),
                                            tabPanel(title = "Biological Process",
                                                     fluidRow(
+                                                      box(
+                                                        actionButton("analyze_BP", "Analyze Biological Process", icon = icon("magnifying-glass-chart"), class = "btn-warning"),
+                                                        helpText("Warning: This can take a couple of minutes"),
+                                                        width = 4, height = 90),
                                                       box(numericInput("gobp_level",
                                                                        "GO Level",
                                                                        min = 1, max = 10, value = 5),
-                                                          width = 2),
-                                                      actionButton("analyze_BP", "Analyze Biological Process", icon = icon("magnifying-glass-chart"), class = "btn-warning"),
-                                                      helpText("Warning: This can take a couple of minutes"),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("gobp_node",
+                                                                       "Node Size",
+                                                                       min = 1, max = 5, value = 2, step = 0.5),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfwidth_BP",
+                                                                       "PDF Width",
+                                                                       min = 3, max = 30, value = 8),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfheight_BP",
+                                                                       "PDF Height",
+                                                                       min = 3, max = 30, value = 8),
+                                                          width = 2, height = 90),
+                                                      
                                                     ),
                                                     fluidRow(
                                                       column(width = 5,
@@ -1072,16 +1092,7 @@ ui <- fluidPage(
                                                       ),
                                                     ),
                                                     fluidRow(
-                                                      box(numericInput("pdfwidth_BP",
-                                                                       "PDF Width",
-                                                                       min = 3, max = 30, value = 6),
-                                                          width = 3),
-                                                      box(numericInput("pdfheight_BP",
-                                                                       "PDF Height",
-                                                                       min = 3, max = 30, value = 8),
-                                                          width = 3),
                                                       downloadButton('download_BP_all', 'Download BP Data', class = "btn-warning")
-                                                      
                                                     ),
                                            )
                                            
@@ -3773,12 +3784,13 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        GOtitle <- paste("Molecular Function up to level ", input$gomf_level, sep="")
+        GOtitle <- paste(" Molecular Function up to level ", input$gomf_level, sep="")
 
         cnet_MF<-cnetplot_custom(cnet_data = GO_MF_report_input(), 
                         mypal = colour_functions_input()[[2]], 
                         GOtitle = GOtitle, 
-                        go_level = input$gomf_level)
+                        showCategory = input$gomf_level,
+                        node_scale = input$gomf_node)
         
         print(cnet_MF)
       }
@@ -3790,12 +3802,13 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        GOtitle <- paste("Cellular Component up to level ", input$gocc_level, sep="")
+        GOtitle <- paste(" Cellular Component up to level ", input$gocc_level, sep="")
         
         cnet_CC<-cnetplot_custom(cnet_data = GO_CC_report_input(), 
                                  mypal = colour_functions_input()[[2]], 
                                  GOtitle = GOtitle, 
-                                 go_level = input$gocc_level)
+                                 showCategory = input$gocc_level,
+                                 node_scale = input$gocc_node)
         
         print(cnet_CC)
       }
@@ -3807,12 +3820,13 @@ server <- shinyServer(function(input, output, session) {
         plot.new()  # Create an empty plot
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
-        GOtitle <- paste("Biological Process up to level ", input$gobp_level, sep="")
+        GOtitle <- paste(" Biological Process up to level ", input$gobp_level, sep="")
         
         cnet_BP<-cnetplot_custom(cnet_data = GO_BP_report_input(), 
                                  mypal = colour_functions_input()[[2]], 
                                  GOtitle = GOtitle, 
-                                 go_level = input$gobp_level)
+                                 showCategory = input$gobp_level,
+                                 node_scale = input$gobp_node)
         
         print(cnet_BP)
       }
