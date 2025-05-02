@@ -46,7 +46,7 @@ library(ragg)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.10-beta"
+Version = "0.14.11-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -344,7 +344,7 @@ ui <- fluidPage(
           condition = "input.analyze >= 1",
           box(
             uiOutput("downloadreport"),
-            helpText("Long report takes several minutes to generate, check GO plots have completed before downloding report"),
+            helpText("Long report takes several minutes to generate, check GO plots have completed before downloading report"),
             #helpText("Check Heatmap has no single protein clusters"),
             width = 2, height = 120)
         ),
@@ -1334,14 +1334,15 @@ server <- shinyServer(function(input, output, session) {
                  href = "https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html",
                  target="https://rformassspectrometry.github.io/MsCoreUtils/reference/imputation.html")),
              checkboxInput("impute_ave", "Average Imputation of 3 different random seeds (1st Dataset)", FALSE),
-             checkboxInput("impute_seed", "Use different imputation seed on second dataset", FALSE),
              if (input$data_mode == TRUE) {
                radioButtons("imputation2",
                             "Imputation type (Dataset 2)",
                             choices = c("man", "NIPALS", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
                             #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                             selected = "man")
-               
+             },
+             if (input$data_mode == TRUE) {
+               checkboxInput("impute_ave2", "Average Imputation of 3 different random seeds (2nd Dataset)", FALSE)
              }
     )
   })
@@ -2246,11 +2247,34 @@ server <- shinyServer(function(input, output, session) {
   })
   
   imp2 <- reactive({
-    if(input$impute_seed == TRUE) {set.seed(321)}else{set.seed(123)}
-    if (input$imputation2 == "man"){
-      impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-        impute_custom(norm2(), input$imputation2)}
-    #set.seed(123)
+    if(input$impute_ave2 == TRUE){
+      set.seed(123)
+      if (input$imputation2 == "man"){
+        imp1<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp1<-impute_custom(norm2(), input$imputation)}
+      imp1_data<-SummarizedExperiment::assay(imp1)
+      
+      set.seed(321)
+      if (input$imputation2 == "man"){
+        imp2<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp2<-impute_custom(norm2(), input$imputation)}
+      imp2_data<-SummarizedExperiment::assay(imp2)
+      
+      set.seed(456)
+      if (input$imputation2 == "man"){
+        imp3<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+          imp3<-impute_custom(norm2(), input$imputation)}
+      imp3_data<-SummarizedExperiment::assay(imp3)
+      
+      imp_ave<-(imp1_data + imp2_data + imp3_data)/3
+      SummarizedExperiment::assay(imp1)<-imp_ave
+      #set.seed(123)
+      return(imp1)
+    }else{set.seed(123)
+      if (input$imputation2 == "man"){
+        impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
+          impute_custom(norm2(), input$imputation)}
+    }
   })
   
   
