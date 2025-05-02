@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.6
+Version = 5.7
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -1999,46 +1999,60 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
 ####Gene Ontology Plots####
 
 ####Entrelist####
-get_entrezlist <- function(clu_df, species="Human"){
-  if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
-  if (species=="Human"){species_db<-"org.Hs.eg.db"}
-  if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
-  
-  clu_df_no<-length(unique(clu_df$Cluster))
-  clu_df_val<-unique(clu_df$Cluster)
-  Cluster_list<- vector(mode='list', length=clu_df_no)
-  entrezlist <- vector(mode='list', length=clu_df_no)
-  entrezlist_names <- vector()
-  
-  for (i in 1:clu_df_no){
-    Cluster_list[[i]] =clu_df[clu_df$Cluster == clu_df_val[i], ]
-  } 
-  
-  
-  ####To do gene Ontology analysis
-  #Convert gene lists (from "SYMBOL", for example) into EntrezIDs.
-  # Generate lists of EntrezIDs
-  
-  for (i in 1:clu_df_no){
-    entrezlist[[i]] <- c(bitr(
-      Cluster_list[[i]]$GeneID,
-      fromType = "SYMBOL",
-      toType = "ENTREZID",
-      OrgDb = species_db
-    ))
+get_entrezlist <- function(clu_df, species = "Human") {
+  # Check if input data frame has the required columns
+  if (!all(c("Cluster", "GeneID") %in% colnames(clu_df))) {
+    stop("Input dataframe must contain 'Cluster' and 'GeneID' columns.")
   }
   
-  for (i in 1:clu_df_no){
-    entrezlist[[i]] <-entrezlist[[i]]$ENTREZID
-  } 
+  # Define species to OrgDb mapping
+  species_db <- switch(species,
+                       "Mouse" = "org.Mm.eg.db",
+                       "Human" = "org.Hs.eg.db",
+                       "Arabidopsis" = "org.At.tair.db",
+                       "Xenopus" = "org.Xl.eg.db",
+                       stop("Unsupported species. Choose from: Human, Mouse, Arabidopsis, Xenopus.")
+  )
   
-  for (i in 1:clu_df_no){
-    entrezlist_names[i]<-paste0("Cluster ", i)
-  } 
+  # Load the required OrgDb package
+  #if (!requireNamespace(species_db, quietly = TRUE)) {
+  #  stop(paste("Required package", species_db, "is not installed."))
+  #}
   
-  names(entrezlist)<-c(entrezlist_names)
+  #OrgDb <- get(species_db, envir = asNamespace(species_db))
+  
+  clu_df_no <- length(unique(clu_df$Cluster))
+  clu_df_val <- unique(clu_df$Cluster)
+  Cluster_list <- vector(mode = 'list', length = clu_df_no)
+  entrezlist <- vector(mode = 'list', length = clu_df_no)
+  entrezlist_names <- character(clu_df_no)
+  
+  for (i in seq_len(clu_df_no)) {
+    Cluster_list[[i]] <- clu_df[clu_df$Cluster == clu_df_val[i], ]
+  }
+  
+  for (i in seq_len(clu_df_no)) {
+    entrezlist[[i]] <- tryCatch({
+      bitr(
+        Cluster_list[[i]]$GeneID,
+        fromType = "SYMBOL",
+        toType = "ENTREZID",
+        OrgDb = species_db
+      )$ENTREZID
+    }, error = function(e) {
+      message("Error converting Cluster ", clu_df_val[i], ": ", e$message)
+      return(NA)
+    })
+  }
+  
+  for (i in seq_len(clu_df_no)) {
+    entrezlist_names[i] <- paste0("Cluster ", i)
+  }
+  
+  names(entrezlist) <- entrezlist_names
   return(entrezlist)
 }
+
 
 ####Cellular Compartment####
 
@@ -2046,6 +2060,7 @@ plot_GO_CC <- function(entrezlist, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
   if (species=="Human"){species_db<-"org.Hs.eg.db"}
   if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
+  if (species=="Xenopus"){species_db<-"org.Xl.eg.db"}
   
   GOCC <- compareCluster(
     geneClusters = entrezlist,
@@ -2066,6 +2081,7 @@ plot_GO_MF <- function(entrezlist, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
   if (species=="Human"){species_db<-"org.Hs.eg.db"}
   if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
+  if (species=="Xenopus"){species_db<-"org.Xl.eg.db"}
   
   GOMF <- compareCluster(
     geneClusters = entrezlist,
@@ -2085,6 +2101,8 @@ plot_GO_BP <- function(entrezlist, species="Human"){
   if (species=="Mouse"){species_db<-"org.Mm.eg.db"}
   if (species=="Human"){species_db<-"org.Hs.eg.db"}
   if (species=="Arabidopsis"){species_db<-"org.At.tair.db"}
+  if (species=="Xenopus"){species_db<-"org.Xl.eg.db"}
+  
   
   GOBP <- compareCluster(
     geneClusters = entrezlist,

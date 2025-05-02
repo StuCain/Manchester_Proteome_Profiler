@@ -10,6 +10,7 @@
 #"ComplexHeatmap", "SummarizedExperiment", "DEP", "org.Hs.eg.db", "HDO.db", "VennDetail", "QFeatures"))
 #BiocManager::install("org.Mm.eg.db")
 #BiocManager::install("org.At.tair.db")
+#BiocManager::install("org.Xl.eg.db")
 
 # Set a custom temp directory for Shiny Server
 if (.Platform$OS.type == "unix") {
@@ -46,7 +47,7 @@ library(ragg)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.14.11-beta"
+Version = "0.15.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -80,6 +81,18 @@ ui <- fluidPage(
       font-family: 'Open Sans', sans-serif;
     }
   ")), # Close tags$style
+  tags$style(HTML("
+    #conversion_status {
+      background-color: white;
+      color: grey;
+      font-size: 14px;
+      font-family: monospace;
+      #white-space: pre-wrap;
+      #padding: 10px;
+      #border: 1px solid #ccc;
+      #border-radius: 5px;
+    }
+  ")),
   tags$head(includeHTML(("google-analytics.html"))),
   theme = shinytheme("spacelab"),
   tags$head(tags$style(HTML('.progress-bar {background-color: #2297E6;}'))),
@@ -288,38 +301,38 @@ ui <- fluidPage(
         box(numericInput("thr",
                          "Missing value threshold",
                          min = 0, max = 3, value = 1),
-            width = 1, height = 120 ),
+            width = 1, height = 140 ),
         box(numericInput("p",
                          "adj. P value",
                          min = 0.0001, max = 0.1, value = 0.05),
             checkboxInput("pval_use", "Use p.Val", FALSE),
-            width = 1, height = 120),
+            width = 1, height = 140),
         box(numericInput("lfc",
                          "Fold change",
                          min = 0, max = 32, value = 2),
-            width = 1, height = 120),
+            width = 1, height = 140),
         infoBoxOutput("significantBox"), #shows number of Sig. Proteins
         conditionalPanel(
           condition = "input.comp_type == 'Use SAINTexpress'",
           box(numericInput("bfdr",
                            "BFDR Cut-Off",
                            min = 0, max = 1, value = 0.05, step = 0.05),
-              width = 1, height = 120),
+              width = 1, height = 140),
           box(numericInput("bfdr_freq",
                            "BFDR Freq. Min",
                            min = 0, max = 10, value = 1),
-              width = 1, height = 120),
+              width = 1, height = 140),
         ),
         conditionalPanel(
           condition = "input.data_mode == true || input.comp_type == '2 Rounds of comparisons'",
           box(numericInput("p2",
                            "adj. P value (Comp2)",
                            min = 0.0001, max = 0.1, value = 0.05),
-              width = 1, height = 120),
+              width = 1, height = 140),
           box(numericInput("lfc2",
                            "Fold change (Comp2)",
                            min = 0, max = 32, value = 2),
-              width = 1, height = 120),
+              width = 1, height = 140),
         ),
         conditionalPanel(
           condition = "input.analyze >= 1",
@@ -328,7 +341,7 @@ ui <- fluidPage(
                          "Report type",
                          choices = c("Short", "with Box Plots", "Long"),
                          selected = "Short"),
-            width = 2, height = 120),
+            width = 2, height = 140),
         ),
         conditionalPanel(
           condition = "input.data_mode == true || input.comp_type == '2 Rounds of comparisons'",
@@ -346,15 +359,16 @@ ui <- fluidPage(
             uiOutput("downloadreport"),
             helpText("Long report takes several minutes to generate, check GO plots have completed before downloading report"),
             #helpText("Check Heatmap has no single protein clusters"),
-            width = 2, height = 120)
+            width = 2, height = 140)
         ),
         box(
           radioButtons("species",
                        "GO species",
-                       choices = c("Human", "Mouse", "Arabidopsis"),
+                       choices = c("Human", "Mouse", "Arabidopsis", "Xenopus"),
                        selected = "Human"),
-          width = 1, height = 120),
+          width = 1, height = 140),
       ),
+      uiOutput("conversion_status"),
       
       #Main body of
       tabsetPanel(id = "main_body_tab",
@@ -1120,6 +1134,8 @@ server <- shinyServer(function(input, output, session) {
   #options(shiny.usecairo = TRUE)  # Force Cairo rendering in Shiny
   options(shiny.useragg = TRUE)
   options(shiny.graphics.device = ragg::agg_png)
+  conversion_messages <- reactiveVal(NULL)
+  
   
   
   # Allow reconnect if the session is interrupted
@@ -1168,6 +1184,28 @@ server <- shinyServer(function(input, output, session) {
          height = height_img)
     
   }, deleteFile = F)
+  
+  output$conversion_status <- renderUI({
+    msgs <- conversion_messages()
+    
+    # Filter specific error-related messages
+    #error_msgs <- msgs[grepl("None of the keys entered are valid|No enrichment found in any of gene cluster", msgs)]
+    error_msgs <- msgs[grepl("None of the keys entered are valid", msgs)]
+    
+    if (length(error_msgs) > 0) {
+      #plot.new()  # Create an empty plot
+      print("Error in asigning GO terms, please check the correct G0 species is selected")
+      #infoBoxOutput()
+      #HTML(paste0(
+      #  "<div class='alert alert-danger alert-dismissible fade show' role='alert' style='background-color:white; color:red; font-size:14px;
+      #     font-family:monospace; padding:10px; border:1px solid #ccc; border-radius:5px;'>",
+      #  paste(error_msgs, collapse = "<br>"),
+      #  "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>",
+      #  "</div>"
+      #))
+    }
+  })
+  
   
   
   # getPage<-function() {
@@ -3794,12 +3832,22 @@ server <- shinyServer(function(input, output, session) {
     
     #Make entrezlist
     entrezlist_input <- reactive({
-      #Check for single protein clusters
-      validate(need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, 
-          please alter the Kmeans number")
+      validate(
+        need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
       )
       
-      get_entrezlist(cludf_check_input(), input$species)
+      messages <- character()
+      
+      result <- withCallingHandlers(
+        get_entrezlist(cludf_check_input(), input$species),
+        message = function(m) {
+          messages <<- c(messages, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
+      )
+      
+      conversion_messages(messages)  # Store messages for later display
+      return(result)
     })
     
     GOMF_cnet_input <- reactive({

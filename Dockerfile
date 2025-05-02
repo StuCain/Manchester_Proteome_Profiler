@@ -61,6 +61,9 @@ RUN tlmgr install bookmark
 #Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
 
+#Install XENOPUS library
+RUN Rscript -e "BiocManager::install('org.Xl.eg.db', ask=F, dependencies=TRUE)"
+
 RUN sudo rm /srv/shiny-server/index.html
 
 # Make the ShinyApp available at port 3838
