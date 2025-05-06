@@ -47,7 +47,7 @@ library(ragg)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.15.1-beta"
+Version = "0.15.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1193,16 +1193,7 @@ server <- shinyServer(function(input, output, session) {
     error_msgs <- msgs[grepl("None of the keys entered are valid", msgs)]
     
     if (length(error_msgs) > 0) {
-      #plot.new()  # Create an empty plot
       print("Error in asigning GO terms, please check the correct G0 species is selected")
-      #infoBoxOutput()
-      #HTML(paste0(
-      #  "<div class='alert alert-danger alert-dismissible fade show' role='alert' style='background-color:white; color:red; font-size:14px;
-      #     font-family:monospace; padding:10px; border:1px solid #ccc; border-radius:5px;'>",
-      #  paste(error_msgs, collapse = "<br>"),
-      #  "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>",
-      #  "</div>"
-      #))
     }
   })
   
@@ -3847,6 +3838,16 @@ server <- shinyServer(function(input, output, session) {
       )
       
       conversion_messages(messages)  # Store messages for later display
+      
+      msgs <- conversion_messages()
+      error_msgs <- msgs[grepl("None of the keys entered are valid", msgs)]
+      
+      if (length(error_msgs) > 0) {
+        print("Error in asigning GO terms, please check the correct G0 species is selected")
+        showNotification("Error in asigning GO terms, please check the correct G0 species is selected", type = "error", duration = 20)
+      }
+      
+      
       return(result)
     })
     
@@ -4291,7 +4292,7 @@ server <- shinyServer(function(input, output, session) {
                         "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
           
           plot_GO_MF(entrez_list, species)  # Call function with extracted values
-        }) %...>% GO_MF_report_input %...!% (function(e) {
+        }, seed = 123) %...>% GO_MF_report_input %...!% (function(e) {
           GO_MF_report_input(NULL)
           showNotification(paste("Error:", e$message), type = "error")
         })
@@ -4377,7 +4378,7 @@ server <- shinyServer(function(input, output, session) {
                         "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
           
           plot_GO_CC(entrez_list, species)  # Call function with extracted values
-        }) %...>% GO_CC_report_input %...!% (function(e) {
+        }, seed = 123) %...>% GO_CC_report_input %...!% (function(e) {
           GO_CC_report_input(NULL)
           showNotification(paste("Error:", e$message), type = "error")
         })
@@ -4449,7 +4450,7 @@ server <- shinyServer(function(input, output, session) {
                         "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
           
           plot_GO_BP(entrez_list, species)  # Call function with extracted values
-        }) %...>% GO_BP_report_input %...!% (function(e) {
+        }, seed = 123) %...>% GO_BP_report_input %...!% (function(e) {
           GO_BP_report_input(NULL)
           showNotification(paste("Error:", e$message), type = "error")
         })
