@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.7
+Version = 5.9
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2312,6 +2312,7 @@ cnetplot_custom <- function(
     hilight = "none",
     hilight_alpha = .3,
     pie = "equal",
+    pie_scale = 1,
     mypal,
     GOtitle = "",
     node_scale = 1,
@@ -2355,11 +2356,19 @@ cnetplot_custom <- function(
     dplyr::distinct() %>%
     dplyr::rename(clustergene = Cluster)
   
-
+  
   d <- fortify(cnet_data, showCategory = showCategory, includeAll = TRUE, split = NULL)
   d$Cluster <- sub("\n.*", "", d$Cluster)
   y <- split(d$geneID, d$Description)
   gs <- lapply(y, function(item) unique(unlist(strsplit(item, split="/"))))
+  
+  #For Pie charts
+  dd <- d[,c('Cluster', 'Description', 'Count')]
+  pathway_size <- sapply(split(dd$Count, dd$Description), sum)
+  if (pie == "equal") dd$Count <- 1
+  dd <- tidyr::pivot_wider(dd, names_from="Cluster", values_from="Count", values_fill=0)
+  dd$pathway_size <- pathway_size[dd$Description]/sum(pathway_size)
+  
   
   if (node_label == "all") {
     node_label = "item"
@@ -2374,7 +2383,7 @@ cnetplot_custom <- function(
   p <- ggtangle::cnetplot(gs, layout = layout, 
                           showCategory=length(gs), 
                           foldChange = foldChange, 
-                          color_category = color_category,
+                          color_category = cluster_colors[1],
                           size_category=0, 
                           color_item = color_item,
                           size_item = 0,
@@ -2389,39 +2398,36 @@ cnetplot_custom <- function(
   p$data <- p$data %>%
     left_join(gene_cluster_df, by = c("label" = "geneID"))
   
-  # Plot with coloured gene nodes
-  p <- p + geom_point(aes(x = x, y = y, color = clustergene), size = 3, show.legend = FALSE)+ scale_color_manual(values = cluster_colors, guide = "none")
+  # Plot with coloured gene nodes and single cluster categories
+  if (length(cluster_names)>1){
+    p <- p + geom_point(aes(x = x, y = y, color = clustergene), size = 3, show.legend = FALSE)+ scale_color_manual(values = cluster_colors, guide = "none")
+  }else{
+    p <- p + geom_point(aes(x = x, y = y, color = clustergene), size = 3, show.legend = FALSE)+ scale_color_manual(values = cluster_colors, guide = "none")
+    p <- ggtangle::'%<+%'(p, dd) +
+      geom_point(aes(x = x, y = y, size = pathway_size, color = cluster_colors), color = cluster_colors ,  show.legend = )+ 
+      scale_size(range = c(0, 12*node_scale/2), guide = guide_legend(title = "Category Size"))
+  }
   
   #Add category piecharts
-  p <- add_node_pie(p, d, pie, pie_scale=size_category, node_scale = node_scale)
+  if (length(cluster_names)>1){
+    p <- ggtangle::'%<+%'(p, dd) +
+      scatterpie::geom_scatterpie(aes(x=.data$x, y=.data$y, r=.data$pathway_size*node_scale), 
+                                  cols=as.character(unique(d$Cluster)), 
+                                  legend_name = "Cluster", color=NA, pie_scale = pie_scale) +
+      scatterpie::geom_scatterpie_legend(dd$pathway_size*node_scale, x=min(p$data$x), y=min(p$data$y), n=4,
+                                         labeller=function(x) round(x * sum(pathway_size/node_scale))) +
+      coord_fixed() +
+      guides(size = "none") 
+  }
+  
   if (add_category_label) {
     p <- p + ggtangle::geom_cnet_label(node_label='category')
   }
   
-  #Recolour pie charts to mypal
-  p <- p + scale_fill_manual(values = cluster_colors)
-  
-  return(p)
-}
-
-
-add_node_pie <- function(p, d, pie = "equal", pie_scale = 1, node_scale = 1) {
-  dd <- d[,c('Cluster', 'Description', 'Count')]
-  pathway_size <- sapply(split(dd$Count, dd$Description), sum)
-  if (pie == "equal") dd$Count <- 1
-  dd <- tidyr::pivot_wider(dd, names_from="Cluster", values_from="Count", values_fill=0)
-  dd$pathway_size <- pathway_size[dd$Description]/sum(pathway_size)
-  
-  
-  
-  p <- ggtangle::'%<+%'(p, dd) +
-    scatterpie::geom_scatterpie(aes(x=.data$x, y=.data$y, r=.data$pathway_size*node_scale), 
-                                cols=as.character(unique(d$Cluster)), 
-                                legend_name = "Cluster", color=NA, pie_scale = pie_scale) +
-    scatterpie::geom_scatterpie_legend(dd$pathway_size*node_scale, x=min(p$data$x), y=min(p$data$y), n=4,
-                                       labeller=function(x) round(x * sum(pathway_size/node_scale))) +
-    coord_fixed() +
-    guides(size = "none") 
+  if (length(cluster_names)>1){
+    #Recolour pie charts to mypal
+    p <- p + scale_fill_manual(values = cluster_colors)
+  }
   
   return(p)
 }
