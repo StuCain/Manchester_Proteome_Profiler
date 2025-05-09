@@ -42,12 +42,16 @@ library(future)
 library(ggtangle)
 library(VennDetail)
 library(ragg)
+library(biogridr)
+library(tidygraph)
+library(ggraph)
+
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.15.4-beta"
+Version = "0.16.0-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1108,8 +1112,36 @@ ui <- fluidPage(
                                                     fluidRow(
                                                       downloadButton('download_BP_all', 'Download BP Data', class = "btn-warning")
                                                     ),
+                                           ),
+                                           tabPanel(title = "BioGrid Interactions",
+                                                    fluidRow(
+                                                      box(
+                                                        actionButton("analyze_BG", "Analyze BioGrid Interactions", icon = icon("magnifying-glass-chart")),
+                                                        helpText("Warning: This can take a couple of minutes"),
+                                                        width = 4, height = 90),
+                                                      box(numericInput("BG_level",
+                                                                       "Interaction Count <=",
+                                                                       min = 1, max = 10, value = 2),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("BG_node",
+                                                                       "Node Size",
+                                                                       min = 1, max = 5, value = 2, step = 0.5),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfwidth_BG",
+                                                                       "PDF Width",
+                                                                       min = 3, max = 30, value = 10),
+                                                          width = 2, height = 90),
+                                                      box(numericInput("pdfheight_BG",
+                                                                       "PDF Height",
+                                                                       min = 3, max = 30, value = 10),
+                                                          width = 2, height = 90),
+                                                      
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("BG_cnet", height = 800),
+                                                      downloadButton('download_BG_cnet', 'Save Plot', class = "btn-primary")
+                                                    ),
                                            )
-                                           
                                     )
                              )
                            )
@@ -1147,6 +1179,7 @@ server <- shinyServer(function(input, output, session) {
   trigger_GO_MF <- reactiveVal(FALSE)
   trigger_GO_CC <- reactiveVal(FALSE)
   trigger_GO_BP <- reactiveVal(FALSE)
+  trigger_BG <- reactiveVal(FALSE)
   
   
   
@@ -1154,6 +1187,7 @@ server <- shinyServer(function(input, output, session) {
   GO_MF_report_input <- reactiveVal(NULL)  # Store async result
   GO_CC_report_input <- reactiveVal(NULL)  # Store async result
   GO_BP_report_input <- reactiveVal(NULL)  # Store async result
+  BG_report_input <- reactiveVal(NULL)  # Store async result
   
   
   
@@ -3905,6 +3939,23 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #BioGrid Plot
+    BG_cnet_input <- reactive({
+      if (is.null(BG_report_input())) {
+        # Show a text message while waiting for the plot data
+        plot.new()  # Create an empty plot
+        text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+      } else {
+        biogrid_network_input <- biogrid_network(biogrid_list = BG_report_input(),
+                                                 cludf =cludf_check_input(),
+                                                 mypal = colour_functions_input()[[2]],
+                                                 inter_count = input$BG_level)
+        
+        print (biogrid_network_input)
+      }
+    })
+    
+    
 
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
@@ -4205,10 +4256,8 @@ server <- shinyServer(function(input, output, session) {
         trigger_GO_MF(TRUE)
         trigger_GO_CC(TRUE)
         trigger_GO_BP(TRUE)
-        #   while (is.null(GO_BP_report_input())) {
-        #      Sys.sleep(1)  # Wait for 1 second before checking again
-        #    }
-        
+        trigger_BG(TRUE)
+
       }
     })
     
@@ -4223,6 +4272,11 @@ server <- shinyServer(function(input, output, session) {
     observeEvent(input$analyze_BP, {
       trigger_GO_BP(TRUE)
     })
+    
+    observeEvent(input$analyze_BG, {
+      trigger_BG(TRUE)
+    })
+    
     
     observe({
       output$plot <- renderUI({
@@ -4512,7 +4566,68 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #Observe BioGrid
+    observeEvent(trigger_BG(),{
+      if (trigger_BG() == TRUE) {
+        sendSweetAlert(session, title = "Plotting BioGrid Interactions", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
+        
+        validate(
+          need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
+        )
+
+        # ✅ Correct way to get reactive values
+        clu_df <- isolate(cludf_check_input())  # Extract reactive value
+        #species <- isolate(input$species)  # Capture input value
+        
+        future_promise({
+          # Validate input inside async process
+          #validate(need(try(entrez_list != "try-error"), 
+          #              "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
+          
+          biogrid_query(cludf = clu_df)
+          #plot_GO_BP(entrez_list, species)  # Call function with extracted values
+        }) %...>% BG_report_input %...!% (function(e) {
+          BG_report_input(NULL)
+          showNotification(paste("Error:", e$message), type = "error")
+        })
+        
+        
+
+        output$BG_cnet <- renderPlot({
+          if (is.null(BG_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(BG_cnet_input())
+          }
+        })
+        
+
+        output$download_BG_cnet <- downloadHandler(
+          filename = function() { paste("BioGrid_Map_level_",input$BG_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_BG, width = input$pdfwidth_BG)
+            print(BG_cnet_input())
+            dev.off()
+          }
+        )
+        
+        output$download_BG_all <- downloadHandler(
+          filename = function() { paste("Biological _Process_Data.txt", sep = "") },
+          content = function(file) {
+            write.table(BG_report_input(),
+                        file,
+                        col.names = TRUE,
+                        row.names = FALSE,
+                        sep ="\t") 
+          }
+        )
+        trigger_BG(FALSE)
+      }
+    })
     
+        
     #### Download objects and functions  ------------------------------------
     datasetInput <- reactive({
       switch(input$dataset,

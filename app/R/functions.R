@@ -2431,3 +2431,95 @@ cnetplot_custom <- function(
   
   return(p)
 }
+
+####Biogrid Query####
+biogrid_query <- function(cludf, speciesID = 9606){
+  
+  Bio_GL<-paste(cludf$GeneID,collapse='|')
+  
+  bg_get_key("Stuart","Cain","stuart.a.cain@manchester.ac.uk","BioID")
+  
+  biogrid_list <- bg("interactions") %>% 
+    bg_constrain(taxId = speciesID, geneList = Bio_GL) %>% 
+    bg_get_results()
+  
+  biogrid_list_a <- biogrid_list %>% filter(biogrid_list$official_symbol_for_interactor_a %in% cludf$GeneID )
+  biogrid_list_b <- biogrid_list_a %>% filter(biogrid_list_a$official_symbol_for_interactor_b %in% cludf$GeneID )
+  
+  return(biogrid_list_b)
+}
+
+####BioGrid Network Generation####
+biogrid_network <- function(biogrid_list, cludf, mypal, inter_count = 2){
+  
+  # Create a contingency table of interactions
+  interaction_counts <- table(biogrid_list$official_symbol_for_interactor_a, biogrid_list$official_symbol_for_interactor_b)
+  
+  # Convert to a data frame if needed
+  interaction_df <- as.data.frame(interaction_counts)
+  colnames(interaction_df) <- c("Interactor_A", "Interactor_B", "Count")
+  
+  # Optional: Filter out zero counts
+  interaction_df <- interaction_df[interaction_df$Count > 0, ]
+  # Optional: Filter out single count counts
+  df <- interaction_df[interaction_df$Count >= inter_count, ]
+  
+  
+  interaction_df$Interaction_Label <- paste(
+    interaction_df$Interactor_A,
+    "(interacts with)",
+    interaction_df$Interactor_B
+  )
+  
+  #set cluster colors
+  cluster_names <- unique(cludf$Cluster)
+  
+  # Dynamically assign colors to clusters
+  cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
+  
+  # Ensure Cluster is a factor for consistent coloring
+  cludf$Cluster <- as.factor(cludf$Cluster)
+  
+  # Define fixed colors for specific clusters
+  fixed_clusters <- paste("Cluster", 1:8)
+  for (i in seq_along(fixed_clusters)) {
+    if (fixed_clusters[i] %in% cluster_names) {
+      cluster_colors[fixed_clusters[i]] <- mypal[i]
+    }
+  }
+  
+  
+  # Load the data
+  #df <- read_tsv("path/to/interactor_pair_counts_2.txt")
+  
+  # Ensure character columns
+  df$Interactor_A <- as.character(df$Interactor_A)
+  df$Interactor_B <- as.character(df$Interactor_B)
+  
+  # Create tbl_graph with specified node columns
+  g <- tidygraph::as_tbl_graph(df, directed = FALSE, nodes = NULL)
+  
+  # Add degree (optional, for node size or filtering)
+  g <- g %>% dplyr::mutate(degree = centrality_degree())
+  
+  # Plot the network
+  p <- ggraph::ggraph(g, layout = "fr") +
+    ggraph::geom_edge_link(aes(width = Count), color = "grey", alpha = 0.7)
+  
+  
+  # Join gene cluster ID data with network internal data
+  p$data <- p$data %>%
+    left_join(cludf, by = c("name" = "GeneID"))
+  
+  
+  p <- p +  ggraph::geom_node_point(aes(size = degree, color = Cluster)) + 
+    scale_color_manual(values = cluster_colors)+
+    scale_size_continuous (range = c(2, 15)) +
+    ggraph::geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+    theme_void() +
+    ggtitle(paste("Interactor Network from BioGRID (Number of Interactions >= ", inter_count ,")"))
+  
+  return (p)
+  
+}
+
