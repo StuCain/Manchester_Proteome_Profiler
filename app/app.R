@@ -51,7 +51,7 @@ library(ggraph)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.0-beta"
+Version = "0.16.1-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1116,31 +1116,35 @@ ui <- fluidPage(
                                            tabPanel(title = "BioGrid Interactions",
                                                     fluidRow(
                                                       box(
-                                                        actionButton("analyze_BG", "Analyze BioGrid Interactions", icon = icon("magnifying-glass-chart")),
+                                                        actionButton("analyze_BG", "Analyze BioGrid Interactions", icon = icon("magnifying-glass-chart"), class = "btn-primary"),
                                                         helpText("Warning: This can take a couple of minutes"),
-                                                        width = 4, height = 90),
+                                                        width = 4, height = 100),
                                                       box(numericInput("BG_level",
                                                                        "Interaction Count <=",
                                                                        min = 1, max = 10, value = 2),
-                                                          width = 2, height = 90),
+                                                          width = 2, height = 100),
                                                       box(numericInput("BG_node",
                                                                        "Node Size",
                                                                        min = 1, max = 5, value = 2, step = 0.5),
-                                                          width = 2, height = 90),
+                                                          width = 2, height = 100),
                                                       box(numericInput("pdfwidth_BG",
                                                                        "PDF Width",
                                                                        min = 3, max = 30, value = 10),
-                                                          width = 2, height = 90),
+                                                          width = 2, height = 100),
                                                       box(numericInput("pdfheight_BG",
                                                                        "PDF Height",
                                                                        min = 3, max = 30, value = 10),
-                                                          width = 2, height = 90),
+                                                          width = 2, height = 100),
                                                       
                                                     ),
                                                     fluidRow(
                                                       plotOutput("BG_cnet", height = 800),
                                                       downloadButton('download_BG_cnet', 'Save Plot', class = "btn-primary")
                                                     ),
+                                                    fluidRow(
+                                                      downloadButton('download_BG_data', 'Download BioGrid Search', class = "btn-primary")
+                                                    ),
+                                                    
                                            )
                                     )
                              )
@@ -3944,7 +3948,8 @@ server <- shinyServer(function(input, output, session) {
       if (is.null(BG_report_input())) {
         # Show a text message while waiting for the plot data
         plot.new()  # Create an empty plot
-        text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+        if(nrow(cludf_check_input()) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
         biogrid_network_input <- biogrid_network(biogrid_list = BG_report_input(),
                                                  cludf =cludf_check_input(),
@@ -4534,7 +4539,7 @@ server <- shinyServer(function(input, output, session) {
         
         #PDF Output
         output$download_BP_plot <- downloadHandler(
-          filename = function() { paste("Biological _Process_Plot_level_",input$gobp_level, ".pdf", sep = "") },
+          filename = function() { paste("Biological_Process_Plot_level_",input$gobp_level, ".pdf", sep = "") },
           content = function(file) {
             cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
             GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
@@ -4544,7 +4549,7 @@ server <- shinyServer(function(input, output, session) {
         )
         
         output$download_BP_cnet <- downloadHandler(
-          filename = function() { paste("Biological _Process_Map_level_",input$gobp_level, ".pdf", sep = "") },
+          filename = function() { paste("Biological_Process_Map_level_",input$gobp_level, ".pdf", sep = "") },
           content = function(file) {
             cairo_pdf(file, height = input$pdfheight_BP, width = input$pdfwidth_BP)
             print(GOBP_cnet_input())
@@ -4553,7 +4558,7 @@ server <- shinyServer(function(input, output, session) {
         )
         
         output$download_BP_all <- downloadHandler(
-          filename = function() { paste("Biological _Process_Data.txt", sep = "") },
+          filename = function() { paste("Biological_Process_Data.txt", sep = "") },
           content = function(file) {
             write.table(GO_BP_report_input(),
                         file,
@@ -4571,19 +4576,15 @@ server <- shinyServer(function(input, output, session) {
       if (trigger_BG() == TRUE) {
         sendSweetAlert(session, title = "Plotting BioGrid Interactions", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
         
-        validate(
-          need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
-        )
-
         # ✅ Correct way to get reactive values
         clu_df <- isolate(cludf_check_input())  # Extract reactive value
         #species <- isolate(input$species)  # Capture input value
         
         future_promise({
-          # Validate input inside async process
-          #validate(need(try(entrez_list != "try-error"), 
-          #              "None of the Gene_IDs matched to the species database, make sure you have selected the correct GO species"))
-          
+          validate(
+            need(nrow(clu_df) < 160, 
+                 "BioGRID searches are limited to a significant protein count below 160")
+          )
           biogrid_query(cludf = clu_df)
           #plot_GO_BP(entrez_list, species)  # Call function with extracted values
         }) %...>% BG_report_input %...!% (function(e) {
@@ -4597,6 +4598,7 @@ server <- shinyServer(function(input, output, session) {
           if (is.null(BG_report_input())) {
             # Show a text message while waiting for the plot data
             plot.new()  # Create an empty plot
+            if(nrow(clu_df) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
             text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
           } else {
             print(BG_cnet_input())
@@ -4613,8 +4615,8 @@ server <- shinyServer(function(input, output, session) {
           }
         )
         
-        output$download_BG_all <- downloadHandler(
-          filename = function() { paste("Biological _Process_Data.txt", sep = "") },
+        output$download_BG_data <- downloadHandler(
+          filename = function() { paste("BioGRid_Search_Data.txt", sep = "") },
           content = function(file) {
             write.table(BG_report_input(),
                         file,
