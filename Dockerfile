@@ -63,6 +63,8 @@ RUN cp -r /root/.TinyTeX /home/shiny
 
 #Install XENOPUS library
 RUN Rscript -e "BiocManager::install('org.Xl.eg.db', ask=F, dependencies=TRUE)"
+RUN Rscript -e 'devtools::install_github("npjc/biogridr")'
+RUN Rscript -e 'install.packages(c("tidygraph", "ggraph"), dependencies=TRUE)'
 
 RUN sudo rm /srv/shiny-server/index.html
 

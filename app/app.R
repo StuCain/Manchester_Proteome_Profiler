@@ -11,6 +11,10 @@
 #BiocManager::install("org.Mm.eg.db")
 #BiocManager::install("org.At.tair.db")
 #BiocManager::install("org.Xl.eg.db")
+#install.packages("devtools")  # if not already installed
+#library(devtools)
+#devtools::install_github("npjc/biogridr")
+
 
 # Set a custom temp directory for Shiny Server
 if (.Platform$OS.type == "unix") {
@@ -51,7 +55,7 @@ library(ggraph)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.1-beta"
+Version = "0.16.2-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1118,31 +1122,39 @@ ui <- fluidPage(
                                                       box(
                                                         actionButton("analyze_BG", "Analyze BioGrid Interactions", icon = icon("magnifying-glass-chart"), class = "btn-primary"),
                                                         helpText("Warning: This can take a couple of minutes"),
-                                                        width = 4, height = 100),
+                                                        helpText("Max limit of 160 significant proteins"),
+                                                        width = 4, height = 110),
                                                       box(numericInput("BG_level",
                                                                        "Interaction Count <=",
                                                                        min = 1, max = 10, value = 2),
-                                                          width = 2, height = 100),
+                                                          width = 2, height = 110),
                                                       box(numericInput("BG_node",
                                                                        "Node Size",
-                                                                       min = 1, max = 5, value = 2, step = 0.5),
-                                                          width = 2, height = 100),
-                                                      box(numericInput("pdfwidth_BG",
-                                                                       "PDF Width",
-                                                                       min = 3, max = 30, value = 10),
-                                                          width = 2, height = 100),
-                                                      box(numericInput("pdfheight_BG",
-                                                                       "PDF Height",
-                                                                       min = 3, max = 30, value = 10),
-                                                          width = 2, height = 100),
+                                                                       min = 1, max = 5, value = 1, step = 0.5),
+                                                          width = 2, height = 110),
+                                                      box(checkboxInput("use_human",
+                                                                        "Use Human Interaction Network Data ",
+                                                                        value = FALSE),
+                                                          helpText("This will convert Gene names to uppercase"),
+                                                          width = 4, height = 110),
                                                       
                                                     ),
                                                     fluidRow(
                                                       plotOutput("BG_cnet", height = 800),
-                                                      downloadButton('download_BG_cnet', 'Save Plot', class = "btn-primary")
                                                     ),
                                                     fluidRow(
-                                                      downloadButton('download_BG_data', 'Download BioGrid Search', class = "btn-primary")
+                                                      box(downloadButton('download_BG_cnet', 'Save Plot', class = "btn-primary"),
+                                                          width = 2, height = 80),
+                                                      box(downloadButton('download_BG_data', 'Download BioGrid Search', class = "btn-primary"),
+                                                          width = 3, height = 80),
+                                                      box(numericInput("pdfwidth_BG",
+                                                                       "PDF Width",
+                                                                       min = 3, max = 30, value = 10),
+                                                          width = 3, height = 80),
+                                                      box(numericInput("pdfheight_BG",
+                                                                       "PDF Height",
+                                                                       min = 3, max = 30, value = 10),
+                                                          width = 3, height = 80),
                                                     ),
                                                     
                                            )
@@ -3951,10 +3963,14 @@ server <- shinyServer(function(input, output, session) {
         if(nrow(cludf_check_input()) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
+        clu_df<-cludf_check_input()
+        if(input$use_human == TRUE){
+          clu_df$GeneID <- toupper(clu_df$GeneID)}# Convert GeneID column to uppercase
         biogrid_network_input <- biogrid_network(biogrid_list = BG_report_input(),
-                                                 cludf =cludf_check_input(),
+                                                 cludf =clu_df,
                                                  mypal = colour_functions_input()[[2]],
-                                                 inter_count = input$BG_level)
+                                                 inter_count = input$BG_level,
+                                                 node_scale = input$BG_node)
         
         print (biogrid_network_input)
       }
@@ -4578,14 +4594,24 @@ server <- shinyServer(function(input, output, session) {
         
         # ✅ Correct way to get reactive values
         clu_df <- isolate(cludf_check_input())  # Extract reactive value
-        #species <- isolate(input$species)  # Capture input value
+        #species <- 9606
+        species_choice <- isolate(input$species)  # Capture input value
+        if(species_choice =="Human"){species <- 9606}
+        if(species_choice =="Mouse"){species <- 10090}
+        if(species_choice =="Arabidopsis"){species <- 3702}
+        if(species_choice =="Xenopus"){species <- 8355}
         
+        if(input$use_human == TRUE){
+          clu_df$GeneID <- toupper(clu_df$GeneID)# Convert GeneID column to uppercase
+          species <- 9606 } 
+        
+
         future_promise({
           validate(
             need(nrow(clu_df) < 160, 
                  "BioGRID searches are limited to a significant protein count below 160")
           )
-          biogrid_query(cludf = clu_df)
+          biogrid_query(cludf = clu_df, speciesID = species)
           #plot_GO_BP(entrez_list, species)  # Call function with extracted values
         }) %...>% BG_report_input %...!% (function(e) {
           BG_report_input(NULL)

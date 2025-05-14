@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.9
+Version = 5.10
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2433,7 +2433,8 @@ cnetplot_custom <- function(
 }
 
 ####Biogrid Query####
-biogrid_query <- function(cludf, speciesID = 9606){
+biogrid_query <- function(cludf, speciesID = 9606, use_human = FALSE){
+  
   
   Bio_GL<-paste(cludf$GeneID,collapse='|')
   
@@ -2450,7 +2451,7 @@ biogrid_query <- function(cludf, speciesID = 9606){
 }
 
 ####BioGrid Network Generation####
-biogrid_network <- function(biogrid_list, cludf, mypal, inter_count = 2){
+biogrid_network <- function(biogrid_list, cludf, mypal, inter_count = 2, node_scale = 1){
   
   # Create a contingency table of interactions
   interaction_counts <- table(biogrid_list$official_symbol_for_interactor_a, biogrid_list$official_symbol_for_interactor_b)
@@ -2514,7 +2515,7 @@ biogrid_network <- function(biogrid_list, cludf, mypal, inter_count = 2){
   
   p <- p +  ggraph::geom_node_point(aes(size = degree, color = Cluster)) + 
     scale_color_manual(values = cluster_colors)+
-    scale_size_continuous (range = c(2, 15)) +
+    scale_size_continuous (range = c(2, 15*node_scale)) +
     ggraph::geom_node_text(aes(label = name), repel = TRUE, size = 3) +
     theme_void() +
     ggtitle(paste("Interactor Network from BioGRID (Number of Interactions >= ", inter_count ,")"))
