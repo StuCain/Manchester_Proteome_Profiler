@@ -14,6 +14,7 @@
 #install.packages("devtools")  # if not already installed
 #library(devtools)
 #devtools::install_github("npjc/biogridr")
+#BiocManager::install("STRINGdb")
 
 
 # Set a custom temp directory for Shiny Server
@@ -49,13 +50,14 @@ library(ragg)
 library(biogridr)
 library(tidygraph)
 library(ggraph)
+library(STRINGdb)
 
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.2-beta"
+Version = "0.16.3-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1157,7 +1159,49 @@ ui <- fluidPage(
                                                           width = 3, height = 80),
                                                     ),
                                                     
-                                           )
+                                           ),
+                                           tabPanel(title = "STRING db Interactions",
+                                                    fluidRow(
+                                                      box(
+                                                        actionButton("analyze_STR", "Analyze STRINGdb Interactions", icon = icon("magnifying-glass-chart"), class = "btn-primary"),
+                                                        helpText("Warning: This can take a couple of minutes"),
+                                                        helpText("Max limit of 160 significant proteins"),
+                                                        width = 4, height = 110),
+                                                      box(numericInput("STR_level",
+                                                                       "Combined Count <=",
+                                                                       min = 400, max = 1000, value = 400, step = 100),
+                                                          width = 2, height = 110),
+                                                      box(numericInput("STR_node",
+                                                                       "Node Size",
+                                                                       min = 1, max = 5, value = 1, step = 0.5),
+                                                          width = 2, height = 110),
+                                                      #box(checkboxInput("use_human",
+                                                      #                  "Use Human Interaction Network Data ",
+                                                      #                  value = FALSE),
+                                                      #    helpText("This will convert Gene names to uppercase"),
+                                                      #    width = 4, height = 110),
+                                                      
+                                                    ),
+                                                    fluidRow(
+                                                      plotOutput("STR_cnet", height = 800),
+                                                    ),
+                                                    fluidRow(
+                                                      box(downloadButton('download_STR_cnet', 'Save Plot', class = "btn-primary"),
+                                                          width = 2, height = 80),
+                                                      box(downloadButton('download_STR_data', 'Download STRINGdb Search', class = "btn-primary"),
+                                                          width = 3, height = 80),
+                                                      box(numericInput("pdfwidth_STR",
+                                                                       "PDF Width",
+                                                                       min = 3, max = 30, value = 10),
+                                                          width = 3, height = 80),
+                                                      box(numericInput("pdfheight_STR",
+                                                                       "PDF Height",
+                                                                       min = 3, max = 30, value = 10),
+                                                          width = 3, height = 80),
+                                                    ),
+                                                    
+                                           ),
+                                           
                                     )
                              )
                            )
@@ -1196,6 +1240,7 @@ server <- shinyServer(function(input, output, session) {
   trigger_GO_CC <- reactiveVal(FALSE)
   trigger_GO_BP <- reactiveVal(FALSE)
   trigger_BG <- reactiveVal(FALSE)
+  trigger_STR <- reactiveVal(FALSE)
   
   
   
@@ -1204,7 +1249,7 @@ server <- shinyServer(function(input, output, session) {
   GO_CC_report_input <- reactiveVal(NULL)  # Store async result
   GO_BP_report_input <- reactiveVal(NULL)  # Store async result
   BG_report_input <- reactiveVal(NULL)  # Store async result
-  
+  STR_report_input <- reactiveVal(NULL)  # Store async result
   
   
   #### UI functions --------------------------------------------------------
@@ -3277,7 +3322,7 @@ server <- shinyServer(function(input, output, session) {
     cor_input <- reactive({
       expfile<-expdesign()
       condition_no<-length(unique(expfile$condition))
-      if(condition_no<=12){  
+      if(condition_no<=12 && max(as.numeric(expfile$replicate))<=12){  
         plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"), font_size = 10)
       }else{plot_cor(dep(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", font_size = 10)}
     })
@@ -3286,7 +3331,7 @@ server <- shinyServer(function(input, output, session) {
     cor_c2_input <- reactive({
       expfile<-expdesign()
       condition_no<-length(unique(expfile$condition))
-      if(condition_no<=12){  
+      if(condition_no<=12 && max(as.numeric(expfile$replicate))<=12){  
         plot_cor(dep2(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", indicate = c("condition", "replicate"), font_size = 10)
       }else{plot_cor(dep2(), significant = TRUE, lower = 0, upper = 1, pal = "Reds", font_size = 10)}
     })
@@ -3976,6 +4021,28 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
+    #STRINGdb Plot
+    STR_cnet_input <- reactive({
+      if (is.null(STR_report_input())) {
+        # Show a text message while waiting for the plot data
+        plot.new()  # Create an empty plot
+        if(nrow(cludf_check_input()) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+          text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+      } else {
+        clu_df<-cludf_check_input()
+        if(input$use_human == TRUE){
+          clu_df$GeneID <- toupper(clu_df$GeneID)}# Convert GeneID column to uppercase
+        STRINGdb_network_input <- STRINGdb_network(interactions_named = STR_report_input(),
+                                                 cludf =clu_df,
+                                                 mypal = colour_functions_input()[[2]],
+                                                 threshold = input$STR_level,
+                                                 node_scale = input$STR_node)
+        
+        print (STRINGdb_network_input)
+      }
+    })
+    
+    
     
 
     #### Output functions  --------------------------------------------------
@@ -4278,7 +4345,7 @@ server <- shinyServer(function(input, output, session) {
         trigger_GO_CC(TRUE)
         trigger_GO_BP(TRUE)
         trigger_BG(TRUE)
-
+        trigger_STR(TRUE)
       }
     })
     
@@ -4298,6 +4365,9 @@ server <- shinyServer(function(input, output, session) {
       trigger_BG(TRUE)
     })
     
+    observeEvent(input$analyze_STR, {
+      trigger_STR(TRUE)
+    })
     
     observe({
       output$plot <- renderUI({
@@ -4654,6 +4724,74 @@ server <- shinyServer(function(input, output, session) {
         trigger_BG(FALSE)
       }
     })
+    
+    #Observe STRINGdb
+    observeEvent(trigger_STR(),{
+      if (trigger_STR() == TRUE) {
+        sendSweetAlert(session, title = "Plotting STRINGdb Interactions", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
+        
+        # ✅ Correct way to get reactive values
+        clu_df <- isolate(cludf_check_input())  # Extract reactive value
+        #species <- 9606
+        species_choice <- isolate(input$species)  # Capture input value
+        if(species_choice =="Human"){species <- 9606}
+        if(species_choice =="Mouse"){species <- 10090}
+        if(species_choice =="Arabidopsis"){species <- 3702}
+        if(species_choice =="Xenopus"){species <- 8355}
+        
+        if(input$use_human == TRUE){
+          clu_df$GeneID <- toupper(clu_df$GeneID)# Convert GeneID column to uppercase
+          species <- 9606 } 
+        
+        
+        future_promise({
+          validate(
+            need(nrow(clu_df) < 160, 
+                 "STRINGdb searches are limited to a significant protein count below 160")
+          )
+          STRINGdb_query(cludf = clu_df, speciesID = species)
+        }) %...>% STR_report_input %...!% (function(e) {
+          STR_report_input(NULL)
+          showNotification(paste("Error:", e$message), type = "error")
+        })
+        
+        
+        
+        output$STR_cnet <- renderPlot({
+          if (is.null(STR_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            if(nrow(clu_df) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(STR_cnet_input())
+          }
+        })
+        
+        
+        output$download_STR_cnet <- downloadHandler(
+          filename = function() { paste("STRINGdb_Map_level_",input$BG_level, ".pdf", sep = "") },
+          content = function(file) {
+            cairo_pdf(file, height = input$pdfheight_STR, width = input$pdfwidth_STR)
+            print(STR_cnet_input())
+            dev.off()
+          }
+        )
+        
+        output$download_STR_data <- downloadHandler(
+          filename = function() { paste("STRINGdb_Search_Data.txt", sep = "") },
+          content = function(file) {
+            write.table(STR_report_input(),
+                        file,
+                        col.names = TRUE,
+                        row.names = FALSE,
+                        sep ="\t") 
+          }
+        )
+        trigger_STR(FALSE)
+      }
+    })
+    
     
         
     #### Download objects and functions  ------------------------------------

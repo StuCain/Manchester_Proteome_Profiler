@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.10
+Version = 5.12
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2515,10 +2515,94 @@ biogrid_network <- function(biogrid_list, cludf, mypal, inter_count = 2, node_sc
   
   p <- p +  ggraph::geom_node_point(aes(size = degree, color = Cluster)) + 
     scale_color_manual(values = cluster_colors)+
-    scale_size_continuous (range = c(2, 15*node_scale)) +
+    scale_size_continuous (range = c(2*node_scale, 15*node_scale)) +
     ggraph::geom_node_text(aes(label = name), repel = TRUE, size = 3) +
     theme_void() +
     ggtitle(paste("Interactor Network from BioGRID (Number of Interactions >= ", inter_count ,")"))
+  
+  return (p)
+  
+}
+
+####STRINGdb Query####
+STRINGdb_query <- function(cludf, speciesID = 9606, threshold = 400){
+  
+  #STRINGdb search
+  string_db <- STRINGdb$new(version="11", species=speciesID, score_threshold=400)
+  
+  # Get gene list
+  genes <- cludf$GeneID
+  
+  # Map gene symbols to STRING IDs
+  genes_df <- data.frame(gene = genes, stringsAsFactors = FALSE)
+  mapped_genes <- string_db$map(genes_df, "gene", removeUnmappedRows = TRUE)
+  string_db$plot_network(mapped_genes)
+  
+  # Get interactions
+  interactions <- string_db$get_interactions(mapped_genes$STRING_id)
+  
+  # Merge to get gene names for 'from'
+  interactions_named <- merge(interactions, mapped_genes[, c("STRING_id", "gene")],
+                              by.x = "from", by.y = "STRING_id", all.x = TRUE)
+  colnames(interactions_named)[ncol(interactions_named)] <- "from_gene"
+  
+  # Merge to get gene names for 'to'
+  interactions_named <- merge(interactions_named, mapped_genes[, c("STRING_id", "gene")],
+                              by.x = "to", by.y = "STRING_id", all.x = TRUE)
+  colnames(interactions_named)[ncol(interactions_named)] <- "to_gene"
+  
+  #Convert to confidence score
+  interactions_named$confidence <- interactions_named$combined_score / 1000
+  
+  return(interactions_named)
+}
+
+
+####STRINGdb Network####
+STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 400, node_scale = 1){
+  
+  #set cluster colors
+  cluster_names <- unique(cludf$Cluster)
+  
+  # Dynamically assign colors to clusters
+  cluster_colors <- setNames(mypal[1:length(cluster_names)], cluster_names)
+  
+  # Ensure Cluster is a factor for consistent coloring
+  cludf$Cluster <- as.factor(cludf$Cluster)
+  
+  # Define fixed colors for specific clusters
+  fixed_clusters <- paste("Cluster", 1:8)
+  for (i in seq_along(fixed_clusters)) {
+    if (fixed_clusters[i] %in% cluster_names) {
+      cluster_colors[fixed_clusters[i]] <- mypal[i]
+    }
+  }
+  
+  # Set threshold Cutoff
+  interactions_named_filt <- interactions_named[interactions_named$combined_score >= threshold, ]
+
+  # Create igraph object using gene names
+  edges <- interactions_named_filt[, c("from_gene", "to_gene", "combined_score")]
+  g <- igraph::graph_from_data_frame(edges, directed = FALSE)
+  
+  tg <- as_tbl_graph(g)
+  tg <- tg %>% mutate(degree = centrality_degree())
+  
+  
+  #p <- ggraph::ggraph(tg, layout = "kk") +
+  p <- ggraph::ggraph(tg, layout = "fr") +
+    ggraph::geom_edge_link(aes(edge_alpha = combined_score), edge_width = 1.2, color = "grey", show.legend = TRUE)
+  
+  # Join gene cluster ID data with network internal data
+  p$data <- p$data %>%
+    left_join(cludf, by = c("name" = "GeneID"))
+  
+  p <- p +  ggraph::geom_node_point(aes(size = degree, color = Cluster)) + 
+    scale_color_manual(values = cluster_colors)+
+    scale_size_continuous (range = c(3*node_scale, 10*node_scale)) +
+    ggraph::geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+    theme_void()+
+    ggtitle(paste("Interactor Network from STRINGdb (Threshold >= ", threshold ,")"))
   
   return (p)
   
