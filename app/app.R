@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.3-beta"
+Version = "0.16.4-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1168,8 +1168,8 @@ ui <- fluidPage(
                                                         helpText("Max limit of 160 significant proteins"),
                                                         width = 4, height = 110),
                                                       box(numericInput("STR_level",
-                                                                       "Combined Count <=",
-                                                                       min = 400, max = 1000, value = 400, step = 100),
+                                                                       "Confidence Score >=",
+                                                                       min = 0.4, max = 1, value = 0.4, step = 0.1),
                                                           width = 2, height = 110),
                                                       box(numericInput("STR_node",
                                                                        "Node Size",
@@ -4770,7 +4770,7 @@ server <- shinyServer(function(input, output, session) {
         
         
         output$download_STR_cnet <- downloadHandler(
-          filename = function() { paste("STRINGdb_Map_level_",input$BG_level, ".pdf", sep = "") },
+          filename = function() { paste("STRINGdb_Conf_Score_",input$STR_level, ".pdf", sep = "") },
           content = function(file) {
             cairo_pdf(file, height = input$pdfheight_STR, width = input$pdfwidth_STR)
             print(STR_cnet_input())
@@ -5466,6 +5466,10 @@ server <- shinyServer(function(input, output, session) {
                          gomf_level = input$gomf_level,
                          gocc_level = input$gocc_level,
                          gobp_level = input$gobp_level,
+                         STR_report_input = STR_report_input,
+                         STR_cnet_input = STR_cnet_input,
+                         BG_report_input = BG_report_input,
+                         BG_cnet_input = BG_cnet_input,
                          box_plot_report_input = box_plot_report_input,
                          rendered_by_shiny = TRUE
           )

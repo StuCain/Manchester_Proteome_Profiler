@@ -88,6 +88,10 @@ params:
   gomf_level: NA
   gocc_level: NA
   gobp_level: NA
+  BG_report_input: NA
+  BG_cnet_input: NA
+  STR_report_input: NA
+  STR_cnet_input: NA
   box_plot_report_input: NA
   
   
@@ -194,7 +198,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.5.2
+Version:0.6.0
 
 ## Method details
  
@@ -903,7 +907,7 @@ clust_no<-as.numeric(params$k1)
 for(i in 1:clust_no){
   print(params$box_plot_report_input()[[i]])
   
-  prog<-0.4+(i/20)
+  prog<-0.2+(i/20)
   if (params$rendered_by_shiny)
 shiny::setProgress(prog) 
   
@@ -925,7 +929,7 @@ print(dotplot(params$GO_MF_report_input(), showCategory = params$gomf_level) + g
 }else{print("No enrichment found in any of the gene clusters")}
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.6)  # set progress to 60%
+shiny::setProgress(0.4)  # set progress to 60%
 ```
 
 \pagebreak
@@ -942,7 +946,7 @@ print(params$GOMF_cnet_input())
 
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.65)  # set progress to 70%
+shiny::setProgress(0.45)  # set progress to 70%
 ```
 
 \pagebreak
@@ -959,7 +963,7 @@ print(dotplot(params$GO_CC_report_input(), showCategory = params$gocc_level) + g
 }else{print("No enrichment found in any of the gene clusters")}
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.7)  # set progress to 70%
+shiny::setProgress(0.5)  # set progress to 70%
 ```
 
 \pagebreak
@@ -975,7 +979,7 @@ if (!is.null(params$GO_CC_report_input())){
 }else{print("No enrichment found in any of the gene clusters")}
 
 if (params$rendered_by_shiny)
-  shiny::setProgress(0.75)  # set progress to 75%
+  shiny::setProgress(0.55)  # set progress to 75%
 ```
 
 \pagebreak
@@ -992,7 +996,7 @@ print(dotplot(params$GO_BP_report_input(), showCategory = params$gobp_level) + g
 }else{print("No enrichment found in any of the gene clusters")}
 
 if (params$rendered_by_shiny)
-shiny::setProgress(0.8)  # set progress to 80%
+shiny::setProgress(0.6)  # set progress to 80%
 ```
 
 \pagebreak
@@ -1006,6 +1010,38 @@ print(params$GOBP_cnet_input())
     # Ignore plot errors
   })
 }else{print("No enrichment found in any of the gene clusters")}
+
+if (params$rendered_by_shiny)
+shiny::setProgress(0.65)  # set progress to 90%
+```
+
+\pagebreak
+### BioGrid Network
+
+```{r BG_cNET, echo=FALSE, fig.height=10, fig.width=10, out.width='90%', message=FALSE, warning=FALSE, comment=NA}
+if (!is.null(params$BG_report_input())){
+  tryCatch({
+print(params$BG_cnet_input())
+  }, error = function(e) {
+    # Ignore plot errors
+  })
+}else{print("No BioGrid Network Generated")}
+
+if (params$rendered_by_shiny)
+shiny::setProgress(0.8)  # set progress to 90%
+```
+
+\pagebreak
+### STRING Network
+
+```{r STR_cNET, echo=FALSE, fig.height=10, fig.width=10, out.width='90%', message=FALSE, warning=FALSE, comment=NA}
+if (!is.null(params$STR_report_input())){
+  tryCatch({
+print(params$STR_cnet_input())
+  }, error = function(e) {
+    # Ignore plot errors
+  })
+}else{print("No STRING Network Generated")}
 
 if (params$rendered_by_shiny)
 shiny::setProgress(0.9)  # set progress to 90%

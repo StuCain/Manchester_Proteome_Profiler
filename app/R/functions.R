@@ -2559,7 +2559,7 @@ STRINGdb_query <- function(cludf, speciesID = 9606, threshold = 400){
 
 
 ####STRINGdb Network####
-STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 400, node_scale = 1){
+STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 0.4, node_scale = 1){
   
   #set cluster colors
   cluster_names <- unique(cludf$Cluster)
@@ -2579,10 +2579,10 @@ STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 400,
   }
   
   # Set threshold Cutoff
-  interactions_named_filt <- interactions_named[interactions_named$combined_score >= threshold, ]
+  interactions_named_filt <- interactions_named[interactions_named$confidence >= threshold, ]
 
   # Create igraph object using gene names
-  edges <- interactions_named_filt[, c("from_gene", "to_gene", "combined_score")]
+  edges <- interactions_named_filt[, c("from_gene", "to_gene", "confidence")]
   g <- igraph::graph_from_data_frame(edges, directed = FALSE)
   
   tg <- as_tbl_graph(g)
@@ -2591,7 +2591,7 @@ STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 400,
   
   #p <- ggraph::ggraph(tg, layout = "kk") +
   p <- ggraph::ggraph(tg, layout = "fr") +
-    ggraph::geom_edge_link(aes(edge_alpha = combined_score), edge_width = 1.2, color = "grey", show.legend = TRUE)
+    ggraph::geom_edge_link(aes(edge_alpha = confidence), edge_width = 1.2, color = "grey", show.legend = TRUE)
   
   # Join gene cluster ID data with network internal data
   p$data <- p$data %>%
@@ -2602,7 +2602,7 @@ STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 400,
     scale_size_continuous (range = c(3*node_scale, 10*node_scale)) +
     ggraph::geom_node_text(aes(label = name), repel = TRUE, size = 3) +
     theme_void()+
-    ggtitle(paste("Interactor Network from STRINGdb (Threshold >= ", threshold ,")"))
+    ggtitle(paste("Interactor Network from STRINGdb (Confidence Score >= ", threshold ,")"))
   
   return (p)
   

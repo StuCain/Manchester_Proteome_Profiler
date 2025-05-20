@@ -88,6 +88,10 @@ params:
   gomf_level: NA
   gocc_level: NA
   gobp_level: NA
+  BG_report_input: NA
+  BG_cnet_input: NA
+  STR_report_input: NA
+  STR_cnet_input: NA
   box_plot_report_input: NA
   
   
@@ -194,7 +198,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.5.2
+Version:0.6.0
 
 ## Method details
  
