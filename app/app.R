@@ -18,9 +18,9 @@
 
 
 # Set a custom temp directory for Shiny Server
-if (.Platform$OS.type == "unix") {
-Sys.setenv(TMPDIR = "/srv/shiny-server/tmp")
-}
+#if (.Platform$OS.type == "unix") {
+#Sys.setenv(TMPDIR = "/srv/shiny-server/tmp")
+#}
 library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.4-beta"
+Version = "0.16.5-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -4340,12 +4340,11 @@ server <- shinyServer(function(input, output, session) {
     # Auto-trigger only when 'long' is selected
     observeEvent(input$report_type, {
       if (input$report_type == "Long") {
-        #trigger_GO_MF <- reactiveVal(TRUE)
-        trigger_GO_MF(TRUE)
-        trigger_GO_CC(TRUE)
-        trigger_GO_BP(TRUE)
-        trigger_BG(TRUE)
-        trigger_STR(TRUE)
+        if (is.null(GOMF_cnet_input())) {trigger_GO_MF(TRUE)}
+        if (is.null(GOCC_cnet_input())) {trigger_GO_CC(TRUE)}
+        if (is.null(GOBP_cnet_input())) {trigger_GO_BP(TRUE)}
+        if (is.null(BG_cnet_input())) {trigger_BG(TRUE)}
+        if (is.null(STR_cnet_input())) {trigger_STR(TRUE)}
       }
     })
     
