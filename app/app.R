@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.5-beta"
+Version = "0.16.6-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1142,7 +1142,8 @@ ui <- fluidPage(
                                                       
                                                     ),
                                                     fluidRow(
-                                                      plotOutput("BG_cnet", height = 800),
+                                                      column(width = 10, offset = 1, # Centers a 10-column-wide element
+                                                             plotOutput("BG_cnet", height = 800)),
                                                     ),
                                                     fluidRow(
                                                       box(downloadButton('download_BG_cnet', 'Save Plot', class = "btn-primary"),
@@ -1183,7 +1184,8 @@ ui <- fluidPage(
                                                       
                                                     ),
                                                     fluidRow(
-                                                      plotOutput("STR_cnet", height = 800),
+                                                      column(width = 10, offset = 1, # Centers a 10-column-wide element
+                                                      plotOutput("STR_cnet", height = 800)),
                                                     ),
                                                     fluidRow(
                                                       box(downloadButton('download_STR_cnet', 'Save Plot', class = "btn-primary"),
@@ -1609,6 +1611,19 @@ server <- shinyServer(function(input, output, session) {
     data<-read.csv(inFile$datapath, header = TRUE,
                    sep = "\t", stringsAsFactors = FALSE) %>%
       mutate(id = row_number())
+    if ("Gene.names" %in% names(data)) {
+      names(data)[names(data) == "Gene.names"] <- "Gene_names"
+    }
+    if ("Protein.IDs" %in% names(data)) {
+      names(data)[names(data) == "Protein.IDs"] <- "Protein_IDs"
+    }
+    if ("Protein.names" %in% names(data)) {
+      names(data)[names(data) == "Protein.names"] <- "Protein_names"
+    }
+    if ("Sequence.length" %in% names(data)) {
+      names(data)[names(data) == "Sequence.length"] <- "Sequence_length"
+    }
+    
     return(data)
   })
   
@@ -1621,6 +1636,19 @@ server <- shinyServer(function(input, output, session) {
     data<-read.csv(inFile$datapath, header = TRUE,
                    sep = "\t", stringsAsFactors = FALSE) %>%
       mutate(id = row_number())
+    if ("Gene.names" %in% names(data)) {
+      names(data)[names(data) == "Gene.names"] <- "Gene_names"
+    }
+    if ("Protein.IDs" %in% names(data)) {
+      names(data)[names(data) == "Protein.IDs"] <- "Protein_IDs"
+    }
+    if ("Protein.names" %in% names(data)) {
+      names(data)[names(data) == "Protein.names"] <- "Protein_names"
+    }
+    if ("Sequence.length" %in% names(data)) {
+      names(data)[names(data) == "Sequence.length"] <- "Sequence_length"
+    }
+    
     return(data)
   })
   
@@ -1644,7 +1672,14 @@ server <- shinyServer(function(input, output, session) {
     col_num_start <- which(names(tempdata6) == input$int_col_start)
     col_num_end <- which(names(tempdata6) == input$int_col_last)
     lfq_columns <- col_num_start:col_num_end
-    #if (input$id_other)
+    
+    # Replace NaN with "" in columns start to end
+    #tempdata7 <- tempdata6 %>%
+    #  mutate(across(col_num_start:col_num_end, ~ ifelse(is.nan(.x), 0, .x)))    
+    
+    #tempdata7 <- tempdata6 %>%
+    #mutate(across(col_num_start:col_num_end, ~ as.numeric(.x)))
+    
     data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("\\Sequence.length\\b", colnames(tempdata6)),lfq_columns)]
     
     return(data1)

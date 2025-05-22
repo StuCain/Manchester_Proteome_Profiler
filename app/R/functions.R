@@ -75,7 +75,7 @@ colour_functions <- function( limit_comp=6, high_col="red", low_col="blue", pale
   return(col_fun_out)
 } 
 
-#Custom Normalisation function
+####Custom Normalisation function####
 normalize_custom <- function(se, method = c("vsn", "median center", "quantile", "none")) {
   assertthat::assert_that(inherits(se, "SummarizedExperiment"))
   
