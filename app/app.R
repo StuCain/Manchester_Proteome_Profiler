@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.6-beta"
+Version = "0.16.8-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -373,7 +373,7 @@ ui <- fluidPage(
         ),
         box(
           radioButtons("species",
-                       "GO species",
+                       "Species",
                        choices = c("Human", "Mouse", "Arabidopsis", "Xenopus"),
                        selected = "Human"),
           width = 1, height = 140),
@@ -1127,7 +1127,7 @@ ui <- fluidPage(
                                                         helpText("Max limit of 160 significant proteins"),
                                                         width = 4, height = 110),
                                                       box(numericInput("BG_level",
-                                                                       "Interaction Count <=",
+                                                                       "Interaction Count >=",
                                                                        min = 1, max = 10, value = 2),
                                                           width = 2, height = 110),
                                                       box(numericInput("BG_node",
@@ -1161,10 +1161,10 @@ ui <- fluidPage(
                                                     ),
                                                     
                                            ),
-                                           tabPanel(title = "STRING db Interactions",
+                                           tabPanel(title = "STRING Interactions",
                                                     fluidRow(
                                                       box(
-                                                        actionButton("analyze_STR", "Analyze STRINGdb Interactions", icon = icon("magnifying-glass-chart"), class = "btn-primary"),
+                                                        actionButton("analyze_STR", "Analyze STRING Interactions", icon = icon("magnifying-glass-chart"), class = "btn-primary"),
                                                         helpText("Warning: This can take a couple of minutes"),
                                                         helpText("Max limit of 160 significant proteins"),
                                                         width = 4, height = 110),
@@ -1190,7 +1190,7 @@ ui <- fluidPage(
                                                     fluidRow(
                                                       box(downloadButton('download_STR_cnet', 'Save Plot', class = "btn-primary"),
                                                           width = 2, height = 80),
-                                                      box(downloadButton('download_STR_data', 'Download STRINGdb Search', class = "btn-primary"),
+                                                      box(downloadButton('download_STR_data', 'Download STRING Search', class = "btn-primary"),
                                                           width = 3, height = 80),
                                                       box(numericInput("pdfwidth_STR",
                                                                        "PDF Width",
@@ -1276,7 +1276,7 @@ server <- shinyServer(function(input, output, session) {
   output$intro_img <- renderImage({
     width_img  <- session$output_plot2_width
     height_img <- session$output_plot2_height
-    list(src = "www/Introduction.svg",
+    list(src = "www/Introduction.png",
          width = width_img,
          height = height_img)
     

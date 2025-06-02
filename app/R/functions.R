@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.12
+Version = 5.14
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2437,8 +2437,18 @@ biogrid_query <- function(cludf, speciesID = 9606, use_human = FALSE){
   
   
   Bio_GL<-paste(cludf$GeneID,collapse='|')
+  # Retrieve the value of 'x' from the biogridr:::ws_ environment
+  #key_value <- get("key", envir = biogridr:::ws_)
+  #print(key_value)
   
-  bg_get_key("Stuart","Cain","stuart.a.cain@manchester.ac.uk","BioID")
+  
+  if (get("key", envir = biogridr:::ws_) == "not set") {
+    bg_get_key("Stuart","Cain","stuart.a.cain@manchester.ac.uk","BioID")
+  }
+
+  # Retrieve the value of 'x' from the biogridr:::ws_ environment
+  #key_value <- get("key", envir = biogridr:::ws_)
+  #print(key_value)
   
   biogrid_list <- bg("interactions") %>% 
     bg_constrain(taxId = speciesID, geneList = Bio_GL) %>% 
@@ -2536,7 +2546,7 @@ STRINGdb_query <- function(cludf, speciesID = 9606, threshold = 400){
   # Map gene symbols to STRING IDs
   genes_df <- data.frame(gene = genes, stringsAsFactors = FALSE)
   mapped_genes <- string_db$map(genes_df, "gene", removeUnmappedRows = TRUE)
-  string_db$plot_network(mapped_genes)
+  #string_db$plot_network(mapped_genes)
   
   # Get interactions
   interactions <- string_db$get_interactions(mapped_genes$STRING_id)
@@ -2602,7 +2612,7 @@ STRINGdb_network <- function(interactions_named , cludf, mypal, threshold = 0.4,
     scale_size_continuous (range = c(3*node_scale, 10*node_scale)) +
     ggraph::geom_node_text(aes(label = name), repel = TRUE, size = 3) +
     theme_void()+
-    ggtitle(paste("Interactor Network from STRINGdb (Confidence Score >= ", threshold ,")"))
+    ggtitle(paste("Interactor Network from STRING (Confidence Score >= ", threshold ,")"))
   
   return (p)
   
