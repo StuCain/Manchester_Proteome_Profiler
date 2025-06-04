@@ -2433,22 +2433,12 @@ cnetplot_custom <- function(
 }
 
 ####Biogrid Query####
-biogrid_query <- function(cludf, speciesID = 9606, use_human = FALSE){
-  
-  
-  Bio_GL<-paste(cludf$GeneID,collapse='|')
-  # Retrieve the value of 'x' from the biogridr:::ws_ environment
-  #key_value <- get("key", envir = biogridr:::ws_)
-  #print(key_value)
-  
-  
-  if (get("key", envir = biogridr:::ws_) == "not set") {
-    bg_get_key("Stuart","Cain","stuart.a.cain@manchester.ac.uk","BioID")
-  }
+biogrid_query <- function(cludf, speciesID = 9606, use_human = FALSE, key_assign){
 
-  # Retrieve the value of 'x' from the biogridr:::ws_ environment
-  #key_value <- get("key", envir = biogridr:::ws_)
-  #print(key_value)
+  Bio_GL<-paste(cludf$GeneID,collapse='|')
+  
+  #Assign BioGrid Key
+  assign("key", key_assign, envir = biogridr:::ws_)
   
   biogrid_list <- bg("interactions") %>% 
     bg_constrain(taxId = speciesID, geneList = Bio_GL) %>% 

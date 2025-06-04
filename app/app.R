@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.8-beta"
+Version = "0.16.9-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1229,8 +1229,11 @@ server <- shinyServer(function(input, output, session) {
   options(shiny.useragg = TRUE)
   options(shiny.graphics.device = ragg::agg_png)
   conversion_messages <- reactiveVal(NULL)
+  #Set upper protein limit 
+  upper_limit <- 160
   
-  
+  #Assign BioGris search key (can be obtained from website)
+  key_assign <- "REMOVED"
   
   # Allow reconnect if the session is interrupted
   session$allowReconnect("force")
@@ -4040,7 +4043,7 @@ server <- shinyServer(function(input, output, session) {
       if (is.null(BG_report_input())) {
         # Show a text message while waiting for the plot data
         plot.new()  # Create an empty plot
-        if(nrow(cludf_check_input()) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+        if(nrow(cludf_check_input()) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
         clu_df<-cludf_check_input()
@@ -4061,7 +4064,7 @@ server <- shinyServer(function(input, output, session) {
       if (is.null(STR_report_input())) {
         # Show a text message while waiting for the plot data
         plot.new()  # Create an empty plot
-        if(nrow(cludf_check_input()) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+        if(nrow(cludf_check_input()) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
         clu_df<-cludf_check_input()
@@ -4712,10 +4715,10 @@ server <- shinyServer(function(input, output, session) {
 
         future_promise({
           validate(
-            need(nrow(clu_df) < 160, 
+            need(nrow(clu_df) < upper_limit, 
                  "BioGRID searches are limited to a significant protein count below 160")
           )
-          biogrid_query(cludf = clu_df, speciesID = species)
+          biogrid_query(cludf = clu_df, speciesID = species, key_assign = key_assign)
           #plot_GO_BP(entrez_list, species)  # Call function with extracted values
         }) %...>% BG_report_input %...!% (function(e) {
           BG_report_input(NULL)
@@ -4728,7 +4731,7 @@ server <- shinyServer(function(input, output, session) {
           if (is.null(BG_report_input())) {
             # Show a text message while waiting for the plot data
             plot.new()  # Create an empty plot
-            if(nrow(clu_df) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+            if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
             text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
           } else {
             print(BG_cnet_input())
@@ -4762,7 +4765,7 @@ server <- shinyServer(function(input, output, session) {
     #Observe STRINGdb
     observeEvent(trigger_STR(),{
       if (trigger_STR() == TRUE) {
-        sendSweetAlert(session, title = "Plotting STRINGdb Interactions", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
+        sendSweetAlert(session, title = "Plotting STRING Interactions", html = TRUE, type = NULL, text = HTML('<img src="app_icon_anim.gif" width="100"><br><br><strong>This may take a while...</strong>'), timer = 10000)
         
         # ✅ Correct way to get reactive values
         clu_df <- isolate(cludf_check_input())  # Extract reactive value
@@ -4780,8 +4783,8 @@ server <- shinyServer(function(input, output, session) {
         
         future_promise({
           validate(
-            need(nrow(clu_df) < 160, 
-                 "STRINGdb searches are limited to a significant protein count below 160")
+            need(nrow(clu_df) < upper_limit, 
+                 "STRING searches are limited to a significant protein count below 160")
           )
           STRINGdb_query(cludf = clu_df, speciesID = species)
         }) %...>% STR_report_input %...!% (function(e) {
@@ -4795,7 +4798,7 @@ server <- shinyServer(function(input, output, session) {
           if (is.null(STR_report_input())) {
             # Show a text message while waiting for the plot data
             plot.new()  # Create an empty plot
-            if(nrow(clu_df) > 160){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
+            if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 160", cex = 1.5)}else
               text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
           } else {
             print(STR_cnet_input())
@@ -4804,7 +4807,7 @@ server <- shinyServer(function(input, output, session) {
         
         
         output$download_STR_cnet <- downloadHandler(
-          filename = function() { paste("STRINGdb_Conf_Score_",input$STR_level, ".pdf", sep = "") },
+          filename = function() { paste("STRING_Conf_Score_",input$STR_level, ".pdf", sep = "") },
           content = function(file) {
             cairo_pdf(file, height = input$pdfheight_STR, width = input$pdfwidth_STR)
             print(STR_cnet_input())
@@ -4813,7 +4816,7 @@ server <- shinyServer(function(input, output, session) {
         )
         
         output$download_STR_data <- downloadHandler(
-          filename = function() { paste("STRINGdb_Search_Data.txt", sep = "") },
+          filename = function() { paste("STRING_Search_Data.txt", sep = "") },
           content = function(file) {
             write.table(STR_report_input(),
                         file,
