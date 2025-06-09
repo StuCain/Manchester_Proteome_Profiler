@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.9-beta"
+Version = "0.16.10-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 

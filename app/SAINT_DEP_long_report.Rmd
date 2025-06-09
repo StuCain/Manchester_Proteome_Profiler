@@ -169,10 +169,10 @@ if (params$pval_use == FALSE){
 if (params$pval_use == FALSE){pval_type_2 <- "adjusted p-value"} else {pval_type_2 <- "p-value"}
 
 if (params$comp_type == "2 Rounds of comparisons"){second_round_txt<-paste("For this analysis two sets of comparisons were analysed. The second comparison had", pval_type , params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both comparison lists ",sep="")}else{second_round_txt<-""}
-if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{7} processing was used to allow identification of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
+if (params$comp_type == "Use SAINTexpress"){second_round_txt<-paste("For this analysis, SAINTexpress \\textsuperscript{9} processing was used to allow identification of proteins that were enriched compared with the control samples. A initial protein list was generated from proteins that  had a Bayesian false-discovery rate (BFDR) of <=", params$bfdr, ", in at least ", params$bfdr_freq, " of the experimental conditions.",sep="")}
 if (params$data_mode == TRUE){second_round_txt<-paste("For this analysis two datasets were analysed. The second dataset was processed using ", params$data_type2, " using the ",file_input2, " The second dataset comparison used ", pval_type , params$p2, " and a fold change of ", params$lfc2, ". The protein list was compiled from proteins that were present in both dataset comparison lists ",sep="")}
 
-if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{7} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
+if (params$comp_type == "Use SAINTexpress"){saint_ref_txt<- " \\textsuperscript{9} Teo, G., et al. (2014). SAINTexpress: improvements and additional features in Significance Analysis of INTeractome software. J Proteomics 100: 37-43."}else{saint_ref_txt<-""}
 
 #Imputation Text
 if (params$imputation == "man"){imputation_text <-paste0("and missing values were imputed using the ‘Missing not At Random’ (MNAR) method, which uses random draws from a left-shifted Gaussian distribution of ", params$shift, " StDev (standard deviation) apart with a width of ", params$width, " .")}
@@ -198,7 +198,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.6.0
+Version:0.6.1
 
 ## Method details
  
@@ -208,14 +208,19 @@ The `r file_input` was uploaded into a web-based analysis suite "Manchester Prot
 
 `r second_round_txt`
 
-To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Enhanced Volcano plots\textsuperscript{6} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
- 
-\textsuperscript{1} Cain SA and Humphries MJ (2025) "Manchester Proteome Profiler: An easy to use tool for Analyzing Quantitative Proteomic Data" (Manuscript in preparation)
+To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Network plots generated from protein-protein interaction databases BioGrid\textsuperscript{6} and STRING\textsuperscript{7}. Enhanced Volcano plots\textsuperscript{8} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
+
+\small 
+\textsuperscript{1} Cain SA and Humphries MJ (2025) "Manchester Proteome Profiler: An easy to use tool for Analyzing Quantitative Proteomic Data" (Manuscript in preparation) https://mpp.sbs.manchester.ac.uk
 \textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550. DOI: 10.1038/nprot.2017.147
 \textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022. DOI: 10.1002/imt2.43
 \textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016. DOI: 10.1093/bioinformatics/btw313
-\textsuperscript{5} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
-\textsuperscript{6} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. DOI: 10.1016/j.xinn.2021.100141. `r saint_ref_txt`
+\textsuperscript{5} Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. DOI: 10.1016/j.xinn.2021.100141. `r saint_ref_txt`
+\textsuperscript{6}Oughtred, R., J. Rust, C. Chang, B. J. Breitkreutz, C. Stark, A. Willems, L. Boucher, G. Leung, N. Kolas, F. Zhang, S. Dolma, J. Coulombe-Huntington, A. Chatr-Aryamontri, K. Dolinski and M. Tyers (2021). "The BioGRID database: A comprehensive biomedical resource of curated protein, genetic, and chemical interactions." Protein Sci 30(1): 187-200.
+\textsuperscript{7} Szklarczyk, D., R. Kirsch, M. Koutrouli, K. Nastou, F. Mehryary, R. Hachilif, A. L. Gable, T. Fang, N. T. Doncheva, S. Pyysalo, P. Bork, L. J. Jensen and C. von Mering (2023). "The STRING database in 2023: protein-protein association networks and functional enrichment analyses for any sequenced genome of interest." Nucleic Acids Res 51(D1): D638-D646.
+\textsuperscript{8} Blighe, K, S Rana, and M Lewis. 2018. “EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling.” https://github.com/kevinblighe/EnhancedVolcano
+`r saint_ref_txt`
+\normalsize
 
 \pagebreak
 
