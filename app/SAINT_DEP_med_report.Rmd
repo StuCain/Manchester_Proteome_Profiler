@@ -28,6 +28,8 @@ params:
   comp2: NA
   imputation: NA
   imputation2: NA
+  impute_ave: NA
+  impute_ave2: NA
   shift: NA
   width: NA
   tested_contrasts: NA
@@ -198,7 +200,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Medium)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.6.1
+Version:0.6.2
 
 ## Method details
  
@@ -287,6 +289,7 @@ if (params$comp_type == "Use SAINTexpress"){bfdr_text<-paste0 ("* SAINTexpress B
 if (params$comp_type == "Use SAINTexpress"){bfdr_freq_text<-paste0 ("* SAINTexpress BFDR Frequency >= \\textbf{", params$bfdr_freq, "}")}else{bfdr_freq_text<-""}
 if (params$data_mode == TRUE){norm2txt<-paste0 ("* Normalisation method (Dataset 2) = \\textbf{", params$normalisation_choice2, "}")}else{norm2txt<-""}
 if (params$data_mode == TRUE){imp2txt<-paste0 ("* Imputation method (Dataset 2) = \\textbf{", params$imputation2, "}")}else{imp2txt<-""}
+if (params$data_mode == TRUE){imp2avetxt<-paste0 ("* Average Imputation of 3 different random seeds (Dataset 2)= \\textbf{", params$impute_ave2, "}")}else{imp2avetxt<-""}
 
 padjusttxt <- gsub('[()]','',padjusttxt)
 padjusttxt2 <- gsub('[()]','',padjusttxt2)
@@ -320,7 +323,9 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 * Normalisation method = \textbf{`r params$normalisation_choice`}
 `r norm2txt`
 * Imputation method = \textbf{`r params$imputation`}
+* Average Imputation of 3 different random seeds = \textbf{`r params$impute_ave`}
 `r imp2txt`
+`r imp2avetxt`
 * Adjusted _p-value_ cut-off method = \textbf{`r padjusttxt`}
 `r padjtxt`
 

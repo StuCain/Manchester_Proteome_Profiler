@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.10-beta"
+Version = "0.16.11-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -5449,6 +5449,8 @@ server <- shinyServer(function(input, output, session) {
                          comp2= comp2,
                          imputation = input$imputation,
                          imputation2 = input$imputation2,
+                         impute_ave = input$impute_ave,
+                         impute_ave2 = input$impute_ave2,
                          shift = input$shift,
                          width = input$width,
                          #missval_input = missval_input,
