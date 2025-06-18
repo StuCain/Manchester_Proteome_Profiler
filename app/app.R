@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.16.11-beta"
+Version = "0.17.01-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1320,6 +1320,11 @@ server <- shinyServer(function(input, output, session) {
       col_names<-c("",colnames(data_other()))
       menuItem("Columns",
                startExpanded = TRUE,
+               radioButtons("id_type",
+                            "ID Type",
+                            choices = c("Gene ID", "Uniprot ID"),
+                            selected = "Gene ID", inline=TRUE,
+               ),
                selectizeInput("name_other",
                               "Name column",
                               choices=col_names
@@ -3959,11 +3964,13 @@ server <- shinyServer(function(input, output, session) {
       validate(
         need(try(cludf_check_input() != "try-error"), "One of your Clusters contains a single protein, please alter the Kmeans number")
       )
+      id_type_choice <- "Gene ID"
+      if (input$data_type == "Other (Experimental)"){id_type_choice <-input$id_type}
       
       messages <- character()
       
       result <- withCallingHandlers(
-        get_entrezlist(cludf_check_input(), input$species),
+        get_entrezlist(cludf_check_input(), input$species, id_type_choice),
         message = function(m) {
           messages <<- c(messages, conditionMessage(m))
           invokeRestart("muffleMessage")

@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.14
+Version = 5.15
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -1999,7 +1999,7 @@ plot_enhanced_volcano <- function(data_results, clu_df, comp_pick,  FC=2, pVal=0
 ####Gene Ontology Plots####
 
 ####Entrelist####
-get_entrezlist <- function(clu_df, species = "Human") {
+get_entrezlist <- function(clu_df, species = "Human", id_type = "Gene ID") {
   # Check if input data frame has the required columns
   if (!all(c("Cluster", "GeneID") %in% colnames(clu_df))) {
     stop("Input dataframe must contain 'Cluster' and 'GeneID' columns.")
@@ -2013,6 +2013,10 @@ get_entrezlist <- function(clu_df, species = "Human") {
                        "Xenopus" = "org.Xl.eg.db",
                        stop("Unsupported species. Choose from: Human, Mouse, Arabidopsis, Xenopus.")
   )
+  
+  #ID_type mapping
+  if (id_type == "Gene ID"){id_choice <- "SYMBOL"}
+  if (id_type == "Uniprot ID"){id_choice <- "UNIPROT"}
   
   # Load the required OrgDb package
   #if (!requireNamespace(species_db, quietly = TRUE)) {
@@ -2035,7 +2039,7 @@ get_entrezlist <- function(clu_df, species = "Human") {
     entrezlist[[i]] <- tryCatch({
       bitr(
         Cluster_list[[i]]$GeneID,
-        fromType = "SYMBOL",
+        fromType = id_choice,
         toType = "ENTREZID",
         OrgDb = species_db
       )$ENTREZID
