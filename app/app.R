@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.01-beta"
+Version = "0.17.02-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1681,12 +1681,11 @@ server <- shinyServer(function(input, output, session) {
     col_num_end <- which(names(tempdata6) == input$int_col_last)
     lfq_columns <- col_num_start:col_num_end
     
-    # Replace NaN with "" in columns start to end
-    #tempdata7 <- tempdata6 %>%
-    #  mutate(across(col_num_start:col_num_end, ~ ifelse(is.nan(.x), 0, .x)))    
-    
-    #tempdata7 <- tempdata6 %>%
-    #mutate(across(col_num_start:col_num_end, ~ as.numeric(.x)))
+    # Replace "NaN" string with 0 and convert to numeric
+    tempdata6[ , col_num_start:col_num_end] <- lapply(tempdata6[ , col_num_start:col_num_end], function(x) {
+      x[x == "NaN"] <- 0          # Replace "NaN" with "0" as character
+      as.numeric(x)               # Convert column to numeric
+    })
     
     data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("\\Sequence.length\\b", colnames(tempdata6)),lfq_columns)]
     
@@ -1713,6 +1712,13 @@ server <- shinyServer(function(input, output, session) {
     col_num_end <- which(names(tempdata6) == input$int_col_last2)
     lfq_columns <- col_num_start:col_num_end
     #if (input$id_other)
+    
+    # Replace "NaN" string with 0 and convert to numeric
+    tempdata6[ , col_num_start:col_num_end] <- lapply(tempdata6[ , col_num_start:col_num_end], function(x) {
+      x[x == "NaN"] <- 0          # Replace "NaN" with "0" as character
+      as.numeric(x)               # Convert column to numeric
+    })
+    
     data1<-tempdata6[, c(grep("Gene.names", colnames(tempdata6)), grep("Protein.IDs", colnames(tempdata6)), grep("Protein.names", colnames(tempdata6)), grep("\\Sequence.length\\b", colnames(tempdata6)),lfq_columns)]
     
     return(data1)
@@ -2344,23 +2350,10 @@ server <- shinyServer(function(input, output, session) {
   
   norm <- reactive({
     normalize_custom(filt(), method = input$normalisation_choice)
-#    if (input$normalisation_choice=="vsn")
-#    {normalize_vsn(filt())}
-#    else if(input$normalisation_choice=="quantile"){
-#      QFeatures::normalize(filt(), method = "quantiles")}
-#    else if (input$normalisation_choice=="none")
-#    {norm<-filt()}
   })
   
   norm2 <- reactive({
     normalize_custom(filt2(), method = input$normalisation_choice2)
-    
-#    if (input$normalisation_choice2=="vsn")
-#    {normalize_vsn(filt2())}
-#    else if(input$normalisation_choice2=="quantile"){
-#      QFeatures::normalize(filt2(), method = "quantiles")}
-#    else if (input$normalisation_choice2=="none")
-#    {norm<-filt2()}
   })
   
   #Get Normalized data
