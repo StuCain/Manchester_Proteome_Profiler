@@ -57,7 +57,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.02-beta"
+Version = "0.17.04-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1293,7 +1293,7 @@ server <- shinyServer(function(input, output, session) {
     error_msgs <- msgs[grepl("None of the keys entered are valid", msgs)]
     
     if (length(error_msgs) > 0) {
-      print("Error in asigning GO terms, please check the correct G0 species is selected")
+      print("Error in assigning GO terms, please check the correct G0 species is selected")
     }
   })
   
@@ -1795,7 +1795,7 @@ server <- shinyServer(function(input, output, session) {
                                  grep("MaxLFQ", colnames(data)))
           lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
           lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
-          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), grep ("Sequence.length", colnames(data)), lfq_columns)]
           #        data1<-data1 %>% 
           #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
           
@@ -1804,7 +1804,7 @@ server <- shinyServer(function(input, output, session) {
           if (length(lfq_columns) == 0) {
             stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
           }
-          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep ("Sequence.length", colnames(data)), lfq_columns)]
         }
       }else if(input$exp == "DIA"){
         line<-paste(Sys.time(),"FragPipe_DIA")
@@ -1838,7 +1838,7 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Sequence.length=uniprot_length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)),grep("Sequence.length", colnames(data)), lfq_columns)]
         data1<-data_2 %>% 
           dplyr::rename(
             Protein.names=uniprot_description)
@@ -1928,7 +1928,7 @@ server <- shinyServer(function(input, output, session) {
                                  grep("MaxLFQ", colnames(data)))
           lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
           lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
-          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), grep("Sequence.length", colnames(data)), lfq_columns)]
           #        data1<-data1 %>% 
           #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
           
@@ -1937,7 +1937,7 @@ server <- shinyServer(function(input, output, session) {
           if (length(lfq_columns) == 0) {
             stop(safeError("No MaxLFQ column available. Please make sure your files have MaxLFQ intensity columns."))
           }
-          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+          data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), grep("Sequence.length", colnames(data)), lfq_columns)]
         }
       }else if(input$exp2 == "DIA"){
         line<-paste(Sys.time(),"FragPipe_DIA_data2")
@@ -1971,7 +1971,7 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Sequence.length=uniprot_length
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)), lfq_columns,  grep ("Sequence.length", colnames(data)))]
+        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)),  grep("Sequence.length", colnames(data)), lfq_columns)]
         data1<-data_2 %>% 
           dplyr::rename(
             Protein.names=uniprot_description)
@@ -2672,7 +2672,7 @@ server <- shinyServer(function(input, output, session) {
       selectizeInput("dataset",
                      "Choose a dataset to save" ,
                      c("results","significant_proteins",
-                       "displayed_subset","full_dataset","Cluster_list", "normalised_values", "imputed_values", "results_long", "results_long_signif"))
+                       "displayed_subset","full_dataset","Cluster_list", "normalised_values", "imputed_values", "results_long", "results_long_signif", "initial_data_input", "initial_data_input_2"))
     })
     
     output$downloadButton <- renderUI({
@@ -3976,8 +3976,8 @@ server <- shinyServer(function(input, output, session) {
       error_msgs <- msgs[grepl("None of the keys entered are valid", msgs)]
       
       if (length(error_msgs) > 0) {
-        print("Error in asigning GO terms, please check the correct G0 species is selected")
-        showNotification("Error in asigning GO terms, please check the correct G0 species is selected", type = "error", duration = 20)
+        print("Error in assigning GO terms, please check the correct G0 species is selected")
+        showNotification("Error in assigning GO terms, please check the correct G0 species is selected", type = "error", duration = 20)
       }
       
       
@@ -4846,7 +4846,9 @@ server <- shinyServer(function(input, output, session) {
              "normalised_values"= norm_data_table(),
              "imputed_values"= imp_data_table(),
              "results_long"=get_df_long(dep()),
-             "results_long_signif" = get_df_long(dep())%>% filter(significant) %>% select(-significant)
+             "results_long_signif" = get_df_long(dep())%>% filter(significant) %>% select(-significant),
+             "initial_data_input" = data(),
+             "initial_data_input_2" = data2()
              
       )
     }

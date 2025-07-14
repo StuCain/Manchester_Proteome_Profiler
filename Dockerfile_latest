@@ -54,6 +54,9 @@ RUN Rscript -e "tinytex::is_tinytex()"
 
 #add TinyTeX to PATH variable
 ENV PATH="$PATH:/root/.TinyTeX/bin/x86_64-linux"
+#Update TinyTeX
+RUN tlmgr update --self
+
 #Install extra TinyTEX packages
 RUN tlmgr install sourcesanspro
 RUN tlmgr install ly1
