@@ -260,9 +260,9 @@ cd Manchester_Proteome_Profiler
 # Build Manchester_Proteome_Profiler (Any name after -t)
 docker buildx build -f Dockerfile.local -t Manchester_Proteome_Profiler  --output=type=docker --platform=linux/amd64 .
 
-# Run FragPipe-Analyst
-docker run -it --platform=linux/amd64 -d -p 80:80 Manchester_Proteome_Profiler
+# Run Manchester Proteome Profiler
+docker run -it --platform=linux/amd64 -d -p 3838:3838 Manchester_Proteome_Profiler
 
 # Open local interface
-http://localhost:80/fragpipe-analyst/
+http://localhost:3838/
 ```
