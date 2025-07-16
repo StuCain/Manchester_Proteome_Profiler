@@ -23,6 +23,13 @@ Manchester Proteome Profiler is a web application which is easy to use and allow
 #### 6. Press "Analyse"
 ------------
 
+## Data Pipeline
+<img
+  src="app/www/data_flow.jpg"
+  alt="Alt text"
+  title="Optional title"
+  style="display: inline-block; margin: 0 auto; max-width: 100px">
+
 # Instructions
 ## Sidebar Menu
 
