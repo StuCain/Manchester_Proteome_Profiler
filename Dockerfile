@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:4.4.3
+FROM rocker/shiny-verse:4.5
 
 RUN apt-get update && apt-get install -y \
     sudo \
@@ -48,6 +48,8 @@ RUN Rscript -e "install.packages('tinytex', repos='https://cloud.r-project.org')
 
 # Add TinyTeX to PATH
 ENV PATH="/root/.TinyTeX/bin/x86_64-linux:$PATH"
+#Update TinyTeX
+RUN tlmgr update --self
 
 # Verify installation
 RUN Rscript -e "tinytex::is_tinytex()"

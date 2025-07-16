@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.15
+Version = 5.16
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -154,11 +154,45 @@ normalize_custom <- function(se, method = c("vsn", "median center", "quantile", 
   return(se_norm)
 }
 
+###Hybrid Imputation
+knn_within_conditions <- function(data_matrix, conditions, k = 3) {
+  if (!is.matrix(data_matrix)) {
+    data_matrix <- as.matrix(data_matrix)
+  }
+  
+  imputed_data <- data_matrix  # To store results
+  
+  for (cond in unique(conditions)) {
+    # Get the columns (samples) for this condition
+    cols <- which(conditions == cond)
+    
+    # Subset the data for these columns
+    subset_data <- data_matrix[, cols, drop = FALSE]
+    
+    # Check rows where NOT all values are missing
+    non_all_na_rows <- apply(subset_data, 1, function(x) !all(is.na(x)))
+    
+    # Subset only valid rows (with at least 1 non-NA in this condition)
+    valid_data <- subset_data[non_all_na_rows, , drop = FALSE]
+    
+    # If there's enough data to run KNN (at least k+1 complete rows), impute
+    if (nrow(valid_data) >= k + 1 && ncol(valid_data) >= 2) {
+      imputed_subset <- impute::impute.knn(valid_data, k = k)$data
+      
+      # Replace only these rows in the output matrix
+      imputed_data[rownames(imputed_subset), cols] <- imputed_subset
+    } else {
+      message(paste("Skipping condition:", cond, "- not enough data to impute"))
+    }
+  }
+  
+  return(imputed_data)
+}
 
 
 ###Imputation with NIPALS
 impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet", 
-                                      "MinProb", "man", "min", "zero", "mixed", "nbavg", "NIPALS"), ...) 
+                                      "MinProb", "man", "min", "zero", "mixed", "nbavg", "NIPALS", "knn+man"), ...) 
 {
   assertthat::assert_that(inherits(se, "SummarizedExperiment"), 
                           is.character(fun))
@@ -192,6 +226,16 @@ impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet",
     imp_nipals <-pcaMethods::pca(SummarizedExperiment::assay(se), method = "nipals", nPcs = 2)
     assay(se) <- pcaMethods::completeObs(imp_nipals)
 
+  } else if (fun == "knn+man") {
+    norm_matrix <- SummarizedExperiment::assay(se)
+    norm_conditions<-se@colData@listData[["condition"]]
+    rep_num<- length(unique(se@colData@listData[["replicate"]]))
+    #knn on missing values with other values in condition
+    norm_knn<-knn_within_conditions(norm_matrix, norm_conditions, k=rep_num)
+    assay(se) <- norm_knn
+    #Impute values with all missing values
+    se <- manual_impute(se, ...)
+    
   } else {
     MSnSet_data <- as(se, "MSnSet")
     MSnSet_imputed <- MSnbase::impute(MSnSet_data, method = fun, 

@@ -51,13 +51,14 @@ library(biogridr)
 library(tidygraph)
 library(ggraph)
 library(STRINGdb)
+#library(impute)  # For impute.knn
 
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.04-beta"
+Version = "0.17.05-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1454,7 +1455,7 @@ server <- shinyServer(function(input, output, session) {
     menuItem("Imputation options",
              radioButtons("imputation",
                           "Imputation type (Dataset 1)",
-                          choices = c("man", "NIPALS", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                          choices = c("man", "NIPALS", "knn+man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
                           #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                           selected = "man"),
              helpText("Manual (man) Imputation settings"),
@@ -1471,7 +1472,7 @@ server <- shinyServer(function(input, output, session) {
              if (input$data_mode == TRUE) {
                radioButtons("imputation2",
                             "Imputation type (Dataset 2)",
-                            choices = c("man", "NIPALS", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
+                            choices = c("man", "NIPALS", "knn+man", "knn", "QRILC", "MinDet", "MinProb",  "min", "zero", "bpca"),
                             #choices = c("man", MsCoreUtils::imputeMethods())[1:12],
                             selected = "man")
              },
