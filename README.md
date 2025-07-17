@@ -222,41 +222,52 @@ git clone https://github.com/StuCain/Manchester_Proteome_Profiler
 # Move to the folder
 cd Manchester_Proteome_Profiler
 
-# Inside R console or R studio
-> install.packages("renv")
-> install.packages("BiocManager")
-> renv::install("shiny")
-> renv::install("shinydashboard")
-> renv::install("shinyWidgets")
-> renv::install("tidyverse")
-> renv::install("circlize")
-> renv::install("data.table")
-> renv::install("scales")
-> renv::install("gridtext")
-> renv::install("waiter")
-> renv::install("shinythemes")
-> renv::install("RColorBrewer")
-> renv::install("readxl")
-> renv::install("rmarkdown")
-> renv::install("tinytex")
-> renv::install("bioc::DEP")
-> renv::install("bioc::SummarizedExperiment")
-> renv::install("bioc::ComplexHeatmap")
-> renv::install("bioc::clusterProfiler")
-> renv::install("bioc::enrichplot")
-> renv::install("bioc::QFeatures")
-> renv::install("bioc::EnhancedVolcano")
-> renv::install("bioc::HDO.db")
-> renv::install("bioc::org.Hs.eg.db")
-> renv::install("bioc::org.Mm.eg.db")
-> renv::install("bioc::VennDetail")
+# Install renv and BiocManager from CRAN
+install.packages("renv")
+install.packages("BiocManager")
+
+# Initialize renv project (creates renv.lock and renv library folder)
+renv::init(bare = TRUE)
+
+# Install CRAN packages using renv
+renv::install("shiny")
+renv::install("shinydashboard")
+renv::install("shinyWidgets")
+renv::install("tidyverse")
+renv::install("circlize")
+renv::install("data.table")
+renv::install("scales")
+renv::install("gridtext")
+renv::install("waiter")
+renv::install("shinythemes")
+renv::install("RColorBrewer")
+renv::install("readxl")
+renv::install("rmarkdown")
+renv::install("tinytex")
+
+# Install Bioconductor packages using renv
+renv::install("bioc::DEP")
+renv::install("bioc::SummarizedExperiment")
+renv::install("bioc::ComplexHeatmap")
+renv::install("bioc::clusterProfiler")
+renv::install("bioc::enrichplot")
+renv::install("bioc::QFeatures")
+renv::install("bioc::EnhancedVolcano")
+renv::install("bioc::HDO.db")
+renv::install("bioc::org.Hs.eg.db")
+renv::install("bioc::org.Mm.eg.db")
+renv::install("bioc::VennDetail")
+
+# Snapshot the environment (writes renv.lock)
+renv::snapshot()
+
 
 # Execute
 > library("shiny")
 > runApp()
 ```
 
-Or run it through Docker:
+Or build a Docker image
 
 ``` sh
 # Clone the repository
@@ -265,10 +276,10 @@ git clone https://github.com/StuCain/Manchester_Proteome_Profiler
 cd Manchester_Proteome_Profiler
 
 # Build Manchester_Proteome_Profiler (Any name after -t)
-docker buildx build -f Dockerfile.local -t Manchester_Proteome_Profiler  --output=type=docker --platform=linux/amd64 .
+docker buildx build -f Dockerfile -t manchester_proteome_profiler  --output=type=docker --platform=linux/amd64 .
 
 # Run Manchester Proteome Profiler
-docker run -it --platform=linux/amd64 -d -p 3838:3838 Manchester_Proteome_Profiler
+docker run -it --platform=linux/amd64 -d -p 3838:3838 manchester_proteome_profiler
 
 # Open local interface
 http://localhost:3838/
