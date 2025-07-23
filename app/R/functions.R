@@ -170,9 +170,12 @@ knn_within_conditions <- function(data_matrix, conditions, k = 3) {
     subset_data <- data_matrix[, cols, drop = FALSE]
     
     # Check rows where NOT all values are missing
-    non_all_na_rows <- apply(subset_data, 1, function(x) !all(is.na(x)))
+    #non_all_na_rows <- apply(subset_data, 1, function(x) !all(is.na(x)))
     
-    # Subset only valid rows (with at least 1 non-NA in this condition)
+    # Check rows where at least two values are present
+    non_all_na_rows <- apply(subset_data, 1, function(x) sum(!is.na(x)) >= 2)
+
+    # Subset only valid rows (with at least two values are present in this condition)
     valid_data <- subset_data[non_all_na_rows, , drop = FALSE]
     
     # If there's enough data to run KNN (at least k+1 complete rows), impute
@@ -189,10 +192,9 @@ knn_within_conditions <- function(data_matrix, conditions, k = 3) {
   return(imputed_data)
 }
 
-
-###Imputation with NIPALS
+###Custom Imputation function
 impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet", 
-                                      "MinProb", "man", "min", "zero", "mixed", "nbavg", "NIPALS", "knn+man"), ...) 
+                                      "MinProb", "man", "min", "zero", "mixed", "nbavg", "NIPALS", "knn+man", "knn+man_v2"), ...) 
 {
   assertthat::assert_that(inherits(se, "SummarizedExperiment"), 
                           is.character(fun))
@@ -247,7 +249,7 @@ impute_custom <-function (se, fun = c("bpca", "knn", "QRILC", "MLE", "MinDet",
 }
 
 
-###custom limma tesst diff function
+###custom limma test diff function
 #This function is a modification of the DEP test_diff function, with the FDRtools method removed and option to change 
 #limma p.adjust methods which should be one of “holm”, “hochberg”, “hommel”, “bonferroni”, “BH”, “BY”, “fdr”, “none”
 test_diff_custom <-function (se, type = c("control", "all", "manual"), control = NULL, 

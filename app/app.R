@@ -58,7 +58,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.05-beta"
+Version = "0.17.06-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -1233,7 +1233,7 @@ server <- shinyServer(function(input, output, session) {
   #Set upper protein limit 
   upper_limit <- 160
   
-  #Assign BioGris search key (can be obtained from website)
+  #Assign BioGrid search key (can be obtained from website)
   key_assign <- "REMOVED"
   
   # Allow reconnect if the session is interrupted
@@ -2412,19 +2412,19 @@ server <- shinyServer(function(input, output, session) {
       set.seed(123)
       if (input$imputation2 == "man"){
         imp1<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp1<-impute_custom(norm2(), input$imputation)}
+          imp1<-impute_custom(norm2(), input$imputation2)}
       imp1_data<-SummarizedExperiment::assay(imp1)
       
       set.seed(321)
       if (input$imputation2 == "man"){
         imp2<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp2<-impute_custom(norm2(), input$imputation)}
+          imp2<-impute_custom(norm2(), input$imputation2)}
       imp2_data<-SummarizedExperiment::assay(imp2)
       
       set.seed(456)
       if (input$imputation2 == "man"){
         imp3<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp3<-impute_custom(norm2(), input$imputation)}
+          imp3<-impute_custom(norm2(), input$imputation2)}
       imp3_data<-SummarizedExperiment::assay(imp3)
       
       imp_ave<-(imp1_data + imp2_data + imp3_data)/3
@@ -2434,7 +2434,7 @@ server <- shinyServer(function(input, output, session) {
     }else{set.seed(123)
       if (input$imputation2 == "man"){
         impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          impute_custom(norm2(), input$imputation)}
+          impute_custom(norm2(), input$imputation2)}
     }
   })
   
