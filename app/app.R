@@ -58,7 +58,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.08-beta"
+Version = "0.17.09-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -2038,15 +2038,10 @@ server <- shinyServer(function(input, output, session) {
       }else if (input$exp == "DIA")
       {
         end<-ncol(data())
-        end_1<-end-1
-        LFQ_columns<- 4:end_1
+        #end_1<-end-1
+        LFQ_columns<- 5:end
         label<-colnames(data()[LFQ_columns])
-        #label <- gsub('.MaxLFQ.Intensity', '', label)
-        #label <- gsub('.Intensity', '', label)
         condition<-""
-        #substrRight <- function(x, n){
-        #  substr(x, nchar(x)-n+1, nchar(x))
-        #}
         replicate<-""
         condition_type<-"1"
         bait_id<-"T"
@@ -2119,20 +2114,14 @@ server <- shinyServer(function(input, output, session) {
       }else if (input$exp == "DIA")
       {
         end<-ncol(data2())
-        end_1<-end-1
-        LFQ_columns<- 4:end_1
+        #end_1<-end-1
+        LFQ_columns<- 5:end
         label<-colnames(data2()[LFQ_columns])
-        #label <- gsub('.MaxLFQ.Intensity', '', label)
-        #label <- gsub('.Intensity', '', label)
         condition<-""
-        #substrRight <- function(x, n){
-        #  substr(x, nchar(x)-n+1, nchar(x))
-        #}
         replicate<-""
         condition_type<-"1"
         bait_id<-"T"
         exp_template_new<- data.frame(label, condition, replicate, condition_type, bait_id)
-        
       }
     }
     
@@ -2275,8 +2264,8 @@ server <- shinyServer(function(input, output, session) {
       }else if(input$exp == "DIA")
       {
         end<-ncol(data())
-        end_1<-end-1
-        cols<- 4:end_1
+        #end_1<-end-1
+        cols<- 5:end
         unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
       }
       
@@ -2346,8 +2335,8 @@ server <- shinyServer(function(input, output, session) {
       }else if(input$exp2 == "DIA")
       {
         end<-ncol(data2())
-        end_1<-end-1
-        cols<- 4:end_1
+        #end_1<-end-1
+        cols<- 5:end
         unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
       }
       
