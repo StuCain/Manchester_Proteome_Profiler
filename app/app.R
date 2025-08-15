@@ -58,7 +58,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.07-beta"
+Version = "0.17.08-beta"
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -2289,10 +2289,29 @@ server <- shinyServer(function(input, output, session) {
     }
     
     #Check for Experimental Design File
-    validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
-    Use the Experimental template to assist you. ")
-    )
-    
+    #validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
+    #Use the Experimental template to assist you. ")
+    #)
+    if (is.null(expdesign())) {
+      sendSweetAlert(
+        session,
+        title = NULL,  # Title is in the HTML already
+        text = HTML('
+      <h1><font color="#DF536B">Quick Instructions</font><font color="#000000"></font></h1>
+      <h3>1. Load data (Pick Data File type first)</h3>
+      <h3>2. Save Exp. Template</h3>
+      <h3>3. Modify Exp. Template (Use a spreadsheet editor, see instructions tab)</h3>
+      <h3>4. Load modified Exp. Template</h3>
+      <h3>5. Pick Comparisons or Generate comparison file from Comp. template and upload</h3>
+      <h3>6. Press "Analyse"</h3>
+    '),
+        html = TRUE,
+        type = NULL,   # No default SweetAlert icon
+        btn_labels = "Got it!"
+      )
+      return()
+    }
+
     se <- make_se(unique_names, cols, expdesign())
     filter_missval(se, input$thr) #filtering set less stringent
   })
@@ -2340,10 +2359,30 @@ server <- shinyServer(function(input, output, session) {
       unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
     }
     
-    #Check for Experimental Design File
-    validate(need(!is.null(expdesign2()), "You need to upload an Experimental Design File for 2nd dataset.
-    Use the Experimental template to assist you. ")
-    )
+    ##Check for Experimental Design File
+    #validate(need(!is.null(expdesign2()), "You need to upload an Experimental Design File for 2nd dataset.
+    #Use the Experimental template to assist you. ")
+    #)
+    
+    if (is.null(expdesign2())) {
+      sendSweetAlert(
+        session,
+        title = NULL,  # Title is in the HTML already
+        text = HTML('
+      <h1><font color="#DF536B">Quick Instructions</font><font color="#000000"></font></h1>
+      <h3>1. Load data (Pick Data File type first)</h3>
+      <h3>2. Save Exp. Template</h3>
+      <h3>3. Modify Exp. Template (Use a spreadsheet editor, see instructions tab)</h3>
+      <h3>4. Load modified Exp. Template</h3>
+      <h3>5. Pick Comparisons or Generate comparison file from Comp. template and upload</h3>
+      <h3>6. Press "Analyse"</h3>
+    '),
+        html = TRUE,
+        type = NULL,   # No default SweetAlert icon
+        btn_labels = "Got it!"
+      )
+      return()
+    }
     
     se <- make_se(unique_names, cols, expdesign2())
     filter_missval(se, input$thr) #filtering set less stringent
@@ -2501,6 +2540,11 @@ server <- shinyServer(function(input, output, session) {
   
   
   df <- reactive({
+    #Check for Comparisons
+    validate(need(comp() != "", "You need to select some comparisons, or import a comparisons file.
+          Use the Comp. template to assist you. ")
+    )
+    
     if (input$padjust_method == "default"){
       DEP::test_diff(imp(), type = "manual", test = comp())}
     else{test_diff_custom(imp(), type = "manual", test = comp(), method = input$padjust_method)}
@@ -2527,11 +2571,6 @@ server <- shinyServer(function(input, output, session) {
     Use the Experimental template to assist you. ")
     )
     
-    #Check for Comparisons
-    validate(need(comp() != "", "You need to select some comparisons, or import a comparisons file.
-          Use the Comp. template to assist you. ")
-    )
-    #validate(need(try(df() != "try-error"), base::stop(shiny::safeError(warning(test_diff(imp(), type = "manual", test = comp()))))))
     if(input$pval_use == FALSE){
       DEP::add_rejections(df(), input$p, log2(input$lfc))
     }else{add_rejections_pval(df(), input$p, log2(input$lfc))}
@@ -3311,12 +3350,12 @@ server <- shinyServer(function(input, output, session) {
     
     imputation_input <- reactive({
       plot_imputation(norm(),
-                      df())
+                      imp())
     })
     
     imputation_input2 <- reactive({
       plot_imputation(norm2(),
-                      df2())
+                      imp2())
     })
     
     numbers_input <- reactive({
