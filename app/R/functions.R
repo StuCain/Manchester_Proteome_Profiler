@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.16
+Version = 5.17
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -998,7 +998,11 @@ plot_complex_heatmap_2xcomp <- function(data_results, kmeans, ht_title, col_fun,
   dfdata_sig2<-dfdata_sig_c1m[, c("name", "sigcount_c1", "sigcount_c2")]
   dfdata_sig2[is.na(dfdata_sig2)] <- 0
   
-  #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
+  # Ensure dfdata_sig2 is aligned with my_mat rownames
+  dfdata_sig2 <- dfdata_sig2[match(rownames(my_mat), dfdata_sig2$name), ]
+  rownames(dfdata_sig2) <- dfdata_sig2$name
+  
+  #Build Right annotation
   sc3max_c1<- max(dfdata_sig2$sigcount_c1)
   sc3max_c2<- max(dfdata_sig2$sigcount_c2)
   
@@ -1188,7 +1192,16 @@ plot_complex_heatmap_BFDR <- function(data_results, kmeans, ht_title, col_fun, m
   dfdata_sig2<-dfdata_sig_c1m[, c("name", "sigcount_c1", "BFDR_Freq")]
   dfdata_sig2[is.na(dfdata_sig2)] <- 0
   
-  #saint_count3 = setDT(dfdata_sig2)[name %chin% LFQ_GL]
+  # Ensure dfdata_sig2 is aligned with my_mat rownames
+  dfdata_sig2 <- dfdata_sig2[match(rownames(my_mat), dfdata_sig2$name), ]
+  rownames(dfdata_sig2) <- dfdata_sig2$name
+  
+  # sanity check
+  if (!all(rownames(my_mat) == dfdata_sig2$name)) {
+    warning("Rowname mismatch detected between heatmap matrix and annotation data!")
+  }
+  
+  #Build Right annotation
   sc3max_c1<- max(dfdata_sig2$sigcount_c1)
   sc3max_c2<- max(dfdata_sig2$BFDR_Freq)
   

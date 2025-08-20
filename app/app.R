@@ -51,6 +51,7 @@ library(biogridr)
 library(tidygraph)
 library(ggraph)
 library(STRINGdb)
+#library(ragg)   # must be installed
 #library(impute)  # For impute.knn
 
 #library(limma)
@@ -58,7 +59,11 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.17.09-beta"
+Version = "0.18.01-beta"
+
+# Force Shiny to use ragg device
+#options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
+options(shiny.graphics.device = function(...) png(..., type = "cairo"))
 
 set.seed(123) #random seed to give consistent kmeans clustering and imputation
 
@@ -741,7 +746,9 @@ ui <- fluidPage(
                                     #infoBoxOutput("ibox"), #Info box for testing
                                     #),
                                     fluidRow(
-                                      uiOutput("plot_comp"),
+                                      uiOutput("comp_heatmap_ui")
+                                    ),
+                                    fluidRow(
                                       box(numericInput("pdfwidth_ht",
                                                        "PDF Width",
                                                        min = 3, max = 30, value = 5),
@@ -1227,8 +1234,8 @@ ui <- fluidPage(
 
 server <- shinyServer(function(input, output, session) {
   #options(shiny.usecairo = TRUE)  # Force Cairo rendering in Shiny
-  options(shiny.useragg = TRUE)
-  options(shiny.graphics.device = ragg::agg_png)
+  #options(shiny.useragg = TRUE)
+  #options(shiny.graphics.device = ragg::agg_png)
   conversion_messages <- reactiveVal(NULL)
   #Set upper protein limit 
   upper_limit <- 170
@@ -3430,7 +3437,7 @@ server <- shinyServer(function(input, output, session) {
                                    ht_title,
                                    colour_functions_input()[[1]],
                                    colour_functions_input()[[2]],
-                                   font_size=8,
+                                   font_size=6,
                                    cluster_cols=input$cluster_cols,
                                    comp_list=comp()
           )
@@ -3447,7 +3454,7 @@ server <- shinyServer(function(input, output, session) {
                                         ht_title,
                                         colour_functions_input()[[1]],
                                         colour_functions_input()[[2]],
-                                        font_size=8,
+                                        font_size=6,
                                         cluster_cols=input$cluster_cols,
                                         comp_list=comp(),
                                         data_results1=data_results1(),
@@ -3465,7 +3472,7 @@ server <- shinyServer(function(input, output, session) {
                                            ht_title,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
-                                           font_size=8,
+                                           font_size=6,
                                            cluster_cols=input$cluster_cols,
                                            comp_list=comp2(),
                                            data_results1=data_results1(),
@@ -3485,7 +3492,7 @@ server <- shinyServer(function(input, output, session) {
                                            ht_title,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
-                                           font_size=8,
+                                           font_size=6,
                                            cluster_cols=input$cluster_cols,
                                            comp_list=comp(),
                                            data_results1=data_results1(),
@@ -4334,9 +4341,39 @@ server <- shinyServer(function(input, output, session) {
     })
     
     #complex heatmap output
-    output$comp_heatmap <- renderPlot({
-      comp_heatmap_input()[[1]]
+    #output$comp_heatmap <- renderPlot({
+    #  comp_heatmap_input()[[1]]
+    #})
+    
+    # complex heatmap output (fixed Cairo rendering)
+    output$comp_heatmap_ui <- renderUI({
+      ht_height <- ((dep_num() * 20) + 350 + input$heatmap_pad)
+      if (ht_height < 420) ht_height <- ht_height + 80
+      
+      imageOutput("comp_heatmap", height = paste0(ht_height, "px"))
     })
+    
+    output$comp_heatmap <- renderImage({
+      tmp_png <- tempfile(fileext = ".png")
+      
+      ht_height <- ((dep_num() * 20) + 350 + input$heatmap_pad)
+      if (ht_height < 420) ht_height <- ht_height + 80
+      
+      png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
+      
+      ht <- comp_heatmap_input()[[1]]
+      if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
+        draw(ht)
+      } else {
+        plot(ht)
+      }
+      dev.off()
+      
+      list(src = tmp_png,
+           contentType = "image/png",
+           width = "100%")
+    }, deleteFile = TRUE)
+    
     
     output$comp_heatmap_c1 <- renderPlot({
       comp_heatmap_input_c1()[[1]]
@@ -4456,9 +4493,10 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_comp <- renderUI({
-        ht_height<-((dep_num()*12)+270+input$heatmap_pad)
+        ht_height<-((dep_num()*14)+300+input$heatmap_pad)
         if (ht_height < 420){ht_height<-ht_height+80}
-        plotOutput("comp_heatmap", height = ht_height)
+        imageOutput("comp_heatmap",  height = ht_height)
+        #uiOutput("comp_heatmap")#, height = ht_height)
       })
     })
     
