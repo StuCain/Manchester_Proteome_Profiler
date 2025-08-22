@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:4.5
+FROM rocker/shiny-verse:4.5.0
 
 RUN apt-get update && apt-get install -y \
     sudo \
@@ -36,9 +36,16 @@ RUN Rscript -e "BiocManager::install('clusterProfiler', ask=F, dependencies=TRUE
 RUN Rscript -e "BiocManager::install('QFeatures', configure.args='--disable-threading')"
 RUN Rscript -e "BiocManager::install('preprocessCore', configure.args='--disable-threading', force= TRUE, update=TRUE, type = 'source')"
 RUN Rscript -e "BiocManager::install('org.At.tair.db', ask=F, dependencies=TRUE)"
+RUN Rscript -e "BiocManager::install('org.Xl.eg.db', ask=F, dependencies=TRUE)" #Install XENOPUS library
+
 
 RUN Rscript -e 'install.packages(c("promises", "future", "ggtangle"), dependencies=TRUE)'
 RUN Rscript -e 'install.packages(c("shinyWidgets", "gridtext", "shinythemes"), dependencies=TRUE)'
+RUN Rscript -e 'devtools::install_github("npjc/biogridr")'
+RUN Rscript -e 'install.packages(c("tidygraph", "ggraph"), dependencies=TRUE)'
+RUN Rscript -e "BiocManager::install('STRINGdb', ask=F, dependencies=TRUE)"
+RUN Rscript -e 'devtools::install_github("guokai8/VennDetail")'
+
 
 #fetch TinyTeX installer and run it
 #RUN apt-get install perl wget -y  
@@ -62,13 +69,6 @@ RUN tlmgr install ly1
 RUN tlmgr install bookmark
 #Copy TinyTEx directory from root to /home/shiny
 RUN cp -r /root/.TinyTeX /home/shiny
-
-#Install XENOPUS library
-RUN Rscript -e "BiocManager::install('org.Xl.eg.db', ask=F, dependencies=TRUE)"
-RUN Rscript -e 'devtools::install_github("npjc/biogridr")'
-RUN Rscript -e 'install.packages(c("tidygraph", "ggraph"), dependencies=TRUE)'
-RUN Rscript -e "BiocManager::install('STRINGdb', ask=F, dependencies=TRUE)"
-RUN Rscript -e 'devtools::install_github("guokai8/VennDetail")'
 
 RUN sudo rm /srv/shiny-server/index.html
 

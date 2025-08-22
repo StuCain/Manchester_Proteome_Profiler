@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.17
+Version = 5.18
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -2269,7 +2269,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
     facet_wrap(~rowname) +
     #scale_color_brewer(palette = palette_choice)+
     #theme_linedraw() +
-    theme (axis.text.x = element_text(angle=90, hjust = 1, vjust = 1))+
+    theme (axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))+
     ggtitle(origtitle)
   #theme(axis.title.x = element_blank())
   
@@ -2298,7 +2298,7 @@ plot_box_plot <- function(normdata, intdata, clu_df, cluster_no, palette_choice=
     facet_wrap(~rowname) +
     #scale_color_brewer(palette = palette_choice)+
     #theme_linedraw() +
-    theme (axis.text.x = element_text(angle=90, hjust = 1, vjust = 1))+
+    theme (axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))+
     ggtitle(Imptitle)
   #theme(axis.title.x = element_blank())
   

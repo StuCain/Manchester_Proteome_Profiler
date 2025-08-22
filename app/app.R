@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.01-beta"
+Version = "0.18.03-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -746,7 +746,9 @@ ui <- fluidPage(
                                     #infoBoxOutput("ibox"), #Info box for testing
                                     #),
                                     fluidRow(
-                                      uiOutput("comp_heatmap_ui")
+                                      box(
+                                      uiOutput("comp_heatmap_ui"),
+                                      width = 12)
                                     ),
                                     fluidRow(
                                       box(numericInput("pdfwidth_ht",
@@ -3431,8 +3433,6 @@ server <- shinyServer(function(input, output, session) {
           ht_title<-paste(input$data_type, "<br>", "FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap(data_results(),
-                                   #                     input$pres,
-                                   #                     kmeans = TRUE,
                                    input$k1,
                                    ht_title,
                                    colour_functions_input()[[1]],
@@ -3448,8 +3448,6 @@ server <- shinyServer(function(input, output, session) {
           ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results(),
-                                        #                     input$pres,
-                                        #                     kmeans = TRUE,
                                         input$k1,
                                         ht_title,
                                         colour_functions_input()[[1]],
@@ -3466,8 +3464,6 @@ server <- shinyServer(function(input, output, session) {
           ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
-                                           #                     input$pres,
-                                           #                     kmeans = TRUE,
                                            input$k1,
                                            ht_title,
                                            colour_functions_input()[[1]],
@@ -3486,8 +3482,6 @@ server <- shinyServer(function(input, output, session) {
           ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
-                                           #                     input$pres,
-                                           #                     kmeans = TRUE,
                                            input$k1,
                                            ht_title,
                                            colour_functions_input()[[1]],
@@ -3841,7 +3835,7 @@ server <- shinyServer(function(input, output, session) {
                                            input$p,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
-                                           font_size=8,
+                                           font_size=6,
                                            data_unique_defn = data_defn()
           )
         }
@@ -3857,7 +3851,7 @@ server <- shinyServer(function(input, output, session) {
                                     input$p,
                                     colour_functions_input()[[1]],
                                     colour_functions_input()[[2]],
-                                    font_size=8,
+                                    font_size=6,
                                     data_unique_defn = data_defn()
           )
         }
@@ -3873,7 +3867,7 @@ server <- shinyServer(function(input, output, session) {
                                            input$p,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
-                                           font_size=8,
+                                           font_size=6,
                                            data_unique_defn = data_defn()
           )
         }
@@ -4347,8 +4341,8 @@ server <- shinyServer(function(input, output, session) {
     
     # complex heatmap output (fixed Cairo rendering)
     output$comp_heatmap_ui <- renderUI({
-      ht_height <- ((dep_num() * 20) + 350 + input$heatmap_pad)
-      if (ht_height < 420) ht_height <- ht_height + 80
+      ht_height <- ((dep_num() * 16) + 200 + input$heatmap_pad)
+      if (ht_height < 420) ht_height <- ht_height + 160
       
       imageOutput("comp_heatmap", height = paste0(ht_height, "px"))
     })
@@ -4356,8 +4350,8 @@ server <- shinyServer(function(input, output, session) {
     output$comp_heatmap <- renderImage({
       tmp_png <- tempfile(fileext = ".png")
       
-      ht_height <- ((dep_num() * 20) + 350 + input$heatmap_pad)
-      if (ht_height < 420) ht_height <- ht_height + 80
+      ht_height <- ((dep_num() * 18) + 440 + input$heatmap_pad)
+      if (ht_height < 420) ht_height <- ht_height + 160
       
       png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
       
@@ -4394,10 +4388,28 @@ server <- shinyServer(function(input, output, session) {
       DT::datatable(venn_input()[[2]], options = list(lengthMenu = c(5, 30, 50), pageLength = 7))
     })
     
-    #cluster heatmap output
-    output$cluster_heatmap <- renderPlot({
-      cluster_heatmap_input()[[1]][[input$cluster_no]]
-    })
+    # Cluster heatmap output (fixed Cairo rendering)
+    output$cluster_heatmap <- renderImage({
+      tmp_png <- tempfile(fileext = ".png")
+      
+      ht_height <- (cluster_heatmap_input()[[2]][[input$cluster_no]]*18)+440+input$cluster_pad
+      if (ht_height < 600) ht_height <- ht_height + 200
+      
+      png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
+      
+      ht <- cluster_heatmap_input()[[1]][[input$cluster_no]]
+      if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
+        draw(ht)
+      } else {
+        plot(ht)
+      }
+      dev.off()
+      
+      list(src = tmp_png,
+           contentType = "image/png",
+           width = "100%")
+    }, deleteFile = TRUE)
+    
     
     #Box Plots
     output$box_plot <- renderPlot({
@@ -4495,8 +4507,7 @@ server <- shinyServer(function(input, output, session) {
       output$plot_comp <- renderUI({
         ht_height<-((dep_num()*14)+300+input$heatmap_pad)
         if (ht_height < 420){ht_height<-ht_height+80}
-        imageOutput("comp_heatmap",  height = ht_height)
-        #uiOutput("comp_heatmap")#, height = ht_height)
+        plotOutput("comp_heatmap",  height = ht_height)
       })
     })
     
@@ -4520,7 +4531,7 @@ server <- shinyServer(function(input, output, session) {
     observe({
       output$plot_clust <- renderUI({
         validate(need(!(input$cluster_no > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
-        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[input$cluster_no]]*12)+270+input$cluster_pad)
+        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[input$cluster_no]]*12)+520+input$cluster_pad)
       })
     })
     
