@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.03-beta"
+Version = "0.18.04-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -643,11 +643,14 @@ ui <- fluidPage(
                                            title = "QC Plots", width = 12,
                                            tabPanel(title = "Protein Numbers",
                                                     plotOutput("numbers", height = 600),
-                                                    downloadButton('downloadNumbers', 'Save', class = "btn-primary")
+                                                    downloadButton('downloadNumbers', 'Save Plot', class = "btn-primary"),
+                                                    downloadButton('downloadNumbers_data', 'Save Values', class = "btn-primary"),
                                            ),
                                            tabPanel(title = "Protein Numbers (Dataset 2)",
                                                     plotOutput("numbers2", height = 600),
-                                                    downloadButton('downloadNumbers2', 'Save', class = "btn-primary")
+                                                    downloadButton('downloadNumbers2', 'Save Plot', class = "btn-primary"),
+                                                    downloadButton('downloadNumbers_data2', 'Save Values', class = "btn-primary"),
+                                                    
                                            ),
                                            tabPanel(title = "Sample coverage",
                                                     plotOutput("coverage", height = 600),
@@ -3360,9 +3363,19 @@ server <- shinyServer(function(input, output, session) {
       plot_numbers(norm())
     })
     
+    numbers_data_input <- reactive({
+      plot_numbers(norm(), plot = FALSE)
+    })
+    
+    
     numbers_input2 <- reactive({
       plot_numbers(norm2())
     })
+    
+    numbers_data_input2 <- reactive({
+      plot_numbers(norm2(), plot = FALSE)
+    })
+    
     
     coverage_input <- reactive({
       plot_coverage(norm())
@@ -5348,6 +5361,19 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     
+    output$downloadNumbers_data <- downloadHandler(
+      filename = "numbers_values.txt",
+      content = function(file) {
+        write.table(numbers_data_input(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+      
+    )
+    
+    
     output$downloadNumbers2 <- downloadHandler(
       filename = "numbers (dataset 2).pdf",
       content = function(file) {
@@ -5356,6 +5382,19 @@ server <- shinyServer(function(input, output, session) {
         dev.off()
       }
     )
+    
+    output$downloadNumbers_data2 <- downloadHandler(
+      filename = "numbers_values2.txt",
+      content = function(file) {
+        write.table(numbers_data_input2(),
+                    file,
+                    col.names = TRUE,
+                    row.names = FALSE,
+                    sep ="\t") 
+      }
+      
+    )
+    
     
     output$downloadCoverage <- downloadHandler(
       filename = "coverage.pdf",
