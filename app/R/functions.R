@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.19
+Version = 5.20
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -641,7 +641,7 @@ plot_normalization_vert <-function (se,  ...)
   df <- map_df(arglist, gather_join, .id = "var") %>% mutate(var = factor(var, 
                                                                           levels = names(arglist)))
   # New facet label names
-  df$var <- factor(df$var, labels = c("Filtered Data", "Normalized Data"))
+  df$var <- factor(df$var, labels = c("Filtered Data", "Normalised Data"))
   ggplot(df, aes(x = ID, y = val, fill = condition)) + geom_boxplot(notch = TRUE, 
                                                                     na.rm = TRUE) + coord_flip() + facet_wrap(~var, ncol = 1) + 
     labs(x = "", y = expression(log[2] ~ "Intensity")) + 
@@ -673,7 +673,7 @@ plot_normalization_hor <-function (se,  ...)
   df <- map_df(arglist, gather_join, .id = "var") %>% mutate(var = factor(var, 
                                                                           levels = names(arglist)))
   # New facet label names
-  df$var <- factor(df$var, labels = c("Filtered Data", "Normalized Data"))
+  df$var <- factor(df$var, labels = c("Filtered Data", "Normalised Data"))
   ggplot(df, aes(x = ID, y = val, fill = condition)) + geom_boxplot(notch = TRUE, 
                                                                     na.rm = TRUE) + coord_flip() + facet_wrap(~var, ncol = 2) + 
     labs(x = "", y = expression(log[2] ~ "Intensity")) + 

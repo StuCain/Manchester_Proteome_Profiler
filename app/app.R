@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.05-beta"
+Version = "0.18.06-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -656,7 +656,7 @@ ui <- fluidPage(
                                                     plotOutput("coverage", height = 600),
                                                     downloadButton('downloadCoverage', 'Save', class = "btn-primary")
                                            ),
-                                           tabPanel(title = "Normalization",
+                                           tabPanel(title = "Normalisation",
                                                     fluidRow(
                                                       box(checkboxInput("norm_orient",
                                                                         "Horizontal plots",
@@ -666,7 +666,7 @@ ui <- fluidPage(
                                                     plotOutput("norm", height = 600),
                                                     downloadButton('downloadNorm', 'Save', class = "btn-primary")
                                            ),
-                                           tabPanel(title = "Normalization (Dataset 2)",
+                                           tabPanel(title = "Normalisation (Dataset 2)",
                                                     fluidRow(
                                                       box(checkboxInput("norm_orient2",
                                                                         "Horizontal plots",
@@ -1599,8 +1599,8 @@ server <- shinyServer(function(input, output, session) {
       showTab(inputId =  "QC_plots", target = "Protein Numbers (Dataset 2)")
     }else{hideTab(inputId =  "QC_plots", target = "Protein Numbers (Dataset 2)")}
     if (input$data_mode == TRUE) {
-      showTab(inputId =  "QC_plots", target = "Normalization (Dataset 2)")
-    }else{hideTab(inputId =  "QC_plots", target = "Normalization (Dataset 2)")}
+      showTab(inputId =  "QC_plots", target = "Normalisation (Dataset 2)")
+    }else{hideTab(inputId =  "QC_plots", target = "Normalisation (Dataset 2)")}
     if (input$data_mode == TRUE) {
       showTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")
     }else{hideTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")}
@@ -5195,7 +5195,7 @@ server <- shinyServer(function(input, output, session) {
     
     
     output$downloadNorm <- downloadHandler(
-      filename = "normalization.pdf",
+      filename = "normalisation.pdf",
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
         print(norm_input())
@@ -5204,7 +5204,7 @@ server <- shinyServer(function(input, output, session) {
     )
     
     output$downloadNorm2 <- downloadHandler(
-      filename = "normalization (dataset 2).pdf",
+      filename = "normalisation (dataset 2).pdf",
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight, width = input$pdfwidth)
         print(norm_input2())

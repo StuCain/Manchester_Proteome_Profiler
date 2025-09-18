@@ -189,9 +189,9 @@ if (params$imputation == "zero"){imputation_text <- "and missing values were rep
 if (params$imputation == "bpca"){imputation_text <- "and missing values were imputed by an  iterative method using a Bayesian model to handle missing values (bpca method).  "}
 
 #Normalisation Text
-if (params$normalisation_choice == "vsn"){norm_text <- "Normalization was performed using the variance stabilizing transformation method (vsn) "}
-if (params$normalisation_choice == "quantile"){norm_text <- "Normalization was performed using the quantile method "}
-if (params$normalisation_choice == "median center"){norm_text <- "Normalization was performed using the median centered method "}
+if (params$normalisation_choice == "vsn"){norm_text <- "Normalisation was performed using the variance stabilizing transformation method (vsn) "}
+if (params$normalisation_choice == "quantile"){norm_text <- "Normalisation was performed using the quantile method "}
+if (params$normalisation_choice == "median center"){norm_text <- "Normalisation was performed using the median centered method "}
 if (params$normalisation_choice == "none"){norm_text <- "Protein Intensisty values were not normalised "}
 ```
 ```{r app_logo, echo=FALSE,message=FALSE, warning=FALSE}
@@ -201,13 +201,13 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.6.2
+Version:0.6.3
 
 ## Method details
  
 Initial analysis of the spectral file outputs from the Mass Spectrometer, were processed using `r params$data_type`, which uses a proteomic search engine to perform peptide and protein identifications, and assign intensity values to the identified proteins. Label-free quantification was applied to the intensities and the grouped values were outputted as a table. 
 
-The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalization and imputation of missing values. `r norm_text` `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` `r padjmethod`, along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. 
+The `r file_input` was uploaded into a web-based analysis suite "Manchester Proteome Profiler" \textsuperscript{1}, along with experimental design information. "Manchester Proteome Profiler"  uses a number of R packages to process the protein intensity data, and  perform cluster analysis to allow data visualization and discovery of significantly enriched proteins. Briefly the suite uses the "DEP" package \textsuperscript{2} to perform contaminant filtering , normalisation and imputation of missing values. `r norm_text` `r imputation_text`  Protein-wise linear models combined with empirical Bayes statistics were used for the differential expression analyses. "DEP" uses the  _limma_ package from R Bioconductor to generate a list of differentially expressed proteins for each chosen pair-wise comparison. A cut-off using the chosen _`r pval_type_2`_ of `r params$p` `r padjmethod`, along with a fold change of `r params$lfc` has been applied to determine a list of significantly regulated proteins in each chosen pairwise comparison. Both the _`r pval_type_2`_ and fold change can be adjusted interactively and information of the number and percentage of total  of proteins is displayed dynamically. The suite also uses "DEP" to generate Principal Component Analysis (PCA) and correlation plots to evaluate replicate quality. 
 
 `r second_round_txt`
 
@@ -369,11 +369,11 @@ if(params$data_mode == TRUE){print(params$numbers_input2())}
 
 \pagebreak
 
-## Normalization Plot
+## Normalisation Plot
 
 ```{r norm, echo=FALSE, fig.height=sample_no/2, warning=FALSE}
 print(params$norm_input())
-if(params$data_mode == TRUE){norm_txt<-"## Normalization Plot (Dataset 2)"}else{norm_txt<-""}
+if(params$data_mode == TRUE){norm_txt<-"## Normalisation Plot (Dataset 2)"}else{norm_txt<-""}
 ```
 \pagebreak
 
