@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.07-beta"
+Version = "0.18.08-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -5093,7 +5093,8 @@ server <- shinyServer(function(input, output, session) {
       filename = 'Venn.pdf',
       content = function(file) {
         cairo_pdf(file)
-        plot(venn_input()[[3]])
+       # plot(venn_input()[[3]])
+        plot(venn_input()[[1]])
         dev.off()
       }
     )
