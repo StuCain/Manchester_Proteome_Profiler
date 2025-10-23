@@ -15,13 +15,14 @@ cran_pkgs <- c(
 
   # Shiny framework & UI
   "shiny", "shinydashboard", "shinyWidgets", "shinythemes",
-  "shinyalert", "shinyjs", "shinyBS", "shinycssloaders", "shiny.info",
+  "shinyalert", "shinyjs", "shinyBS", "shinycssloaders",
   "waiter", "DT",
 
   # Data handling and plotting
   "tidyverse", "data.table", "scales", "RColorBrewer",
   "readxl", "rmarkdown", "svglite", "gridtext", "ggrepel",
   "circlize", "httr", "rjson", "mvtnorm", "tmvtnorm", "ggtangle",
+  "tidygraph",
 
   # Asynchronous and performance tools
   "promises", "future",
@@ -43,8 +44,9 @@ for (pkg in bioc_pkgs) renv::install(paste0("bioc::", pkg))
 
 # ---- GitHub Packages ----
 if (!requireNamespace("devtools", quietly = TRUE)) renv::install("devtools")
-devtools::install_github("npjc/biogridr")
-devtools::install_github("guokai8/VennDetail")
+renv::install("npjc/biogridr")
+renv::install("guokai8/VennDetail")
+
 
 # ---- Snapshot the environment ----
 # This records exact package versions into renv.lock
@@ -57,3 +59,4 @@ if (!tinytex::is_tinytex()) {
   system("tlmgr install sourcesanspro ly1 bookmark")
 }
 
+shiny::runApp("app/app.R")
