@@ -22,7 +22,7 @@ cran_pkgs <- c(
   "tidyverse", "data.table", "scales", "RColorBrewer",
   "readxl", "rmarkdown", "svglite", "gridtext", "ggrepel",
   "circlize", "httr", "rjson", "mvtnorm", "tmvtnorm", "ggtangle",
-  "tidygraph",
+  "tidygraph", "ggraph",
 
   # Asynchronous and performance tools
   "promises", "future",
