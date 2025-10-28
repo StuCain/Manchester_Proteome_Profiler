@@ -21,8 +21,10 @@ Manchester Proteome Profiler (MPP) is an open-source R Shiny application that st
 #### 5. Pick Comparisons or Generate comparison file from Comp. template and upload
 #### 6. Press "Analyse"
 
-There is currently a public server hosted by the University of Manchester available at https://mpp.sbs.manchester.ac.uk/ where more detailed instructions can also be found.
 ------------
+## Public Server
+There is currently a public server hosted by the University of Manchester available at https://mpp.sbs.manchester.ac.uk/ where more detailed instructions can also be found.
+
 
 ## Data Pipeline
 <img
