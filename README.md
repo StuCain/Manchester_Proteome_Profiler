@@ -8,6 +8,15 @@ Manchester Proteome Profiler (MPP) is an open-source R Shiny application that st
   style="display: inline-block; margin: 0 auto; max-width: 100px">
   
 
+## Features
+- Supports single and dual dataset comparisons
+- Normalisation and imputation options
+- Differential expression analysis using limma
+- SAINTexpress support for AP-MS/BioID data
+- Gene Ontology enrichment and protein interaction networks (BioGRID, STRING)
+- Interactive visualisations: PCA, volcano plots, heatmaps, violin plots
+- Publication-ready plots and downloadable reports
+
 ## Table of Contents
 1. [Quick Instructions](#quick-instructions)
 2. [Installation](#installation)
@@ -25,6 +34,10 @@ Manchester Proteome Profiler (MPP) is an open-source R Shiny application that st
 ## Public Server
 There is currently a public server hosted by the University of Manchester available at https://mpp.sbs.manchester.ac.uk/ where more detailed instructions can also be found.
 
+## 📁 Input Requirements
+- Grouped protein intensity files (e.g., `proteinGroups.txt`, `combined_protein.tsv`)
+- Experimental design file (template provided in-app)
+- Optional: comparison file for complex queries
 
 ## Data Pipeline
 <img
@@ -33,6 +46,13 @@ There is currently a public server hosted by the University of Manchester availa
   title="Optional title"
   style="display: inline-block; margin: 0 auto; max-width: 100px">
 
+## Citation
+
+If you use Manchester Proteome Profiler in your research, please cite:
+
+> Cain, S.A. & Humphries, M.J. *Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomics Analysis*. Journal of Proteome Research (submitted).
+
+A DOI will be added upon publication.
 
 
 ## Installation
@@ -140,3 +160,6 @@ docker run -d -p 3838:3838 stucain/mpp
 # Open local interface
 http://localhost:3838/
 ```
+
+## License
+This project is licensed under the GNU General Public License v3.0 - see the LICENSE file for details.
