@@ -34,7 +34,7 @@ Manchester Proteome Profiler (MPP) is an open-source R Shiny application that st
 ## Public Server
 There is currently a public server hosted by the University of Manchester available at https://mpp.sbs.manchester.ac.uk/ where more detailed instructions can also be found.
 
-## 📁 Input Requirements
+## Input Requirements
 - Grouped protein intensity files (e.g., `proteinGroups.txt`, `combined_protein.tsv`)
 - Experimental design file (template provided in-app)
 - Optional: comparison file for complex queries
@@ -50,7 +50,7 @@ There is currently a public server hosted by the University of Manchester availa
 
 If you use Manchester Proteome Profiler in your research, please cite:
 
-> Cain, S.A. & Humphries, M.J. *Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomics Analysis*. Journal of Proteome Research (submitted).
+> Cain, S.A., Fatima, M. & Humphries, M.J. *Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomic Analysis*. Journal of Proteome Research (submitted).
 
 A DOI will be added upon publication.
 
