@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.08-beta"
+Version = "0.18.09-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -4111,8 +4111,8 @@ server <- shinyServer(function(input, output, session) {
           text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
         clu_df<-cludf_check_input()
-        if(input$use_human == TRUE){
-          clu_df$GeneID <- toupper(clu_df$GeneID)}# Convert GeneID column to uppercase
+        #if(input$use_human == TRUE){
+        #  clu_df$GeneID <- toupper(clu_df$GeneID)}# Convert GeneID column to uppercase
         STRINGdb_network_input <- STRINGdb_network(interactions_named = STR_report_input(),
                                                  cludf =clu_df,
                                                  mypal = colour_functions_input()[[2]],
@@ -4867,9 +4867,9 @@ server <- shinyServer(function(input, output, session) {
         if(species_choice =="Arabidopsis"){species <- 3702}
         if(species_choice =="Xenopus"){species <- 8355}
         
-        if(input$use_human == TRUE){
-          clu_df$GeneID <- toupper(clu_df$GeneID)# Convert GeneID column to uppercase
-          species <- 9606 } 
+        #if(input$use_human == TRUE){
+        #  clu_df$GeneID <- toupper(clu_df$GeneID)# Convert GeneID column to uppercase
+        #  species <- 9606 } 
         
         
         future_promise({
