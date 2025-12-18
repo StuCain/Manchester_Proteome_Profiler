@@ -201,7 +201,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.6.3
+Version:0.6.4
 
 ## Method details
  
@@ -214,7 +214,7 @@ The `r file_input` was uploaded into a web-based analysis suite "Manchester Prot
 To identify clusters of proteins Heatmaps are generated using the "ComplexHeatmap package" \textsuperscript{3,4} using the chosen condition comparisons and the protein list generated from the "DEP" package. k-means clustering allows proteins of similar fold change values to be grouped and subjected to GO ontology enrichment analysis using the package "clusterProfiler"\textsuperscript{5}. Network plots generated from protein-protein interaction databases BioGrid\textsuperscript{6} and STRING\textsuperscript{7}. Enhanced Volcano plots\textsuperscript{8} and box plots are also generated to validate possible proteins of interest.  The suite also has built in SAINTexpress analysis, which allows identification proteins that have a higher abundance compared to the control samples.
 
 \small 
-\textsuperscript{1} Cain SA and Humphries MJ (2025) "Manchester Proteome Profiler: An easy to use tool for Analyzing Quantitative Proteomic Data" (Manuscript in preparation) https://mpp.sbs.manchester.ac.uk
+\textsuperscript{1} Cain SA, Fatima M and Humphries MJ (2025) "Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomic Analysis" (Manuscript under Review) https://mpp.sbs.manchester.ac.uk
 \textsuperscript{2} Zhang X, Smits A, van Tilburg G, Ovaa H, Huber W, Vermeulen M (2018). “Proteome-wide identification of ubiquitin interactions using UbIA-MS.” Nature Protocols, 13, 530–550. DOI: 10.1038/nprot.2017.147
 \textsuperscript{3}Gu, Z. Complex Heatmap Visualization. iMeta 2022. DOI: 10.1002/imt2.43
 \textsuperscript{4} Gu, Z. Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics 2016. DOI: 10.1093/bioinformatics/btw313
