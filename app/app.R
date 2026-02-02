@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.09-beta"
+Version = "0.18.10-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -115,7 +115,7 @@ ui <- fluidPage(
   #tags$head(tags$style(HTML('.navbar-default {background-color: #2297E6; border-color: #dddddd}'))),
   tags$head(tags$link(rel = "icon", type = "image/gif/png", href = "app_icon.png")), 
   tags$head(tags$title("Manchester Proteome Profiler"),
-            tags$meta(name = "description", content = "Manchester Proteome Profiler is an esy to use tool to allow analysis of protein intensity data from MaxQuant, FragPipe,  Proteome Discoverer or any grouped protein intensity data. MPP can then normalise, impute missing values and carry out pairwise comparisons. You can then check the data quality with PCA and correlation plots, generate heatmaps, volcano plots and box plots. The resulting significant proteins can be then clustered and subjected to Gene Ontology analysis.")
+            tags$meta(name = "description", content = "Manchester Proteome Profiler is an easy to use tool to allow analysis of protein intensity data from MaxQuant, FragPipe,  Proteome Discoverer or any grouped protein intensity data. MPP can then normalise, impute missing values and carry out pairwise comparisons. You can then check the data quality with PCA and correlation plots, generate heatmaps, volcano plots and box plots. The resulting significant proteins can be then clustered and subjected to Gene Ontology analysis.")
             ),
   tags$head(tags$style(".main-header .logo {height: 70px}, {background-color: #FFFFFF;}")),
   autoWaiter(html = spin_dots(), color = "white"),
@@ -1839,11 +1839,19 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Gene.names=Genes,
             Protein.IDs=Protein.Group,
+            Protein_Names=Protein.Names,
             Protein.names=First.Protein.Description,
             #  Sequence.length=Protein.Length
           )
+        #Check for DiaNN 2.x output
+        if ("N.Proteotypic.Sequences" %in% colnames(data)) {
+          col_start<-7
+        } else {
+          col_start<-6
+        }
+
         data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
-        lfq_columns<- 6:ncol(data)
+        lfq_columns<- col_start:ncol(data)
         if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
         if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
         data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "uniprot_entry", all.x = TRUE, all.y = FALSE)
@@ -1972,11 +1980,20 @@ server <- shinyServer(function(input, output, session) {
           dplyr::rename(
             Gene.names=Genes,
             Protein.IDs=Protein.Group,
+            Protein_Names=Protein.Names,
             Protein.names=First.Protein.Description,
             #  Sequence.length=Protein.Length
           )
+        #Check for DiaNN 2.x output
+        if ("N.Proteotypic.Sequences" %in% colnames(data)) {
+          col_start<-7
+        } else {
+          col_start<-6
+        }
+        
+        
         data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
-        lfq_columns<- 6:ncol(data)
+        lfq_columns<- col_start:ncol(data)
         if(input$dia_species2 == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
         if(input$dia_species2 == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
         data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "uniprot_entry", all.x = TRUE, all.y = FALSE)
@@ -2620,8 +2637,7 @@ server <- shinyServer(function(input, output, session) {
     saint_list<-list()
     
     for(i in sort(unique(experimental_design$condition_type))){
-      #norm_df<-pg_filt[, c(1, grep("Norm",colnames(pg_filt)))]
-      
+
       #bait
       bait<-experimental_design[experimental_design$condition_type==i, c(1,2,grep("bait_id",colnames(experimental_design)))]
       baitfile<-paste("data/bait_", i, ".txt",sep="")
@@ -2636,7 +2652,9 @@ server <- shinyServer(function(input, output, session) {
       prey<-prey %>% 
         distinct(across(-PROT_ID), # reduces data frame to only unique rows (keeps first one of any duplicates)
                  .keep_all = TRUE) 
-      
+      #Replace LENGTH NA values with average protein size of 500
+      prey[[2]][is.na(prey[[2]])] <- 500
+
       preyfile<-paste("data/prey_", i, ".txt",sep="")
       write.table(prey, preyfile, sep="\t", quote = F, row.names = F, col.names = F)
       
