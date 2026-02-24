@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.10-beta"
+Version = "0.19.1-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1268,6 +1268,28 @@ server <- shinyServer(function(input, output, session) {
   GO_BP_report_input <- reactiveVal(NULL)  # Store async result
   BG_report_input <- reactiveVal(NULL)  # Store async result
   STR_report_input <- reactiveVal(NULL)  # Store async result
+  
+  # --------------------------------------------------------------------
+  # PATCH 1: GLOBAL SAFE DEVICE WRAPPER
+  # Prevents runaway "too many open devices" errors by force‑closing
+  # all graphics devices whenever plotting errors occur.
+  # --------------------------------------------------------------------
+  
+  safe_device <- function(expr) {
+    tryCatch(
+      {
+        expr
+      },
+      error = function(e) {
+        # Close ALL open devices except the null device
+        while (dev.cur() > 1) {
+          dev.off()
+        }
+        # Re-throw the error so Shiny still reports it
+        stop(e)
+      }
+    )
+  }
   
   
   #### UI functions --------------------------------------------------------
