@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.19.1-beta"
+Version = "0.19.2-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1277,18 +1277,39 @@ server <- shinyServer(function(input, output, session) {
   
   safe_device <- function(expr) {
     tryCatch(
-      {
-        expr
-      },
+      expr,
       error = function(e) {
-        # Close ALL open devices except the null device
-        while (dev.cur() > 1) {
-          dev.off()
-        }
-        # Re-throw the error so Shiny still reports it
-        stop(e)
+        # Best-effort cleanup, swallow any device-off errors
+        try({
+          while (dev.cur() > 1) {
+            try(dev.off(), silent = TRUE)
+          }
+        }, silent = TRUE)
+        
+        # Rethrow original error without calling nested stop()
+        # This prevents recursive tryCatch() loops
+        invokeRestart("abort", e)
       }
     )
+  }
+  
+  
+  # --------------------------------------------------------------------
+  # PATCH 2: Safe PNG and PDF generators
+  # These ensure that any PNG() or cairo_pdf() device is ALWAYS closed,
+  # even if plot code errors, user interrupts, or reactives re-trigger.
+  # --------------------------------------------------------------------
+  
+  # Safe PNG creator for renderImage()
+  safe_png <- function(path, width, height, res = 150, type = "cairo") {
+    png(path, width = width, height = height, res = res, type = type)
+    on.exit(dev.off(), add = TRUE)
+  }
+  
+  # Safe PDF creator for downloadHandler()
+  safe_pdf <- function(path, width, height) {
+    cairo_pdf(path, width = width, height = height)
+    on.exit(dev.off(), add = TRUE)
   }
   
   
@@ -4276,22 +4297,26 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
-    
+    #Abundance Heatmaps
     output$heatmap <- renderPlot({
-      heatmap_input()[[1]]
+      safe_device({
+        heatmap_input()[[1]]
+      })
     })
     
     output$heatmap2 <- renderPlot({
-      heatmap_input2()[[1]]
+      safe_device({
+        heatmap_input2()[[1]]
+      })
     })
     
     
     output$volcano <- renderPlot({
-      volcano_input()
+        volcano_input()
     })
     
     output$volcano_c2 <- renderPlot({
-      volcano_c2_input()
+        volcano_c2_input()
     })
     
     #signif plot output
@@ -4401,38 +4426,47 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$comp_heatmap <- renderImage({
-      tmp_png <- tempfile(fileext = ".png")
-      
-      ht_height <- ((dep_num() * 18) + 440 + input$heatmap_pad)
-      if (ht_height < 420) ht_height <- ht_height + 160
-      
-      png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
-      
-      ht <- comp_heatmap_input()[[1]]
-      if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
-        draw(ht)
-      } else {
-        plot(ht)
-      }
-      dev.off()
-      
-      list(src = tmp_png,
-           contentType = "image/png",
-           width = "100%")
+      #Use safe_device function to stop leaked devices
+      safe_device({
+        tmp_png <- tempfile(fileext = ".png")
+        
+        ht_height <- ((dep_num() * 18) + 440 + input$heatmap_pad)
+        if (ht_height < 420) ht_height <- ht_height + 160
+        
+        png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
+        
+        ht <- comp_heatmap_input()[[1]]
+        if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
+          draw(ht)
+        } else {
+          plot(ht)
+        }
+        dev.off()
+        
+        list(src = tmp_png,
+             contentType = "image/png",
+             width = "100%")
+      })
     }, deleteFile = TRUE)
     
     
     output$comp_heatmap_c1 <- renderPlot({
-      comp_heatmap_input_c1()[[1]]
+      safe_device({
+        comp_heatmap_input_c1()[[1]]
+      })
     })
     
     output$comp_heatmap_c2 <- renderPlot({
-      comp_heatmap_input_c2()[[1]]
+      safe_device({
+        comp_heatmap_input_c2()[[1]]
+      })
     })
     
     #Venn Diagram
     output$venn <- renderPlot({
-      plot(venn_input()[[3]])
+      safe_device({
+        plot(venn_input()[[3]])
+      })
       #venn_input()[[1]]
     })
     
@@ -4443,24 +4477,26 @@ server <- shinyServer(function(input, output, session) {
     
     # Cluster heatmap output (fixed Cairo rendering)
     output$cluster_heatmap <- renderImage({
-      tmp_png <- tempfile(fileext = ".png")
-      
-      ht_height <- (cluster_heatmap_input()[[2]][[input$cluster_no]]*18)+440+input$cluster_pad
-      if (ht_height < 600) ht_height <- ht_height + 200
-      
-      png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
-      
-      ht <- cluster_heatmap_input()[[1]][[input$cluster_no]]
-      if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
-        draw(ht)
-      } else {
-        plot(ht)
-      }
-      dev.off()
-      
-      list(src = tmp_png,
-           contentType = "image/png",
-           width = "100%")
+      safe_device({
+        tmp_png <- tempfile(fileext = ".png")
+        
+        ht_height <- (cluster_heatmap_input()[[2]][[input$cluster_no]]*18)+440+input$cluster_pad
+        if (ht_height < 600) ht_height <- ht_height + 200
+        
+        png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
+        
+        ht <- cluster_heatmap_input()[[1]][[input$cluster_no]]
+        if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
+          draw(ht)
+        } else {
+          plot(ht)
+        }
+        dev.off()
+        
+        list(src = tmp_png,
+             contentType = "image/png",
+             width = "100%")
+      })
     }, deleteFile = TRUE)
     
     
@@ -4473,12 +4509,12 @@ server <- shinyServer(function(input, output, session) {
     
     #Enhanced Volcano plot 1
     output$enh_volcano_1 <- renderPlot({
-      enhanced_volcano_1_input()
+        enhanced_volcano_1_input()
     })
     
     #Enhanced Volcano plot 2
     output$enh_volcano_2 <- renderPlot({
-      enhanced_volcano_2_input()
+        enhanced_volcano_2_input()
     })
     
     #Report
@@ -4623,24 +4659,28 @@ server <- shinyServer(function(input, output, session) {
 
         #Plot output
         output$GOMF_plot <- renderPlot({
-          if (is.null(GO_MF_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-            print(GOMF_plot_input() + ggtitle(GOMFtitle))
-          }
+          safe_device({
+            if (is.null(GO_MF_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+              print(GOMF_plot_input() + ggtitle(GOMFtitle))
+            }
+          })
         })
         
         output$GOMF_cnet <- renderPlot({
-          if (is.null(GO_MF_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            print(GOMF_cnet_input())
-          }
+          safe_device({
+            if (is.null(GO_MF_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              print(GOMF_cnet_input())
+            }
+          })
         })
         
         #PDF Output
@@ -4698,23 +4738,27 @@ server <- shinyServer(function(input, output, session) {
         
         #Plot output
         output$GOCC_plot <- renderPlot({
-          if (is.null(GO_CC_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-            print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
-          }
+          safe_device({
+            if (is.null(GO_CC_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+              print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+            }
+          })
         })
         output$GOCC_cnet <- renderPlot({
-          if (is.null(GO_CC_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            print(GOCC_cnet_input())
-          }
+          safe_device({
+            if (is.null(GO_CC_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              print(GOCC_cnet_input())
+            }
+          })
         })
         #PDF Output
         output$download_CC_plot <- downloadHandler(
@@ -4771,24 +4815,28 @@ server <- shinyServer(function(input, output, session) {
         
         #Plot output
         output$GOBP_plot <- renderPlot({
-          if (is.null(GO_BP_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-            print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
-          }
+          safe_device({
+            if (is.null(GO_BP_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+              print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+            }
+          })
         })
         
         output$GOBP_cnet <- renderPlot({
-          if (is.null(GO_BP_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            print(GOBP_cnet_input())
-          }
+          safe_device({
+            if (is.null(GO_BP_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              print(GOBP_cnet_input())
+            }
+          })
         })
         
         #PDF Output
@@ -4859,14 +4907,16 @@ server <- shinyServer(function(input, output, session) {
         
 
         output$BG_cnet <- renderPlot({
-          if (is.null(BG_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            print(BG_cnet_input())
-          }
+          safe_device({
+            if (is.null(BG_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
+                text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              print(BG_cnet_input())
+            }
+          })
         })
         
 
@@ -4926,14 +4976,16 @@ server <- shinyServer(function(input, output, session) {
         
         
         output$STR_cnet <- renderPlot({
-          if (is.null(STR_report_input())) {
-            # Show a text message while waiting for the plot data
-            plot.new()  # Create an empty plot
-            if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-          } else {
-            print(STR_cnet_input())
-          }
+          safe_device({
+            if (is.null(STR_report_input())) {
+              # Show a text message while waiting for the plot data
+              plot.new()  # Create an empty plot
+              if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
+                text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+            } else {
+              print(STR_cnet_input())
+            }
+          })
         })
         
         
