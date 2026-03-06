@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.19.2-beta"
+Version = "0.18.11-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1259,9 +1259,7 @@ server <- shinyServer(function(input, output, session) {
   trigger_GO_BP <- reactiveVal(FALSE)
   trigger_BG <- reactiveVal(FALSE)
   trigger_STR <- reactiveVal(FALSE)
-  
-  
-  
+
   # Initialise the function variable as NULL
   GO_MF_report_input <- reactiveVal(NULL)  # Store async result
   GO_CC_report_input <- reactiveVal(NULL)  # Store async result
@@ -1269,48 +1267,15 @@ server <- shinyServer(function(input, output, session) {
   BG_report_input <- reactiveVal(NULL)  # Store async result
   STR_report_input <- reactiveVal(NULL)  # Store async result
   
-  # --------------------------------------------------------------------
-  # PATCH 1: GLOBAL SAFE DEVICE WRAPPER
-  # Prevents runaway "too many open devices" errors by force‑closing
-  # all graphics devices whenever plotting errors occur.
-  # --------------------------------------------------------------------
-  
-  safe_device <- function(expr) {
-    tryCatch(
-      expr,
-      error = function(e) {
-        # Best-effort cleanup, swallow any device-off errors
-        try({
-          while (dev.cur() > 1) {
-            try(dev.off(), silent = TRUE)
-          }
-        }, silent = TRUE)
-        
-        # Rethrow original error without calling nested stop()
-        # This prevents recursive tryCatch() loops
-        invokeRestart("abort", e)
-      }
-    )
-  }
-  
-  
-  # --------------------------------------------------------------------
-  # PATCH 2: Safe PNG and PDF generators
-  # These ensure that any PNG() or cairo_pdf() device is ALWAYS closed,
-  # even if plot code errors, user interrupts, or reactives re-trigger.
-  # --------------------------------------------------------------------
-  
-  # Safe PNG creator for renderImage()
-  safe_png <- function(path, width, height, res = 150, type = "cairo") {
-    png(path, width = width, height = height, res = res, type = type)
-    on.exit(dev.off(), add = TRUE)
-  }
-  
-  # Safe PDF creator for downloadHandler()
-  safe_pdf <- function(path, width, height) {
-    cairo_pdf(path, width = width, height = height)
-    on.exit(dev.off(), add = TRUE)
-  }
+  # Global debounced versions of lfc and p-value thresholds
+  debounced_lfc <- debounce(reactive(input$lfc), 1000)
+  debounced_p   <- debounce(reactive(input$p),   1000)
+  debounced_lfc2 <- debounce(reactive(input$lfc2), 1000)
+  debounced_p2   <- debounce(reactive(input$p2),   1000)
+  debounced_bfdr <- debounce(reactive(input$bfdr), 1000)
+  debounced_bfdr_freq <- debounce(reactive(input$bfdr_freq), 1000)
+  debounced_k1 <- debounce(reactive(input$k1), 1000)
+  debounced_cluster_no <- debounce(reactive(input$cluster_no), 1000)
   
   
   #### UI functions --------------------------------------------------------
@@ -2633,8 +2598,8 @@ server <- shinyServer(function(input, output, session) {
     )
     
     if(input$pval_use == FALSE){
-      DEP::add_rejections(df(), input$p, log2(input$lfc))
-    }else{add_rejections_pval(df(), input$p, log2(input$lfc))}
+      DEP::add_rejections(df(), debounced_p(), log2(debounced_lfc()))
+    }else{add_rejections_pval(df(), debounced_p(), log2(debounced_lfc()))}
   }) 
   
   dep2 <- reactive({
@@ -2644,8 +2609,8 @@ server <- shinyServer(function(input, output, session) {
     validate(need(comp2() != "", "You need to select some 2nd round comparisons, or import a comparisons file. Use the Comp. template to assist you. ")
     )
     if(input$pval_use == FALSE){
-      DEP::add_rejections(df2(), input$p2, log2(input$lfc2))
-    }else{add_rejections_pval(df2(), input$p2, log2(input$lfc2))}
+      DEP::add_rejections(df2(), debounced_p2(), log2(debounced_lfc2()))
+    }else{add_rejections_pval(df2(), debounced_p2(), log2(debounced_lfc2()))}
     
   }) 
   
@@ -2752,12 +2717,12 @@ server <- shinyServer(function(input, output, session) {
     #if (!is.null(saintfile2())){unfilt_saint<- rbind(saintfile1(),saintfile2())}
     #if (!is.null(saintfile3())){unfilt_saint<- rbind(saintfile1(),saintfile2(),saintfile3())}
     unfilt_saint<-data.frame(unfilt_saint)
-    unfilt_saint<-unfilt_saint %>% dplyr::filter(BFDR <= input$bfdr)
+    unfilt_saint<-unfilt_saint %>% dplyr::filter(BFDR <= debounced_bfdr())
     #    return(unfilt_saint)
     
     saint_count<-as.data.frame(table(unfilt_saint$PreyGene)) #Make into dataframe
     saint_count<-saint_count %>%dplyr::rename(PreyGene=Var1)%>% dplyr::rename(BFDR_Freq=Freq) %>% filter(PreyGene !=(""))
-    saint_count <- saint_count[saint_count$BFDR_Freq>=input$bfdr_freq, ]#filter by BFDR_Freq
+    saint_count <- saint_count[saint_count$BFDR_Freq>=debounced_bfdr_freq(), ]#filter by BFDR_Freq
     saint_count_no <-nrow(saint_count)
     saintlist_out<-list(unfilt_saint,saint_count,saint_count_no)
     return(saintlist_out)
@@ -3336,8 +3301,8 @@ server <- shinyServer(function(input, output, session) {
                                    #get_results(dep()),
                                    #cludf_check_input(),
                                    comp_pick = input$volcano_cntrst,
-                                   FC=input$lfc,
-                                   pVal=input$p,
+                                   FC=debounced_lfc(),
+                                   pVal=debounced_p(),
                                    padj_check=input$p_adj,
                                    mypal = colour_functions_input()[[2]],
                                    colour_functions_input()[[3]],
@@ -3364,8 +3329,8 @@ server <- shinyServer(function(input, output, session) {
                                    #get_results(dep()),
                                    #cludf_check_input(),
                                    comp_pick = input$volcano_cntrst_c2,
-                                   FC=input$lfc2,
-                                   pVal=input$p2,
+                                   FC=debounced_lfc2(),
+                                   pVal=debounced_p2(),
                                    padj_check=input$p_adj_c2,
                                    mypal = colour_functions_input()[[2]],
                                    colour_functions_input()[[3]],
@@ -3504,10 +3469,10 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
         if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons"){
-          ht_title<-paste(input$data_type, "<br>", "FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "(",dep_num_c1(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<-plot_complex_heatmap(data_results(),
-                                   input$k1,
+                                   debounced_k1(),
                                    ht_title,
                                    colour_functions_input()[[1]],
                                    colour_functions_input()[[2]],
@@ -3519,10 +3484,10 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "BFDR_Cutoff=", debounced_bfdr(),  "<br>", "BFDR_Freq=", debounced_bfdr_freq(),  "<br>", "(", dep_num(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results(),
-                                        input$k1,
+                                        debounced_k1(),
                                         ht_title,
                                         colour_functions_input()[[1]],
                                         colour_functions_input()[[2]],
@@ -3535,10 +3500,10 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == FALSE && input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>", "(", dep_num(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
-                                           input$k1,
+                                           debounced_k1(),
                                            ht_title,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
@@ -3553,10 +3518,10 @@ server <- shinyServer(function(input, output, session) {
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
           if(input$data_type2 == "FragPipe"){data_type2 <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type2<-input$data_type2}
-          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>", "(", dep_num(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
-                                           input$k1,
+                                           debounced_k1(),
                                            ht_title,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
@@ -3575,12 +3540,12 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "FC=", input$lfc, p_txt, input$p, "<br>", "(",dep_num_c1(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "(",dep_num_c1(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<- plot_complex_heatmap(data_results(),
                                     #                     input$pres,
                                     #                     kmeans = TRUE,
-                                    input$k1,
+                                    debounced_k1(),
                                     ht_title,
                                     colour_functions_input()[[1]],
                                     colour_functions_input()[[2]],
@@ -3592,12 +3557,12 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$comp_type == "Use SAINTexpress"){
           if(input$data_mode == FALSE && input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "SAINTexpress Filtered", "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "BFDR_Cutoff=", debounced_bfdr(),  "<br>", "BFDR_Freq=", debounced_bfdr_freq(), "<br>", "(", dep_num(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_BFDR(data_results(),
                                          #                     input$pres,
                                          #                     kmeans = TRUE,
-                                         input$k1,
+                                         debounced_k1(),
                                          ht_title,
                                          colour_functions_input()[[1]],
                                          colour_functions_input()[[2]],
@@ -3610,12 +3575,12 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "Comparison 1+2", "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>", "(", dep_num(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
                                            #                     input$pres,
                                            #                     kmeans = TRUE,
-                                           input$k1,
+                                           debounced_k1(),
                                            ht_title,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
@@ -3630,12 +3595,12 @@ server <- shinyServer(function(input, output, session) {
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
           if(input$data_type2 == "FragPipe"){data_type2 <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type2<-input$data_type2}
-          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>", "(", dep_num(), " Proteins)", "<br>",input$k1," Clusters ", sep="")
+          ht_title<-paste(data_type, " and ",  data_type2, "<br>", "Dataset 1+2", "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>", "(", dep_num(), " Proteins)", "<br>",debounced_k1()," Clusters ", sep="")
           
           ht<- plot_complex_heatmap_2xcomp(data_results(),
                                            #                     input$pres,
                                            #                     kmeans = TRUE,
-                                           input$k1,
+                                           debounced_k1(),
                                            ht_title,
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
@@ -3655,7 +3620,7 @@ server <- shinyServer(function(input, output, session) {
         if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
-          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           ht<-plot_complex_heatmap_2xcomp(data_results1(),
                                           #                     input$pres,
                                           #                     kmeans = TRUE,
@@ -3673,7 +3638,7 @@ server <- shinyServer(function(input, output, session) {
         if (input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
-          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results1(),
                                         #                     input$pres,
@@ -3697,7 +3662,7 @@ server <- shinyServer(function(input, output, session) {
         if (input$data_mode == TRUE | input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
-          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>",  "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           ht<-plot_complex_heatmap_2xcomp(data_results1(),
                                           #                     input$pres,
                                           #                     kmeans = TRUE,
@@ -3715,7 +3680,7 @@ server <- shinyServer(function(input, output, session) {
         if (input$comp_type == "Use SAINTexpress"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
-          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", input$lfc, p_txt, input$p, "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
+          ht_title<-paste(data_type, "<br>", "Comp 1 FC=", debounced_lfc(), p_txt, debounced_p(), "<br>", "(", dep_num_c1(), " Proteins)", "<br>",input$k1_c1," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results1(),
                                         #                     input$pres,
@@ -3737,7 +3702,7 @@ server <- shinyServer(function(input, output, session) {
       withProgress(message = 'Plotting', value = 0.66, {
         if (input$comp_type == "Use SAINTexpress"){
           if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
-          ht_title<-paste(data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          ht_title<-paste(data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", debounced_bfdr(),  "<br>", "BFDR_Freq=", debounced_bfdr_freq(),  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
@@ -3757,7 +3722,7 @@ server <- shinyServer(function(input, output, session) {
           if(input$data_mode == FALSE){
             if(input$data_type == "FragPipe"){data_type <- paste(input$data_type, " ", input$exp , sep="")}else{data_type<-input$data_type}
           }else{if(input$data_type2 == "FragPipe"){data_type <- paste(input$data_type2, " ", input$exp2 , sep="")}else{data_type<-input$data_type2}}
-          ht_title<-paste(data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          ht_title<-paste(data_type, "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
                                           #                     input$pres,
@@ -3781,7 +3746,7 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == FALSE && input$comp_type == "2 Rounds of comparisons"){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
                                           #                     input$pres,
@@ -3798,7 +3763,7 @@ server <- shinyServer(function(input, output, session) {
         }
         
         if (input$data_mode == FALSE && input$comp_type == "Use SAINTexpress"){
-          ht_title<-paste(input$data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", input$bfdr,  "<br>", "BFDR_Freq=", input$bfdr_freq,  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          ht_title<-paste(input$data_type, "<br>", "SAINTexpress List", "<br>", "BFDR_Cutoff=", debounced_bfdr(),  "<br>", "BFDR_Freq=", debounced_bfdr_freq(),  "<br>", "(", dep_num_bfdr(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_BFDR(data_results4(),
                                         #                     input$pres,
@@ -3816,7 +3781,7 @@ server <- shinyServer(function(input, output, session) {
         
         if (input$data_mode == TRUE){
           if(input$pval_use == FALSE){p_txt<-" p.adj="}else{p_txt<-" p.Val="}
-          ht_title<-paste(input$data_type2, "<br>", "Comp 2 FC=", input$lfc2, p_txt, input$p2, "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
+          ht_title<-paste(input$data_type2, "<br>", "Comp 2 FC=", debounced_lfc2(), p_txt, debounced_p2(), "<br>",  "(", dep_num_c2(), " Proteins)", "<br>",input$k1_c2," Clusters ", sep="")
           
           ht<-plot_complex_heatmap_2xcomp(data_results2(),
                                           #                     input$pres,
@@ -3884,7 +3849,7 @@ server <- shinyServer(function(input, output, session) {
       cludf<- cluster_check(
         comp_heatmap_input()[[1]],
         comp_heatmap_input()[[2]],
-        input$k1
+        debounced_k1()
         #        colour_functions_input()[[1]]
       )
       data.frame(cludf)
@@ -3904,9 +3869,9 @@ server <- shinyServer(function(input, output, session) {
                                            comp_heatmap_input()[[3]],
                                            #                     input$pres,
                                            #                     kmeans = TRUE,
-                                           input$k1,
-                                           input$lfc,
-                                           input$p,
+                                           debounced_k1(),
+                                           debounced_lfc(),
+                                           debounced_p(),
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
                                            font_size=6,
@@ -3920,9 +3885,9 @@ server <- shinyServer(function(input, output, session) {
                                     comp_heatmap_input()[[3]],
                                     #                     input$pres,
                                     #                     kmeans = TRUE,
-                                    input$k1,
-                                    input$lfc,
-                                    input$p,
+                                    debounced_k1(),
+                                    debounced_lfc(),
+                                    debounced_p(),
                                     colour_functions_input()[[1]],
                                     colour_functions_input()[[2]],
                                     font_size=6,
@@ -3936,9 +3901,9 @@ server <- shinyServer(function(input, output, session) {
                                            comp_heatmap_input()[[3]],
                                            #                     input$pres,
                                            #                     kmeans = TRUE,
-                                           input$k1,
-                                           input$lfc,
-                                           input$p,
+                                           debounced_k1(),
+                                           debounced_lfc(),
+                                           debounced_p(),
                                            colour_functions_input()[[1]],
                                            colour_functions_input()[[2]],
                                            font_size=6,
@@ -3954,12 +3919,12 @@ server <- shinyServer(function(input, output, session) {
     #Enhanced Volcano Input 1
     enhanced_volcano_1_input <- reactive({
       if (input$comp_type == "2 Rounds of comparisons"){
-        lfc<-input$lfc2
-        p<-input$p2
+        lfc<-debounced_lfc2()
+        p<-debounced_p2()
         if(input$enh_vol_data==FALSE){vol_data<-get_results(dep2())}
         else{vol_data<-data_results()}
-      }else{lfc<-input$lfc
-      p<-input$p
+      }else{lfc<-debounced_lfc()
+      p<-debounced_p()
       if(input$enh_vol_data==FALSE){vol_data<-get_results(dep())}
       else{vol_data<-data_results()}
       }
@@ -3986,12 +3951,12 @@ server <- shinyServer(function(input, output, session) {
     #Enhanced Volcano Input 2
     enhanced_volcano_2_input <- reactive({
       if (input$comp_type == "2 Rounds of comparisons"){
-        lfc<-input$lfc2
-        p<-input$p2
+        lfc<-debounced_lfc2()
+        p<-debounced_p2()
         if(input$enh_vol_data2==FALSE){vol_data<-get_results(dep2())}
         else{vol_data<-data_results()}
-      }else{lfc<-input$lfc
-      p<-input$p
+      }else{lfc<-debounced_lfc()
+      p<-debounced_p()
       if(input$enh_vol_data2==FALSE){vol_data<-get_results(dep())}
       else{vol_data<-data_results()}
       }
@@ -4042,7 +4007,7 @@ server <- shinyServer(function(input, output, session) {
         )
         
         box_plot_list<-list()
-        for(i in 1:input$k1){
+        for(i in 1:debounced_k1()){
           box_plot<- plot_box_plot (
             norm_data(),
             imp_data(),
@@ -4210,8 +4175,8 @@ server <- shinyServer(function(input, output, session) {
     
     #Output of table on Cluster tab
     output$table3 <- DT::renderDataTable({
-      validate(need(!(input$cluster_no > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
-      cluster_heatmap_input()[[3]][[input$cluster_no]]
+      validate(need(!(debounced_cluster_no() > debounced_k1()), "The chosen Cluster No. is higher than the number of clusters"))
+      cluster_heatmap_input()[[3]][[debounced_cluster_no()]]
     }, options = list(pageLength = 25, scrollX = T),
     )
     
@@ -4297,26 +4262,22 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
-    #Abundance Heatmaps
+    
     output$heatmap <- renderPlot({
-      safe_device({
-        heatmap_input()[[1]]
-      })
+      heatmap_input()[[1]]
     })
     
     output$heatmap2 <- renderPlot({
-      safe_device({
-        heatmap_input2()[[1]]
-      })
+      heatmap_input2()[[1]]
     })
     
     
     output$volcano <- renderPlot({
-        volcano_input()
+      volcano_input()
     })
     
     output$volcano_c2 <- renderPlot({
-        volcano_c2_input()
+      volcano_c2_input()
     })
     
     #signif plot output
@@ -4426,47 +4387,38 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output$comp_heatmap <- renderImage({
-      #Use safe_device function to stop leaked devices
-      safe_device({
-        tmp_png <- tempfile(fileext = ".png")
-        
-        ht_height <- ((dep_num() * 18) + 440 + input$heatmap_pad)
-        if (ht_height < 420) ht_height <- ht_height + 160
-        
-        png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
-        
-        ht <- comp_heatmap_input()[[1]]
-        if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
-          draw(ht)
-        } else {
-          plot(ht)
-        }
-        dev.off()
-        
-        list(src = tmp_png,
-             contentType = "image/png",
-             width = "100%")
-      })
+      tmp_png <- tempfile(fileext = ".png")
+      
+      ht_height <- ((dep_num() * 18) + 440 + input$heatmap_pad)
+      if (ht_height < 420) ht_height <- ht_height + 160
+      
+      png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
+      
+      ht <- comp_heatmap_input()[[1]]
+      if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
+        draw(ht)
+      } else {
+        plot(ht)
+      }
+      dev.off()
+      
+      list(src = tmp_png,
+           contentType = "image/png",
+           width = "100%")
     }, deleteFile = TRUE)
     
     
     output$comp_heatmap_c1 <- renderPlot({
-      safe_device({
-        comp_heatmap_input_c1()[[1]]
-      })
+      comp_heatmap_input_c1()[[1]]
     })
     
     output$comp_heatmap_c2 <- renderPlot({
-      safe_device({
-        comp_heatmap_input_c2()[[1]]
-      })
+      comp_heatmap_input_c2()[[1]]
     })
     
     #Venn Diagram
     output$venn <- renderPlot({
-      safe_device({
-        plot(venn_input()[[3]])
-      })
+      plot(venn_input()[[3]])
       #venn_input()[[1]]
     })
     
@@ -4477,44 +4429,42 @@ server <- shinyServer(function(input, output, session) {
     
     # Cluster heatmap output (fixed Cairo rendering)
     output$cluster_heatmap <- renderImage({
-      safe_device({
-        tmp_png <- tempfile(fileext = ".png")
-        
-        ht_height <- (cluster_heatmap_input()[[2]][[input$cluster_no]]*18)+440+input$cluster_pad
-        if (ht_height < 600) ht_height <- ht_height + 200
-        
-        png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
-        
-        ht <- cluster_heatmap_input()[[1]][[input$cluster_no]]
-        if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
-          draw(ht)
-        } else {
-          plot(ht)
-        }
-        dev.off()
-        
-        list(src = tmp_png,
-             contentType = "image/png",
-             width = "100%")
-      })
+      tmp_png <- tempfile(fileext = ".png")
+      
+      ht_height <- (cluster_heatmap_input()[[2]][[debounced_cluster_no()]]*18)+440+input$cluster_pad
+      if (ht_height < 600) ht_height <- ht_height + 200
+      
+      png(tmp_png, width = 840, height = ht_height, res = 150, type = "cairo")
+      
+      ht <- cluster_heatmap_input()[[1]][[debounced_cluster_no()]]
+      if (inherits(ht, "Heatmap") || inherits(ht, "HeatmapList")) {
+        draw(ht)
+      } else {
+        plot(ht)
+      }
+      dev.off()
+      
+      list(src = tmp_png,
+           contentType = "image/png",
+           width = "100%")
     }, deleteFile = TRUE)
     
     
     #Box Plots
     output$box_plot <- renderPlot({
-      validate(need(!(input$cluster_no_box > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
+      validate(need(!(input$cluster_no_box > debounced_k1()), "The chosen Cluster No. is higher than the number of clusters"))
       if (input$pres_box=="normalised"){choice=1}else{choice=2}
       box_plot_input()[[choice]]
     })
     
     #Enhanced Volcano plot 1
     output$enh_volcano_1 <- renderPlot({
-        enhanced_volcano_1_input()
+      enhanced_volcano_1_input()
     })
     
     #Enhanced Volcano plot 2
     output$enh_volcano_2 <- renderPlot({
-        enhanced_volcano_2_input()
+      enhanced_volcano_2_input()
     })
     
     #Report
@@ -4619,8 +4569,8 @@ server <- shinyServer(function(input, output, session) {
     
     observe({
       output$plot_clust <- renderUI({
-        validate(need(!(input$cluster_no > input$k1), "The chosen Cluster No. is higher than the number of clusters"))
-        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[input$cluster_no]]*12)+520+input$cluster_pad)
+        validate(need(!(debounced_cluster_no() > debounced_k1()), "The chosen Cluster No. is higher than the number of clusters"))
+        plotOutput("cluster_heatmap", height = (cluster_heatmap_input()[[2]][[debounced_cluster_no()]]*12)+520+input$cluster_pad)
       })
     })
     
@@ -4659,28 +4609,24 @@ server <- shinyServer(function(input, output, session) {
 
         #Plot output
         output$GOMF_plot <- renderPlot({
-          safe_device({
-            if (is.null(GO_MF_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
-              print(GOMF_plot_input() + ggtitle(GOMFtitle))
-            }
-          })
+          if (is.null(GO_MF_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            GOMFtitle<-paste("Molecular Function up to level ", input$gomf_level, sep="")
+            print(GOMF_plot_input() + ggtitle(GOMFtitle))
+          }
         })
         
         output$GOMF_cnet <- renderPlot({
-          safe_device({
-            if (is.null(GO_MF_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              print(GOMF_cnet_input())
-            }
-          })
+          if (is.null(GO_MF_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(GOMF_cnet_input())
+          }
         })
         
         #PDF Output
@@ -4738,27 +4684,23 @@ server <- shinyServer(function(input, output, session) {
         
         #Plot output
         output$GOCC_plot <- renderPlot({
-          safe_device({
-            if (is.null(GO_CC_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
-              print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
-            }
-          })
+          if (is.null(GO_CC_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            GOCCtitle<-paste("Cellular Component up to level ", input$gocc_level, sep="")
+            print(GOCC_dotplot<- dotplot(GO_CC_report_input(), showCategory = input$gocc_level) + ggtitle(GOCCtitle))
+          }
         })
         output$GOCC_cnet <- renderPlot({
-          safe_device({
-            if (is.null(GO_CC_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              print(GOCC_cnet_input())
-            }
-          })
+          if (is.null(GO_CC_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(GOCC_cnet_input())
+          }
         })
         #PDF Output
         output$download_CC_plot <- downloadHandler(
@@ -4815,28 +4757,24 @@ server <- shinyServer(function(input, output, session) {
         
         #Plot output
         output$GOBP_plot <- renderPlot({
-          safe_device({
-            if (is.null(GO_BP_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
-              print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
-            }
-          })
+          if (is.null(GO_BP_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            GOBPtitle<-paste("Biological Process up to level ", input$gobp_level, sep="")
+            print(GOBP_dotplot<- dotplot(GO_BP_report_input(), showCategory = input$gobp_level) + ggtitle(GOBPtitle))
+          }
         })
         
         output$GOBP_cnet <- renderPlot({
-          safe_device({
-            if (is.null(GO_BP_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              print(GOBP_cnet_input())
-            }
-          })
+          if (is.null(GO_BP_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(GOBP_cnet_input())
+          }
         })
         
         #PDF Output
@@ -4907,16 +4845,14 @@ server <- shinyServer(function(input, output, session) {
         
 
         output$BG_cnet <- renderPlot({
-          safe_device({
-            if (is.null(BG_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
-                text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              print(BG_cnet_input())
-            }
-          })
+          if (is.null(BG_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
+            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(BG_cnet_input())
+          }
         })
         
 
@@ -4976,16 +4912,14 @@ server <- shinyServer(function(input, output, session) {
         
         
         output$STR_cnet <- renderPlot({
-          safe_device({
-            if (is.null(STR_report_input())) {
-              # Show a text message while waiting for the plot data
-              plot.new()  # Create an empty plot
-              if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
-                text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
-            } else {
-              print(STR_cnet_input())
-            }
-          })
+          if (is.null(STR_report_input())) {
+            # Show a text message while waiting for the plot data
+            plot.new()  # Create an empty plot
+            if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+          } else {
+            print(STR_cnet_input())
+          }
         })
         
         
@@ -5076,9 +5010,9 @@ server <- shinyServer(function(input, output, session) {
     
     #Cluster table
     output$downloadclustertable <- downloadHandler(
-      filename = function() { paste("Cluster ", input$cluster_no, ".txt", sep = "") },
+      filename = function() { paste("Cluster ", debounced_cluster_no(), ".txt", sep = "") },
       content = function(file) {
-        write.table(cluster_heatmap_input()[[3]][[input$cluster_no]],
+        write.table(cluster_heatmap_input()[[3]][[debounced_cluster_no()]],
                     file,
                     col.names = TRUE,
                     row.names = FALSE,
@@ -5537,11 +5471,11 @@ server <- shinyServer(function(input, output, session) {
     
     output$downloadcomplexheatmapcluster <- downloadHandler(
       filename = function() {
-        paste0("Heatmap_Cluster_", input$cluster_no, ".pdf")
+        paste0("Heatmap_Cluster_", debounced_cluster_no(), ".pdf")
       },
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight_htc, width = input$pdfwidth_htc)
-        print(cluster_heatmap_input()[[1]][[input$cluster_no]])
+        print(cluster_heatmap_input()[[1]][[debounced_cluster_no()]])
         dev.off()
       }
     )
