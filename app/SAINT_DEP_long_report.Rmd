@@ -201,7 +201,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Long)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.6.4
+Version:0.6.5
 
 ## Method details
  
@@ -259,9 +259,16 @@ num_signif_c1 <-as.numeric(params$dep_num_c1())
 num_signif_c2 <-as.numeric(params$dep_num_c2())
 }else{num_signif_c1<-num_signif
 num_signif_c2<-num_signif}
+#set BFDR fig height
+if(num_signif_c1>1000){c1_fig_h <- 10}else{c1_fig_h<-(num_signif_c1/8)+3}    
+if(num_signif_c2>1000){c2_fig_h <- 10}else{c2_fig_h<-(num_signif_c2/8)+3}    
+
+bfdr_fig_h<- 10
 if (params$comp_type == "Use SAINTexpress"){
 num_signif_c1 <-as.numeric(params$dep_num_c1())
 num_signif_bfdr <-as.numeric(params$dep_num_bfdr())
+#set BFDR fig height
+if(num_signif_bfdr>1000){bfdr_fig_h <- 10}else{bfdr_fig_h<-(num_signif_bfdr/8)+3}    
 }
 
 #For comparisons text
@@ -546,39 +553,81 @@ plot(params$venn_input()[[3]])
 
 \pagebreak
 
-```{r heatmap_c1, echo=FALSE, fig.height= (num_signif_c1/8)+3, fig.width=(comp_no_c1/1.5)+2,  fig.keep='last', out.height='90%', warning=FALSE, results='hide'}
-if (params$comp_type == "2 Rounds of comparisons"){
-print(params$comp_heatmap_input_c1()[[1]])
-}
 
-if (params$comp_type == "Use SAINTexpress"){
-print(params$comp_heatmap_input_c1()[[1]])
-}
-
-if (params$data_mode == TRUE){
-print(params$comp_heatmap_input_c1()[[1]])
-}
+```{r heatmap_c1, echo=FALSE, fig.height= c1_fig_h, fig.width=(comp_no_c1/1.5)+2,  fig.keep='last', out.height='90%', warning=FALSE, results='hide'}
+if (params$comp_type == "2 Rounds of comparisons"||params$comp_type == "Use SAINTexpress"||isTRUE(params$data_mode))
+  if (num_signif_c1<1000){
+    {
+      heatmap_obj_c1 <- tryCatch({
+        params$comp_heatmap_input_c1()[[1]]
+      }, error = function(e) NULL)
+      
+      # --- Render once if either condition applies (original behavior) ---
+      should_render_c1 <-
+        (params$comp_type == "2 Rounds of comparisons")||(params$comp_type == "Use SAINTexpress")||isTRUE(params$data_mode)
+      
+      if (should_render_c1) {
+        if (!is.null(heatmap_obj_c1)) {
+          print(heatmap_obj_c1)
+        } else {
+          cat("No valid plot available for this comparison (Comp1).\n")
+          # Remove the cat() above if you prefer total silence when invalid
+        }
+      }
+    }
+  }
 if (params$rendered_by_shiny)
 shiny::setProgress(0.15)  # set progress to 15%
 ```
 
 \pagebreak
-```{r heatmap_c2, echo=FALSE, fig.height= (num_signif_c2/8)+3, fig.width=(comp_no_c2/1.5)+2, fig.keep='last', out.height='90%', warning=FALSE, results='hide'}
-if (params$comp_type == "2 Rounds of comparisons"){
-print(params$comp_heatmap_input_c2()[[1]])
-}
-if (params$data_mode == TRUE){
-print(params$comp_heatmap_input_c2()[[1]])
-}
-
+```{r heatmap_c2, echo=FALSE, fig.height= c2_fig_h, fig.width=(comp_no_c2/1.5)+2, fig.keep='last', out.height='90%', warning=FALSE, results='hide'}
+if ((params$comp_type == "2 Rounds of comparisons")||
+    isTRUE(params$data_mode))
+  if (num_signif_c2<1000){
+    {
+      heatmap_obj_c2 <- tryCatch({
+        params$comp_heatmap_input_c2()[[1]]
+      }, error = function(e) NULL)
+      
+      # --- Render once if either condition applies (original behavior) ---
+      should_render_c2 <-
+        (params$comp_type == "2 Rounds of comparisons") ||
+        isTRUE(params$data_mode)
+      
+      if (should_render_c2) {
+        if (!is.null(heatmap_obj_c2)) {
+          print(heatmap_obj_c2)
+        } else {
+          cat("No valid plot available for this comparison (Comp2).\n")
+          # Remove the cat() above if you prefer total silence when invalid
+        }
+      }
+    }
+  }
 if (params$rendered_by_shiny)
 shiny::setProgress(0.20)  # set progress to 20%
 ```
 
 \pagebreak
-```{r heatmap_bfdr, echo=FALSE, fig.height= (num_signif_bfdr/8)+3, fig.width=(comp_no/1.5)+2, out.height='90%', fig.keep='last', warning=FALSE, results='hide'}
-if (params$comp_type == "Use SAINTexpress"){
-print(params$comp_heatmap_input_c2()[[1]])
+```{r heatmap_bfdr, echo=FALSE, fig.height= bfdr_fig_h, fig.width=(comp_no/1.5)+2, out.height='90%', fig.keep='last', warning=FALSE, results='hide'}
+if (params$comp_type == "Use SAINTexpress" && num_signif_bfdr<1000){
+  # --- Safely extract the SAINTexpress/BFDR heatmap object (from Comp2 input) ---
+  bfdr_heatmap_obj <- tryCatch({
+    params$comp_heatmap_input_c2()[[1]]
+  }, error = function(e) NULL)
+  
+  # --- Render only for SAINTexpress runs (original behavior) ---
+  should_render_bfdr <- (params$comp_type == "Use SAINTexpress")
+  
+  if (should_render_bfdr) {
+    if (!is.null(bfdr_heatmap_obj)) {
+      print(bfdr_heatmap_obj)
+    } else {
+      cat("No valid plot available for SAINTexpress/BFDR heatmap.\n")
+      # Remove the cat() above if you prefer silence when invalid
+    }
+  }
 }
 
 if (params$rendered_by_shiny)
