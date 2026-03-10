@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.12-beta"
+Version = "0.18.13-beta"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1183,18 +1183,12 @@ ui <- fluidPage(
                                                         width = 4, height = 110),
                                                       box(numericInput("STR_level",
                                                                        "Confidence Score >=",
-                                                                       min = 0.4, max = 1, value = 0.4, step = 0.1),
+                                                                       min = 0.4, max = 1, value = 0.6, step = 0.1),
                                                           width = 2, height = 110),
                                                       box(numericInput("STR_node",
                                                                        "Node Size",
                                                                        min = 1, max = 5, value = 1, step = 0.5),
                                                           width = 2, height = 110),
-                                                      #box(checkboxInput("use_human",
-                                                      #                  "Use Human Interaction Network Data ",
-                                                      #                  value = FALSE),
-                                                      #    helpText("This will convert Gene names to uppercase"),
-                                                      #    width = 4, height = 110),
-                                                      
                                                     ),
                                                     fluidRow(
                                                       column(width = 10, offset = 1, # Centers a 10-column-wide element
@@ -1278,7 +1272,9 @@ server <- shinyServer(function(input, output, session) {
   debounced_k1_c1 <- debounce(reactive(input$k1_c1), 1000)
   debounced_k1_c2 <- debounce(reactive(input$k1_c2), 1000)
   debounced_cluster_no <- debounce(reactive(input$cluster_no), 1000)
-  
+  debounced_BG_level <- debounce(reactive(input$BG_level), 1000)
+  debounced_STR_level <- debounce(reactive(input$STR_level), 1000)
+  debounced_cluster_no_box <- debounce(reactive(input$cluster_no_box), 1000)
   
   #### UI functions --------------------------------------------------------
   #### Side bar menu items ####
@@ -3994,7 +3990,7 @@ server <- shinyServer(function(input, output, session) {
         plot_box_plot (norm_data(),
                        imp_data(),
                        clu_df=cludf_check_input(),
-                       cluster_no=input$cluster_no_box,
+                       cluster_no=debounced_cluster_no_box(),
                        input$palette_choice
         )
       })
@@ -4123,7 +4119,7 @@ server <- shinyServer(function(input, output, session) {
         biogrid_network_input <- biogrid_network(biogrid_list = BG_report_input(),
                                                  cludf =clu_df,
                                                  mypal = colour_functions_input()[[2]],
-                                                 inter_count = input$BG_level,
+                                                 inter_count = debounced_BG_level(),
                                                  node_scale = input$BG_node)
         
         print (biogrid_network_input)
@@ -4144,7 +4140,7 @@ server <- shinyServer(function(input, output, session) {
         STRINGdb_network_input <- STRINGdb_network(interactions_named = STR_report_input(),
                                                  cludf =clu_df,
                                                  mypal = colour_functions_input()[[2]],
-                                                 threshold = input$STR_level,
+                                                 threshold = debounced_STR_level(),
                                                  node_scale = input$STR_node)
         
         print (STRINGdb_network_input)
@@ -4454,7 +4450,7 @@ server <- shinyServer(function(input, output, session) {
     
     #Box Plots
     output$box_plot <- renderPlot({
-      validate(need(!(input$cluster_no_box > debounced_k1()), "The chosen Cluster No. is higher than the number of clusters"))
+      validate(need(!(debounced_cluster_no_box() > debounced_k1()), "The chosen Cluster No. is higher than the number of clusters"))
       if (input$pres_box=="normalised"){choice=1}else{choice=2}
       box_plot_input()[[choice]]
     })
@@ -4859,7 +4855,7 @@ server <- shinyServer(function(input, output, session) {
         
 
         output$download_BG_cnet <- downloadHandler(
-          filename = function() { paste("BioGrid_Map_level_",input$BG_level, ".pdf", sep = "") },
+          filename = function() { paste("BioGrid_Map_level_",debounced_BG_level(), ".pdf", sep = "") },
           content = function(file) {
             cairo_pdf(file, height = input$pdfheight_BG, width = input$pdfwidth_BG)
             print(BG_cnet_input())
@@ -4926,7 +4922,7 @@ server <- shinyServer(function(input, output, session) {
         
         
         output$download_STR_cnet <- downloadHandler(
-          filename = function() { paste("STRING_Conf_Score_",input$STR_level, ".pdf", sep = "") },
+          filename = function() { paste("STRING_Conf_Score_",debounced_STR_level(), ".pdf", sep = "") },
           content = function(file) {
             cairo_pdf(file, height = input$pdfheight_STR, width = input$pdfwidth_STR)
             print(STR_cnet_input())
@@ -5506,7 +5502,7 @@ server <- shinyServer(function(input, output, session) {
     
     output$download_box_plot <- downloadHandler(
       filename = function() {
-        paste0("Box_Plot_Cluster_", input$cluster_no_box, "_", input$pres_box, ".pdf")
+        paste0("Box_Plot_Cluster_", debounced_cluster_no_box(), "_", input$pres_box, ".pdf")
       },
       content = function(file) {
         cairo_pdf(file, height = input$pdfheight_box, width = input$pdfwidth_box)
