@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "0.18.13-beta"
+Version = "1.0.1"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -2268,148 +2268,155 @@ server <- shinyServer(function(input, output, session) {
       mutate(id = row_number())
   })
   
-  #Filter the Data using missing value threshold
-  filt <- reactive({
-    data <- data()
-    
-    if (input$data_type == "MaxQuant"){
-      cols <- grep("^LFQ", colnames(data))
-      if('Reverse' %in% names(data)==TRUE && 'Potential.contaminant' %in% names(data)==TRUE){
-        filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
-      }else{filtered<-data}
-      unique_names <- make_unique(filtered, "Gene.names", "Protein.IDs", delim = ";")
-    }
-    
-    else if (input$data_type == "Proteome Discoverer"){
-      Sample_columns<- grep("Abundance..*Sample..", colnames(data()))
-      Control_columns<- grep("Abundance..*Control..", colnames(data()))
-      cols<-c(Sample_columns, Control_columns)
-      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
-    }
-    
-    else if (input$data_type == "FragPipe"){
-      if(input$exp == "LFQ")
-      {
-        cols<- grep(".Intensity", colnames(data))
-        data<-data %>% 
-          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
-        data<-data %>% 
-          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
-        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
-      }else if(input$exp == "DIA")
-      {
-        end<-ncol(data())
-        #end_1<-end-1
-        cols<- 5:end
-        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
-      }
-      
-    }
-    
-    else if (input$data_type == "Other (Experimental)"){
-      end<-ncol(data())
-      cols<- 5:end
-      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
-    }
-    
-    #Check for Experimental Design File
-    #validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
-    #Use the Experimental template to assist you. ")
-    #)
-    if (is.null(expdesign())) {
-      sendSweetAlert(
-        session,
-        title = NULL,  # Title is in the HTML already
-        text = HTML('
-      <h1><font color="#DF536B">Quick Instructions</font><font color="#000000"></font></h1>
-      <h3>1. Load data (Pick Data File type first)</h3>
-      <h3>2. Save Exp. Template</h3>
-      <h3>3. Modify Exp. Template (Use a spreadsheet editor, see instructions tab)</h3>
-      <h3>4. Load modified Exp. Template</h3>
-      <h3>5. Pick Comparisons or Generate comparison file from Comp. template and upload</h3>
-      <h3>6. Press "Analyse"</h3>
-    '),
-        html = TRUE,
-        type = NULL,   # No default SweetAlert icon
-        btn_labels = "Got it!"
-      )
-      return()
-    }
 
-    se <- make_se(unique_names, cols, expdesign())
-    filter_missval(se, input$thr) #filtering set less stringent
-  })
-  
-  filt2 <- reactive({
-    data <- data2()
+  filt <- reactive({
+    df <- data()
+    req(df)
     
-    if (input$data_type2 == "MaxQuant"){
-      cols <- grep("^LFQ", colnames(data))
-      #filtered <- DEP:::filter_MaxQuant(data, input$filt)
-      filtered <- data[data$Reverse != "+" & data$Potential.contaminant != "+",]
-      #unique_names <- make_unique(filtered, input$name, input$id)
-      unique_names <- make_unique(filtered, "Gene.names", "Protein.IDs", delim = ";")
+    # Require experimental design early and HARD STOP
+    if (is.null(expdesign())) {
+      showModal(modalDialog(
+        title = "Quick Instructions",
+        HTML('
+        <h3>1. Load data (Pick Data File type first)</h3>
+        <h3>2. Save Exp. Template</h3>
+        <h3>3. Modify template</h3>
+        <h3>4. Load modified Exp. Template</h3>
+        <h3>5. Select comparisons</h3>
+        <h3>6. Press "Analyse"</h3>
+      '),
+        easyClose = TRUE,
+        footer = modalButton("Got it!")
+      ))
+      req(FALSE)   # ✅ hard reactive stop (NOT return())
     }
     
-    else if (input$data_type2 == "Proteome Discoverer"){
-      Sample_columns<- grep("Abundance..*Sample..", colnames(data2()))
-      Control_columns<- grep("Abundance..*Control..", colnames(data2()))
-      cols<-c(Sample_columns, Control_columns)
-      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
-    }
+    cols <- NULL
+    unique_names <- NULL
     
-    else if (input$data_type2 == "FragPipe"){
-      if(input$exp2 == "LFQ")
-      {
-        cols<- grep(".Intensity", colnames(data))
-        data<-data %>% 
-          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE))
-        data<-data %>% 
-          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
-        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
-      }else if(input$exp2 == "DIA")
-      {
-        end<-ncol(data2())
-        #end_1<-end-1
-        cols<- 5:end
-        unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+    if (input$data_type == "MaxQuant") {
+      cols <- grep("^LFQ", colnames(df))
+      
+      if (all(c("Reverse", "Potential.contaminant") %in% names(df))) {
+        df <- df[df$Reverse != "+" & df$Potential.contaminant != "+", ]
       }
       
+      unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
     }
     
-    else if (input$data_type2 == "Other (Experimental)"){
-      end<-ncol(data2())
-      cols<- 5:end
-      unique_names <- make_unique(data, "Gene.names", "Protein.IDs", delim = ";")
+    else if (input$data_type == "Proteome Discoverer") {
+      sample_cols  <- grep("Abundance..*Sample..", colnames(df))
+      control_cols <- grep("Abundance..*Control..", colnames(df))
+      cols <- c(sample_cols, control_cols)
+      
+      unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
     }
     
-    ##Check for Experimental Design File
-    #validate(need(!is.null(expdesign2()), "You need to upload an Experimental Design File for 2nd dataset.
-    #Use the Experimental template to assist you. ")
-    #)
+    else if (input$data_type == "FragPipe") {
+      if (input$exp == "LFQ") {
+        cols <- grep(".Intensity", colnames(df))
+        
+        df <- df %>%
+          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE)) %>%
+          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+        
+        unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+      }
+      
+      else if (input$exp == "DIA") {
+        cols <- 5:ncol(df)
+        unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+      }
+    }
     
+    else if (input$data_type == "Other (Experimental)") {
+      cols <- 5:ncol(df)
+      unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    # Safety check
+    req(!is.null(cols), !is.null(unique_names))
+    
+    se <- make_se(unique_names, cols, expdesign())
+    
+    filtered_se <- filter_missval(se, input$thr)
+    
+    return(filtered_se)
+  })
+    
+  filt2 <- reactive({
+    df <- data2()
+    req(df)
+    
+    # Hard stop if experimental design missing
     if (is.null(expdesign2())) {
-      sendSweetAlert(
-        session,
-        title = NULL,  # Title is in the HTML already
-        text = HTML('
-      <h1><font color="#DF536B">Quick Instructions</font><font color="#000000"></font></h1>
-      <h3>1. Load data (Pick Data File type first)</h3>
-      <h3>2. Save Exp. Template</h3>
-      <h3>3. Modify Exp. Template (Use a spreadsheet editor, see instructions tab)</h3>
-      <h3>4. Load modified Exp. Template</h3>
-      <h3>5. Pick Comparisons or Generate comparison file from Comp. template and upload</h3>
-      <h3>6. Press "Analyse"</h3>
-    '),
-        html = TRUE,
-        type = NULL,   # No default SweetAlert icon
-        btn_labels = "Got it!"
-      )
-      return()
+      showModal(modalDialog(
+        title = "Quick Instructions (Dataset 2)",
+        HTML('
+        <h3>1. Load dataset 2</h3>
+        <h3>2. Save Exp. Template 2</h3>
+        <h3>3. Modify template</h3>
+        <h3>4. Upload modified Exp. Template</h3>
+        <h3>5. Select comparisons</h3>
+        <h3>6. Press "Analyse"</h3>
+      '),
+        easyClose = TRUE,
+        footer = modalButton("Got it!")
+      ))
+      req(FALSE)   # ✅ hard reactive stop
     }
+    
+    cols <- NULL
+    unique_names <- NULL
+    
+    if (input$data_type2 == "MaxQuant") {
+      cols <- grep("^LFQ", colnames(df))
+      
+      if (all(c("Reverse", "Potential.contaminant") %in% colnames(df))) {
+        df <- df[df$Reverse != "+" & df$Potential.contaminant != "+", ]
+      }
+      
+      unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    else if (input$data_type2 == "Proteome Discoverer") {
+      sample_cols  <- grep("Abundance..*Sample..", colnames(df))
+      control_cols <- grep("Abundance..*Control..", colnames(df))
+      cols <- c(sample_cols, control_cols)
+      
+      unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    else if (input$data_type2 == "FragPipe") {
+      if (input$exp2 == "LFQ") {
+        cols <- grep(".Intensity", colnames(df))
+        
+        df <- df %>%
+          rename_with(~ gsub(".MaxLFQ.Intensity", "", .x, fixed = TRUE)) %>%
+          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
+        
+        unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+      }
+      
+      else if (input$exp2 == "DIA") {
+        cols <- 5:ncol(df)
+        unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+      }
+    }
+    
+    else if (input$data_type2 == "Other (Experimental)") {
+      cols <- 5:ncol(df)
+      unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
+    }
+    
+    # Final safety checks
+    req(!is.null(cols), !is.null(unique_names))
     
     se <- make_se(unique_names, cols, expdesign2())
-    filter_missval(se, input$thr) #filtering set less stringent
+    
+    filtered_se <- filter_missval(se, input$thr)
+    
+    return(filtered_se)
   })
   
   norm <- reactive({
