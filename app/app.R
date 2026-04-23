@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.1"
+Version = "1.0.2"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1253,7 +1253,7 @@ server <- shinyServer(function(input, output, session) {
   trigger_GO_BP <- reactiveVal(FALSE)
   trigger_BG <- reactiveVal(FALSE)
   trigger_STR <- reactiveVal(FALSE)
-
+  
   # Initialise the function variable as NULL
   GO_MF_report_input <- reactiveVal(NULL)  # Store async result
   GO_CC_report_input <- reactiveVal(NULL)  # Store async result
@@ -1855,7 +1855,7 @@ server <- shinyServer(function(input, output, session) {
         } else {
           col_start<-6
         }
-
+        
         data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
         lfq_columns<- col_start:ncol(data)
         if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
@@ -2268,7 +2268,7 @@ server <- shinyServer(function(input, output, session) {
       mutate(id = row_number())
   })
   
-
+  
   filt <- reactive({
     df <- data()
     req(df)
@@ -2343,7 +2343,7 @@ server <- shinyServer(function(input, output, session) {
     
     return(filtered_se)
   })
-    
+  
   filt2 <- reactive({
     df <- data2()
     req(df)
@@ -2447,64 +2447,108 @@ server <- shinyServer(function(input, output, session) {
   
   
   imp <- reactive({
-    if(input$impute_ave == TRUE){
-      set.seed(123)
-      if (input$imputation == "man"){
-        imp1<-impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp1<-impute_custom(norm(), input$imputation)}
-      imp1_data<-SummarizedExperiment::assay(imp1)
+    
+    se_norm <- norm()
+    req(se_norm)   # ✅ hard stop if norm() is invalid
+    
+    if (isTRUE(input$impute_ave)) {
       
-      set.seed(321)
-      if (input$imputation == "man"){
-        imp2<-impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp2<-impute_custom(norm(), input$imputation)}
-      imp2_data<-SummarizedExperiment::assay(imp2)
+      impute_once <- function(seed) {
+        set.seed(seed)
+        if (input$imputation == "man") {
+          impute_custom(
+            se_norm,
+            fun   = "man",
+            shift = input$shift,
+            scale = input$width
+          )
+        } else {
+          impute_custom(se_norm, input$imputation)
+        }
+      }
       
-      set.seed(456)
-      if (input$imputation == "man"){
-        imp3<-impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp3<-impute_custom(norm(), input$imputation)}
-      imp3_data<-SummarizedExperiment::assay(imp3)
+      imp1 <- impute_once(123)
+      imp2 <- impute_once(321)
+      imp3 <- impute_once(456)
       
-      imp_ave<-(imp1_data + imp2_data + imp3_data)/3
-      SummarizedExperiment::assay(imp1)<-imp_ave
-      #set.seed(123)
+      ave_mat <-
+        (SummarizedExperiment::assay(imp1) +
+           SummarizedExperiment::assay(imp2) +
+           SummarizedExperiment::assay(imp3)) / 3
+      
+      SummarizedExperiment::assay(imp1) <- ave_mat
+      
       return(imp1)
-    }else{set.seed(123)
-      if (input$imputation == "man"){
-        impute_custom(norm(), fun = "man", shift = input$shift, scale = input$width)}else{
-          impute_custom(norm(), input$imputation)}
+      
+    } else {
+      
+      set.seed(123)
+      
+      imp_res <- if (input$imputation == "man") {
+        impute_custom(
+          se_norm,
+          fun   = "man",
+          shift = input$shift,
+          scale = input$width
+        )
+      } else {
+        impute_custom(se_norm, input$imputation)
+      }
+      
+      return(imp_res)
     }
   })
   
   imp2 <- reactive({
-    if(input$impute_ave2 == TRUE){
-      set.seed(123)
-      if (input$imputation2 == "man"){
-        imp1<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp1<-impute_custom(norm2(), input$imputation2)}
-      imp1_data<-SummarizedExperiment::assay(imp1)
+    
+    se_norm2 <- norm2()
+    req(se_norm2)   # ✅ hard stop if dataset 2 is not ready
+    
+    if (isTRUE(input$impute_ave2)) {
       
-      set.seed(321)
-      if (input$imputation2 == "man"){
-        imp2<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp2<-impute_custom(norm2(), input$imputation2)}
-      imp2_data<-SummarizedExperiment::assay(imp2)
+      impute_once <- function(seed) {
+        set.seed(seed)
+        if (input$imputation2 == "man") {
+          impute_custom(
+            se_norm2,
+            fun   = "man",
+            shift = input$shift,
+            scale = input$width
+          )
+        } else {
+          impute_custom(se_norm2, input$imputation2)
+        }
+      }
       
-      set.seed(456)
-      if (input$imputation2 == "man"){
-        imp3<-impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          imp3<-impute_custom(norm2(), input$imputation2)}
-      imp3_data<-SummarizedExperiment::assay(imp3)
+      imp1 <- impute_once(123)
+      imp2 <- impute_once(321)
+      imp3 <- impute_once(456)
       
-      imp_ave<-(imp1_data + imp2_data + imp3_data)/3
-      SummarizedExperiment::assay(imp1)<-imp_ave
-      #set.seed(123)
+      ave_mat <-
+        (SummarizedExperiment::assay(imp1) +
+           SummarizedExperiment::assay(imp2) +
+           SummarizedExperiment::assay(imp3)) / 3
+      
+      SummarizedExperiment::assay(imp1) <- ave_mat
+      
       return(imp1)
-    }else{set.seed(123)
-      if (input$imputation2 == "man"){
-        impute_custom(norm2(), fun = "man", shift = input$shift, scale = input$width)}else{
-          impute_custom(norm2(), input$imputation2)}
+      
+    } else {
+      
+      set.seed(123)
+      
+      imp_res <- if (input$imputation2 == "man") {
+        impute_custom(
+          se_norm2,
+          fun   = "man",
+          shift = input$shift,
+          scale = input$width
+        )
+      } else {
+        impute_custom(se_norm2, input$imputation2)
+      }
+      
+      return(imp_res)
     }
   })
   
@@ -2571,31 +2615,81 @@ server <- shinyServer(function(input, output, session) {
   
   
   df <- reactive({
-    #Check for Comparisons
-    validate(need(comp() != "", "You need to select some comparisons, or import a comparisons file.
-          Use the Comp. template to assist you. ")
-    )
     
-    if (input$padjust_method == "default"){
-      DEP::test_diff(imp(), type = "manual", test = comp())}
-    else{test_diff_custom(imp(), type = "manual", test = comp(), method = input$padjust_method)}
+    comps <- comp()
+    req(comps)
+    req(any(nzchar(comps))) 
     
+    se_imp <- imp()
+    req(se_imp)
     
-  })
+    res <- if (input$padjust_method == "default") {
+      DEP::test_diff(
+        se_imp,
+        type = "manual",
+        test = comps
+      )
+    } else {
+      test_diff_custom(
+        se_imp,
+        type = "manual",
+        test = comps,
+        method = input$padjust_method
+      )
+    }
+    
+    return(res)
+  })  
   
   df2 <- reactive({
-    if (input$comp_type == "2 Rounds of comparisons"){
-      if (input$padjust_method == "default"){
-        DEP::test_diff(imp(), type = "manual", test = comp2())}
-      else{test_diff_custom(imp(), type = "manual", test = comp2(), method = input$padjust_method)}
+    
+    comps <- comp2()
+    req(comps)
+    req(any(nzchar(comps)))
+    
+    if (input$comp_type == "2 Rounds of comparisons") {
+      
+      se_imp <- imp()
+      req(se_imp)
+      
+      res <- if (input$padjust_method == "default") {
+        DEP::test_diff(
+          se_imp,
+          type = "manual",
+          test = comps
+        )
+      } else {
+        test_diff_custom(
+          se_imp,
+          type = "manual",
+          test = comps,
+          method = input$padjust_method
+        )
+      }
+      
+    } else {
+      
+      se_imp2 <- imp2()
+      req(se_imp2)
+      
+      res <- if (input$padjust_method2 == "default") {
+        DEP::test_diff(
+          se_imp2,
+          type = "manual",
+          test = comps
+        )
+      } else {
+        test_diff_custom(
+          se_imp2,
+          type = "manual",
+          test = comps,
+          method = input$padjust_method2
+        )
+      }
     }
-    else{
-      if (input$padjust_method2 == "default"){
-        DEP::test_diff(imp2(), type = "manual", test = comp2())}
-      else{test_diff_custom(imp2(), type = "manual", test = comp2(), method = input$padjust_method2)}
-    }
-  })
-  
+    
+    return(res)
+  })  
   dep <- reactive({
     #Check for Experimental Design File
     validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
@@ -2650,7 +2744,7 @@ server <- shinyServer(function(input, output, session) {
     saint_list<-list()
     
     for(i in sort(unique(experimental_design$condition_type))){
-
+      
       #bait
       bait<-experimental_design[experimental_design$condition_type==i, c(1,2,grep("bait_id",colnames(experimental_design)))]
       baitfile<-paste("data/bait_", i, ".txt",sep="")
@@ -2667,7 +2761,7 @@ server <- shinyServer(function(input, output, session) {
                  .keep_all = TRUE) 
       #Replace LENGTH NA values with average protein size of 500
       prey[[2]][is.na(prey[[2]])] <- 500
-
+      
       preyfile<-paste("data/prey_", i, ".txt",sep="")
       write.table(prey, preyfile, sep="\t", quote = F, row.names = F, col.names = F)
       
@@ -4065,12 +4159,12 @@ server <- shinyServer(function(input, output, session) {
         text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
       } else {
         GOtitle <- paste(" Molecular Function up to level ", input$gomf_level, sep="")
-
+        
         cnet_MF<-cnetplot_custom(cnet_data = GO_MF_report_input(), 
-                        mypal = colour_functions_input()[[2]], 
-                        GOtitle = GOtitle, 
-                        showCategory = input$gomf_level,
-                        node_scale = input$gomf_node)
+                                 mypal = colour_functions_input()[[2]], 
+                                 GOtitle = GOtitle, 
+                                 showCategory = input$gomf_level,
+                                 node_scale = input$gomf_node)
         
         print(cnet_MF)
       }
@@ -4145,10 +4239,10 @@ server <- shinyServer(function(input, output, session) {
         #if(input$use_human == TRUE){
         #  clu_df$GeneID <- toupper(clu_df$GeneID)}# Convert GeneID column to uppercase
         STRINGdb_network_input <- STRINGdb_network(interactions_named = STR_report_input(),
-                                                 cludf =clu_df,
-                                                 mypal = colour_functions_input()[[2]],
-                                                 threshold = debounced_STR_level(),
-                                                 node_scale = input$STR_node)
+                                                   cludf =clu_df,
+                                                   mypal = colour_functions_input()[[2]],
+                                                   threshold = debounced_STR_level(),
+                                                   node_scale = input$STR_node)
         
         print (STRINGdb_network_input)
       }
@@ -4156,7 +4250,7 @@ server <- shinyServer(function(input, output, session) {
     
     
     
-
+    
     #### Output functions  --------------------------------------------------
     output$table <- DT::renderDataTable({
       if (input$top_table_opt == TRUE){
@@ -4607,11 +4701,11 @@ server <- shinyServer(function(input, output, session) {
             plot.new()  # Create an empty plot
             text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
           } else {
-                 GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level)
+            GOMF_dotplot<- dotplot(GO_MF_report_input(), showCategory = input$gomf_level)
           }
         })
-
-
+        
+        
         #Plot output
         output$GOMF_plot <- renderPlot({
           if (is.null(GO_MF_report_input())) {
@@ -4834,7 +4928,7 @@ server <- shinyServer(function(input, output, session) {
           clu_df$GeneID <- toupper(clu_df$GeneID)# Convert GeneID column to uppercase
           species <- 9606 } 
         
-
+        
         future_promise({
           validate(
             need(nrow(clu_df) < upper_limit, 
@@ -4848,19 +4942,19 @@ server <- shinyServer(function(input, output, session) {
         })
         
         
-
+        
         output$BG_cnet <- renderPlot({
           if (is.null(BG_report_input())) {
             # Show a text message while waiting for the plot data
             plot.new()  # Create an empty plot
             if(nrow(clu_df) > upper_limit){text(0.5, 0.5, "Lower the number of signifcant protein to below 170", cex = 1.5)}else
-            text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
+              text(0.5, 0.5, "Generating plot. Please wait...", cex = 1.5)
           } else {
             print(BG_cnet_input())
           }
         })
         
-
+        
         output$download_BG_cnet <- downloadHandler(
           filename = function() { paste("BioGrid_Map_level_",debounced_BG_level(), ".pdf", sep = "") },
           content = function(file) {
@@ -4952,7 +5046,7 @@ server <- shinyServer(function(input, output, session) {
     })
     
     
-        
+    
     #### Download objects and functions  ------------------------------------
     datasetInput <- reactive({
       switch(input$dataset,
@@ -5124,7 +5218,7 @@ server <- shinyServer(function(input, output, session) {
       filename = 'Venn.pdf',
       content = function(file) {
         cairo_pdf(file)
-       # plot(venn_input()[[3]])
+        # plot(venn_input()[[3]])
         plot(venn_input()[[1]])
         dev.off()
       }
