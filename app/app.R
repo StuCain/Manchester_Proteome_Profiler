@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.2"
+Version = "1.0.3"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -2689,30 +2689,41 @@ server <- shinyServer(function(input, output, session) {
     }
     
     return(res)
-  })  
-  dep <- reactive({
-    #Check for Experimental Design File
-    validate(need(!is.null(expdesign()), "You need to upload an Experimental Design File.
-    Use the Experimental template to assist you. ")
-    )
-    
-    if(input$pval_use == FALSE){
-      DEP::add_rejections(df(), debounced_p(), log2(debounced_lfc()))
-    }else{add_rejections_pval(df(), debounced_p(), log2(debounced_lfc()))}
   }) 
+  
+  dep <- reactive({
+    
+    res <- df()
+    req(res)
+    
+    lfc  <- log2(debounced_lfc())
+    pthr <- debounced_p()
+    
+    dep_res <- if (isTRUE(input$pval_use)) {
+      add_rejections_pval(res, pthr, lfc)
+    } else {
+      DEP::add_rejections(res, pthr, lfc)
+    }
+    
+    return(dep_res)
+  })
   
   dep2 <- reactive({
-    if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
-      return(NULL)
-    #Check for Comparisons
-    validate(need(comp2() != "", "You need to select some 2nd round comparisons, or import a comparisons file. Use the Comp. template to assist you. ")
-    )
-    if(input$pval_use == FALSE){
-      DEP::add_rejections(df2(), debounced_p2(), log2(debounced_lfc2()))
-    }else{add_rejections_pval(df2(), debounced_p2(), log2(debounced_lfc2()))}
     
-  }) 
-  
+    res <- df2()
+    req(res)
+    
+    lfc  <- log2(debounced_lfc2())
+    pthr <- debounced_p2()
+    
+    dep_res <- if (isTRUE(input$pval_use)) {
+      add_rejections_pval(res, pthr, lfc)
+    } else {
+      DEP::add_rejections(res, pthr, lfc)
+    }
+    
+    return(dep_res)
+  })
   
   dep_num2 <- reactive({
     if (input$comp_type == "1 Round of comparisons")
