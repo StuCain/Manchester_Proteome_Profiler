@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.4"
+Version = "1.0.5"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1322,7 +1322,7 @@ server <- shinyServer(function(input, output, session) {
   output$analysis_banner <- renderUI({
     
     status <- analysis_status()
-    req(is.list(status), !is.null(status$ok), !is.null(status$msg))
+    req(is.list(status), status$msgs)
     
     div(
       style = paste0(
@@ -1337,15 +1337,12 @@ server <- shinyServer(function(input, output, session) {
         "font-weight: 600;"
       ),
       icon(if (status$ok) "check-circle" else "exclamation-triangle"),
-      status$msg
+      tags$ul(
+        lapply(status$msgs, tags$li)
+      )
     )
-  })
+  })    
   
-  
-  # getPage<-function() {
-  #    return(includeHTML("www/index.html"))
-  #  }
-  #  output$inc<-renderUI({getPage()})
   
   addResourcePath("src", "./www")
   output$help <- renderUI({
@@ -1634,6 +1631,23 @@ server <- shinyServer(function(input, output, session) {
     if (input$data_mode == TRUE) {
       showTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")
     }else{hideTab(inputId =  "QC_plots", target = "Imputation (Dataset 2)")}
+  })
+  
+  observeEvent(input$analyze, {
+    
+    status <- analysis_status()
+    
+    if (!isTRUE(status$ok)) {
+      showModal(modalDialog(
+        title = "Analysis not ready",
+        tags$ul(lapply(status$msgs, tags$li)),
+        easyClose = TRUE,
+        footer = modalButton("OK")
+      ))
+      return()
+    }
+    
+    # Safe to proceed
   })
   
   
@@ -2863,47 +2877,89 @@ server <- shinyServer(function(input, output, session) {
     
   })
   
-  analysis_status <- reactive({
+  #ANALYSIS STATUS BANNER
+  analysis_status_ds1 <- reactive({
     
-    # Data
     if (is.null(data())) {
-      return(list(
-        ok = FALSE,
-        msg = "No data file loaded. Please upload a dataset."
-      ))
+      return(
+        if (isTRUE(input$data_mode)) {
+          list(ok = FALSE, msg = "Dataset 1: no data loaded")}else
+          {list(ok = FALSE, msg = "No dataset loaded")}
+      )
     }
     
-    # Experimental design
     if (is.null(expdesign())) {
-      return(list(
-        ok = FALSE,
-        msg = "Experimental design file is missing."
-      ))
+      return(
+        if (isTRUE(input$data_mode)) {
+          list(ok = FALSE, msg = "Dataset 1: Exp. template missing")}else
+          {list(ok = FALSE, msg = "Experimental template missing")}
+      )
     }
     
-    # Comparisons
     comps <- comp()
     if (is.null(comps) || !any(nzchar(comps))) {
-      return(list(
-        ok = FALSE,
-        msg = "No valid comparisons selected or uploaded."
-      ))
+      return(
+        if (isTRUE(input$data_mode)) {
+          list(ok = FALSE, msg = "Dataset 1: no valid comparisons")}else
+          {list(ok = FALSE, msg = "Select or Load Comparisons")}
+      )
     }
     
-    # Imputation / normalisation pipeline
     if (is.null(imp())) {
-      return(list(
-        ok = FALSE,
-        msg = "Imputation has not completed."
-      ))
+      return(list(ok = FALSE, msg = "Dataset 1: imputation not completed"))
     }
     
-    return(list(
-      ok = TRUE,
-      msg = "Analysis ready"
-    ))
-  }) 
-
+    if (isTRUE(input$data_mode)) {
+      list(ok = TRUE, msg = "Dataset 1 ready")}else
+      {list(ok = TRUE, msg = "Analysis ready")}
+  })
+  
+  analysis_status_ds2 <- reactive({
+    
+    # Dataset 2 not in use → neutral status
+    if (!isTRUE(input$data_mode)) {
+      return(list(ok = TRUE, msg = "Dataset 2 disabled"))
+    }
+    
+    if (is.null(data2())) {
+      return(list(ok = FALSE, msg = "Dataset 2: no data loaded"))
+    }
+    
+    if (is.null(expdesign2())) {
+      return(list(ok = FALSE, msg = "Dataset 2: experimental Template missing"))
+    }
+    
+    comps <- comp2()
+    if (is.null(comps) || !any(nzchar(comps))) {
+      return(list(ok = FALSE, msg = "Dataset 2: Select or Load Comparisons"))
+    }
+    
+    if (is.null(imp2())) {
+      return(list(ok = FALSE, msg = "Dataset 2: imputation not completed"))
+    }
+    
+    list(ok = TRUE, msg = "Dataset 2 ready")
+  })
+  
+  analysis_status <- reactive({
+    
+    s1 <- analysis_status_ds1()
+    s2 <- analysis_status_ds2()
+    
+    all_ok <- isTRUE(s1$ok) && isTRUE(s2$ok)
+    
+    if (isTRUE(input$data_mode)) {
+      list(
+        ok = all_ok,
+        msgs = c(s1$msg, s2$msg)
+      )
+    }else{
+      list(
+        ok = all_ok,
+        msgs = c(s1$msg)
+      )
+    }
+  })
   
   
   ### All object and functions upon 'Analyze' input ----------------------
