@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.5"
+Version = "1.0.6"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -137,6 +137,8 @@ ui <- fluidPage(
                        ),
                        
                        uiOutput("analysis_banner"),
+                       
+                       uiOutput("status_strip"),
                        
                        radioButtons("data_type",
                                     "Data File type",
@@ -1342,6 +1344,53 @@ server <- shinyServer(function(input, output, session) {
       )
     )
   })    
+  
+
+  output$status_strip <- renderUI({
+    
+    status <- analysis_status()
+    req(is.list(status), status$msgs)
+    
+    strip_color <- if (isTRUE(status$ok)) {
+      "#2e7d32"   # green
+    } else {
+      "#c62828"   # red
+    }
+    
+    bg_color <- if (isTRUE(status$ok)) {
+      "#e6f4ea"
+    } else {
+      "#fdecea"
+    }
+    
+    text_color <- if (isTRUE(status$ok)) {
+      "#1e4620"   # dark green text
+    } else {
+      "#611a15"   # dark red text
+    }
+    
+    div(
+      style = paste0(
+        "background-color:", bg_color, ";",
+        "border-left:6px solid ", strip_color, ";",
+        "color:", text_color, ";",
+        "padding:6px 10px;",
+        "margin-bottom:6px;",
+        "font-size:13px;",
+        "line-height:1.3;",
+        "font-weight:600;",
+        "display:flex;",
+        "align-items:center;"
+      ),
+      icon(
+        if (status$ok) "check-circle" else "exclamation-triangle",
+        style = paste0("margin-right:8px;color:", strip_color, ";")
+      ),
+      span(
+        paste(status$msgs, collapse = " • ")
+      )
+    )
+  })
   
   
   addResourcePath("src", "./www")
