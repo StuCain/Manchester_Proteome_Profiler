@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.3"
+Version = "1.0.4"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -135,6 +135,8 @@ ui <- fluidPage(
                          onStatus = "success", 
                          offStatus = "danger"
                        ),
+                       
+                       uiOutput("analysis_banner"),
                        
                        radioButtons("data_type",
                                     "Data File type",
@@ -1316,6 +1318,28 @@ server <- shinyServer(function(input, output, session) {
     }
   })
   
+  #Analysis Banner Status
+  output$analysis_banner <- renderUI({
+    
+    status <- analysis_status()
+    req(is.list(status), !is.null(status$ok), !is.null(status$msg))
+    
+    div(
+      style = paste0(
+        "padding: 10px;",
+        "margin-bottom: 10px;",
+        "border-left: 6px solid ",
+        if (status$ok) "#2e7d32;" else "#c62828;",
+        "background-color: ",
+        if (status$ok) "#e6f4ea;" else "#fdecea;",
+        "color: ",
+        if (status$ok) "#1e4620;" else "#611a15;",
+        "font-weight: 600;"
+      ),
+      icon(if (status$ok) "check-circle" else "exclamation-triangle"),
+      status$msg
+    )
+  })
   
   
   # getPage<-function() {
@@ -2838,6 +2862,48 @@ server <- shinyServer(function(input, output, session) {
     return(saintlist_out)
     
   })
+  
+  analysis_status <- reactive({
+    
+    # Data
+    if (is.null(data())) {
+      return(list(
+        ok = FALSE,
+        msg = "No data file loaded. Please upload a dataset."
+      ))
+    }
+    
+    # Experimental design
+    if (is.null(expdesign())) {
+      return(list(
+        ok = FALSE,
+        msg = "Experimental design file is missing."
+      ))
+    }
+    
+    # Comparisons
+    comps <- comp()
+    if (is.null(comps) || !any(nzchar(comps))) {
+      return(list(
+        ok = FALSE,
+        msg = "No valid comparisons selected or uploaded."
+      ))
+    }
+    
+    # Imputation / normalisation pipeline
+    if (is.null(imp())) {
+      return(list(
+        ok = FALSE,
+        msg = "Imputation has not completed."
+      ))
+    }
+    
+    return(list(
+      ok = TRUE,
+      msg = "Analysis ready"
+    ))
+  }) 
+
   
   
   ### All object and functions upon 'Analyze' input ----------------------
