@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.6"
+Version = "1.0.7"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -220,6 +220,7 @@ ui <- fluidPage(
                        ),
                        conditionalPanel(
                          condition = "input.data_mode == true",
+                         uiOutput("status_strip2"),
                          radioButtons("data_type2",
                                       "Data File type 2",
                                       choices = c("MaxQuant", "Proteome Discoverer", "FragPipe", "Other (Experimental)"),
@@ -1321,31 +1322,6 @@ server <- shinyServer(function(input, output, session) {
   })
   
   #Analysis Banner Status
-  output$analysis_banner <- renderUI({
-    
-    status <- analysis_status()
-    req(is.list(status), status$msgs)
-    
-    div(
-      style = paste0(
-        "padding: 10px;",
-        "margin-bottom: 10px;",
-        "border-left: 6px solid ",
-        if (status$ok) "#2e7d32;" else "#c62828;",
-        "background-color: ",
-        if (status$ok) "#e6f4ea;" else "#fdecea;",
-        "color: ",
-        if (status$ok) "#1e4620;" else "#611a15;",
-        "font-weight: 600;"
-      ),
-      icon(if (status$ok) "check-circle" else "exclamation-triangle"),
-      tags$ul(
-        lapply(status$msgs, tags$li)
-      )
-    )
-  })    
-  
-
   output$status_strip <- renderUI({
     
     status <- analysis_status()
@@ -1391,6 +1367,53 @@ server <- shinyServer(function(input, output, session) {
       )
     )
   })
+  
+  output$status_strip2 <- renderUI({
+    
+    status <- analysis_status2()
+    req(is.list(status), status$msgs)
+    
+    strip_color <- if (isTRUE(status$ok)) {
+      "#2e7d32"   # green
+    } else {
+      "#c62828"   # red
+    }
+    
+    bg_color <- if (isTRUE(status$ok)) {
+      "#e6f4ea"
+    } else {
+      "#fdecea"
+    }
+    
+    text_color <- if (isTRUE(status$ok)) {
+      "#1e4620"   # dark green text
+    } else {
+      "#611a15"   # dark red text
+    }
+    
+    div(
+      style = paste0(
+        "background-color:", bg_color, ";",
+        "border-left:6px solid ", strip_color, ";",
+        "color:", text_color, ";",
+        "padding:6px 10px;",
+        "margin-bottom:6px;",
+        "font-size:13px;",
+        "line-height:1.3;",
+        "font-weight:600;",
+        "display:flex;",
+        "align-items:center;"
+      ),
+      icon(
+        if (status$ok) "check-circle" else "exclamation-triangle",
+        style = paste0("margin-right:8px;color:", strip_color, ";")
+      ),
+      span(
+        paste(status$msgs, collapse = " • ")
+      )
+    )
+  })
+  
   
   
   addResourcePath("src", "./www")
@@ -2949,7 +2972,7 @@ server <- shinyServer(function(input, output, session) {
     if (is.null(comps) || !any(nzchar(comps))) {
       return(
         if (isTRUE(input$data_mode)) {
-          list(ok = FALSE, msg = "Dataset 1: no valid comparisons")}else
+          list(ok = FALSE, msg = "Dataset 1: Select or Load comparisons")}else
           {list(ok = FALSE, msg = "Select or Load Comparisons")}
       )
     }
@@ -2975,7 +2998,7 @@ server <- shinyServer(function(input, output, session) {
     }
     
     if (is.null(expdesign2())) {
-      return(list(ok = FALSE, msg = "Dataset 2: experimental Template missing"))
+      return(list(ok = FALSE, msg = "Dataset 2: Exp. Template missing"))
     }
     
     comps <- comp2()
@@ -2993,22 +3016,39 @@ server <- shinyServer(function(input, output, session) {
   analysis_status <- reactive({
     
     s1 <- analysis_status_ds1()
-    s2 <- analysis_status_ds2()
+
+    all_ok <- isTRUE(s1$ok)
     
-    all_ok <- isTRUE(s1$ok) && isTRUE(s2$ok)
+#    if (isTRUE(input$data_mode)) {
+#      list(
+#        ok = all_ok,
+#        msgs = c(s1$msg, s2$msg)
+#      )
+#    }else{
+#      list(
+#        ok = all_ok,
+#        msgs = c(s1$msg)
+#      )
+#    }
     
-    if (isTRUE(input$data_mode)) {
-      list(
-        ok = all_ok,
-        msgs = c(s1$msg, s2$msg)
-      )
-    }else{
       list(
         ok = all_ok,
         msgs = c(s1$msg)
       )
-    }
   })
+  
+  analysis_status2 <- reactive({
+    
+    s2 <- analysis_status_ds2()
+    
+    all_ok <- isTRUE(s2$ok)
+
+    list(
+      ok = all_ok,
+      msgs = c(s2$msg)
+    )
+  })
+  
   
   
   ### All object and functions upon 'Analyze' input ----------------------
