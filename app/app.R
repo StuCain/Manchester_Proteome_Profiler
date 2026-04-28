@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.7"
+Version = "1.0.8"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1514,51 +1514,120 @@ server <- shinyServer(function(input, output, session) {
       )}
   })
   
+  #Create helper flags in server()
+  output$has_expdesign <- reactive({
+    !is.null(expdesign())
+  })
+  outputOptions(output, "has_expdesign", suspendWhenHidden = FALSE)
   
+  output$has_expdesign2 <- reactive({
+    !is.null(expdesign2())
+  })
+  outputOptions(output, "has_expdesign2", suspendWhenHidden = FALSE)
   
+  #Populate choices server‑side
+  observeEvent(expdesign(), {
+    
+    req(expdesign())
+    
+    combinations <- combn(unique(expdesign()$condition), 2)
+    
+    comps <- c(
+      paste0(combinations[2,], "_vs_", combinations[1,]),
+      paste0(combinations[1,], "_vs_", combinations[2,])
+    )
+    
+    updateSelectizeInput(
+      session,
+      "comp1f",
+      choices = make.names(comps),
+      server = TRUE
+    )
+    
+    updateSelectizeInput(
+      session,
+      "comp2f_ds1",
+      choices = make.names(comps),
+      server = TRUE
+    )
+  })
+  observeEvent(expdesign2(), {
+    
+    req(expdesign2())
+    
+    combinations <- combn(unique(expdesign2()$condition), 2)
+    
+    comps <- c(
+      paste0(combinations[2,], "_vs_", combinations[1,]),
+      paste0(combinations[1,], "_vs_", combinations[2,])
+    )
+    
+    updateSelectizeInput(
+      session,
+      "comp2f_ds2",
+      choices = make.names(comps),
+      server = TRUE
+    )
+  })
+  
+  #render menu for comparisons
   output$comparisons <- renderMenu({
-    menuItem("Comparisons",
-             if (!is.null(expdesign())) {
-               combinations<-combn(unique(expdesign()$condition),2)
-               comp1_f<-paste0(combinations[2,],"_vs_",combinations[1,])
-               comp1_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-               comp1_all<-c(comp1_f,comp1_r)
-               selectizeInput("comp1f",
-                              "1: Select 1st round comparisons",
-                              choices=make.names(comp1_all),
-                              multiple = TRUE)
-             },
-             
-             if (!is.null(expdesign()) && input$comp_type == "2 Rounds of comparisons") {
-               combinations<-combn(unique(expdesign()$condition),2)
-               comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
-               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-               comp2_all<-c(comp2_f,comp2_r)
-               selectizeInput("comp2f",
-                              "2: Select 2nd round comparisons",
-                              choices=make.names(comp2_all),
-                              multiple = TRUE)
-             },
-             
-             if (!is.null(expdesign2()) && input$data_mode == TRUE) {
-               combinations<-combn(unique(expdesign2()$condition),2)
-               comp2_f<-paste0(combinations[2,],"_vs_",combinations[1,])
-               comp2_r<-paste0(combinations[1,],"_vs_",combinations[2,])
-               comp2_all<-c(comp2_f,comp2_r)
-               selectizeInput("comp2f",
-                              "2: Select 2nd Dataset comparisons",
-                              choices=make.names(comp2_all),
-                              multiple = TRUE)
-             },
-             
-             
-             helpText("Load Comparisons file"),
-             fileInput('comp_file',
-                       'comparisons.txt',
-                       accept=c('text/csv',
-                                'text/comma-separated-values,text/plain',
-                                '.csv')),
-             downloadButton('downloadcomp_template', 'Save Comp. template', class="btn btn-primary")
+    menuItem(
+      "Comparisons",
+      startExpanded = TRUE,
+      
+      ## First round comparisons (Dataset 1)
+      conditionalPanel(
+        condition = "output.has_expdesign",
+        selectizeInput(
+          "comp1f",
+          "1: Select 1st round comparisons",
+          choices = NULL,
+          multiple = TRUE
+        )
+      ),
+      
+      ## Second round comparisons (same dataset)
+      conditionalPanel(
+        condition = "output.has_expdesign && input.comp_type == '2 Rounds of comparisons'",
+        selectizeInput(
+          "comp2f_ds1",
+          "2: Select 2nd round comparisons",
+          choices = NULL,
+          multiple = TRUE
+        )
+      ),
+      
+      ## Dataset 2 comparisons
+      conditionalPanel(
+        condition = "output.has_expdesign2 && input.data_mode == true",
+        selectizeInput(
+          "comp2f_ds2",
+          "2: Select 2nd Dataset comparisons",
+          choices = NULL,
+          multiple = TRUE
+        )
+      ),
+      
+      tags$hr(),
+      
+      helpText("Load Comparisons file"),
+      
+      fileInput(
+        "comp_file",
+        "comparisons.txt",
+        accept = c(
+          "text/csv",
+          "text/comma-separated-values,text/plain",
+          ".csv"
+        )
+      ),
+      
+      downloadButton(
+        "downloadcomp_template",
+        "Save Comp. template",
+        class = "btn btn-primary"
+      )
     )
   })
   
@@ -2695,20 +2764,42 @@ server <- shinyServer(function(input, output, session) {
   })
   
   comp2 <- reactive({
-    if (input$data_mode == FALSE && input$comp_type == "1 Round of comparisons")
+    
+    # Case 1: no second-round comparisons needed
+    if (!isTRUE(input$data_mode) &&
+        input$comp_type == "1 Round of comparisons") {
       return(NULL)
-    inFile <- input$comp_file
-    if (is.null(inFile)){
-      #      comp2<-c(input$comp2f,input$comp2r)
-      comp2<-c(input$comp2f)
-      
-    }else{
-      comp_input<-data.frame(compfile())
-      comp2<-paste0(comp_input$comp2_A, "_vs_", comp_input$comp2_B)
-      comp2<-comp2[comp2 != "_vs_"]
-      comp2<-comp2[comp2 != ""]
     }
     
+    inFile <- input$comp_file
+    
+    # Case 2: no comparisons file uploaded
+    if (is.null(inFile)) {
+      
+      # Dataset 1, second round
+      if (!isTRUE(input$data_mode)) {
+        return(c(input$comp2f_ds1))
+      }
+      
+      # Dataset 2
+      if (isTRUE(input$data_mode)) {
+        return(c(input$comp2f_ds2))
+      }
+    }
+    
+    # Case 3: comparisons file uploaded
+    comp_input <- as.data.frame(compfile())
+    
+    comp2 <- paste0(
+      comp_input$comp2_A,
+      "_vs_",
+      comp_input$comp2_B
+    )
+    
+    # Clean up invalid rows
+    comp2 <- comp2[comp2 != "_vs_" & nzchar(comp2)]
+    
+    return(comp2)
   })
   
   #Comparisons Table
@@ -2983,7 +3074,7 @@ server <- shinyServer(function(input, output, session) {
     
     if (isTRUE(input$data_mode)) {
       list(ok = TRUE, msg = "Dataset 1 ready")}else
-      {list(ok = TRUE, msg = "Analysis ready")}
+      {list(ok = TRUE, msg = "Ready to Analyse")}
   })
   
   analysis_status_ds2 <- reactive({
@@ -3016,25 +3107,25 @@ server <- shinyServer(function(input, output, session) {
   analysis_status <- reactive({
     
     s1 <- analysis_status_ds1()
-
+    
     all_ok <- isTRUE(s1$ok)
     
-#    if (isTRUE(input$data_mode)) {
-#      list(
-#        ok = all_ok,
-#        msgs = c(s1$msg, s2$msg)
-#      )
-#    }else{
-#      list(
-#        ok = all_ok,
-#        msgs = c(s1$msg)
-#      )
-#    }
+    #    if (isTRUE(input$data_mode)) {
+    #      list(
+    #        ok = all_ok,
+    #        msgs = c(s1$msg, s2$msg)
+    #      )
+    #    }else{
+    #      list(
+    #        ok = all_ok,
+    #        msgs = c(s1$msg)
+    #      )
+    #    }
     
-      list(
-        ok = all_ok,
-        msgs = c(s1$msg)
-      )
+    list(
+      ok = all_ok,
+      msgs = c(s1$msg)
+    )
   })
   
   analysis_status2 <- reactive({
@@ -3042,7 +3133,7 @@ server <- shinyServer(function(input, output, session) {
     s2 <- analysis_status_ds2()
     
     all_ok <- isTRUE(s2$ok)
-
+    
     list(
       ok = all_ok,
       msgs = c(s2$msg)
