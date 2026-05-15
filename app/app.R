@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.8"
+Version = "1.0.9"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -3041,21 +3041,49 @@ server <- shinyServer(function(input, output, session) {
   })
   
   #ANALYSIS STATUS BANNER
+  
   analysis_status_ds1 <- reactive({
     
-    if (is.null(data())) {
-      return(
-        if (isTRUE(input$data_mode)) {
-          list(ok = FALSE, msg = "Dataset 1: no data loaded")}else
-          {list(ok = FALSE, msg = "No dataset loaded")}
-      )
+    # ---- HANDLE "OTHER" DATA FIRST ----
+    if (input$data_type == "Other (Experimental)") {
+      
+      if (is.null(data_other())) {
+        return(list(ok = FALSE, msg = "Load dataset & pick columns"))
+      }
+      
+      if (is.null(input$int_col_last)) {
+        return(list(ok = FALSE, msg = "Dataset 1: Waiting for column selection"))
+      }
+      
+      if (input$int_col_last == "" ||
+          !(input$int_col_last %in% colnames(data_other()))) {
+        
+        return(list(ok = FALSE, msg = "Select ID & intensity columns"))
+      }
+      
+    } else {
+      
+      # ---- STANDARD (e.g. MaxQuant) DATA ----
+      if (is.null(data())) {
+        return(
+          if (isTRUE(input$data_mode)) {
+            list(ok = FALSE, msg = "Dataset 1: no data loaded")
+          } else {
+            list(ok = FALSE, msg = "No dataset loaded")
+          }
+        )
+      }
     }
+    
+    # ---- COMMON CHECKS ----
     
     if (is.null(expdesign())) {
       return(
         if (isTRUE(input$data_mode)) {
-          list(ok = FALSE, msg = "Dataset 1: Exp. template missing")}else
-          {list(ok = FALSE, msg = "Experimental template missing")}
+          list(ok = FALSE, msg = "Dataset 1: Exp. template missing")
+        } else {
+          list(ok = FALSE, msg = "Experimental template missing")
+        }
       )
     }
     
@@ -3063,8 +3091,10 @@ server <- shinyServer(function(input, output, session) {
     if (is.null(comps) || !any(nzchar(comps))) {
       return(
         if (isTRUE(input$data_mode)) {
-          list(ok = FALSE, msg = "Dataset 1: Select or Load comparisons")}else
-          {list(ok = FALSE, msg = "Select or Load Comparisons")}
+          list(ok = FALSE, msg = "Dataset 1: Select or Load comparisons")
+        } else {
+          list(ok = FALSE, msg = "Select or Load Comparisons")
+        }
       )
     }
     
@@ -3072,9 +3102,12 @@ server <- shinyServer(function(input, output, session) {
       return(list(ok = FALSE, msg = "Dataset 1: imputation not completed"))
     }
     
+    # ---- FINAL STATUS ----
     if (isTRUE(input$data_mode)) {
-      list(ok = TRUE, msg = "Dataset 1 ready")}else
-      {list(ok = TRUE, msg = "Ready to Analyse")}
+      list(ok = TRUE, msg = "Dataset 1 ready")
+    } else {
+      list(ok = TRUE, msg = "Ready to Analyse")
+    }
   })
   
   analysis_status_ds2 <- reactive({
@@ -3084,9 +3117,41 @@ server <- shinyServer(function(input, output, session) {
       return(list(ok = TRUE, msg = "Dataset 2 disabled"))
     }
     
-    if (is.null(data2())) {
-      return(list(ok = FALSE, msg = "Dataset 2: no data loaded"))
+    # ---- HANDLE "OTHER" DATA FIRST ----
+    if (input$data_type2 == "Other (Experimental)") {
+      
+      if (is.null(data_other2())) {
+        return(list(ok = FALSE, msg = "Load dataset & pick columns"))
+      }
+      
+      if (is.null(input$int_col_last2)) {
+        return(list(ok = FALSE, msg = "Dataset 2: Waiting for column selection"))
+      }
+      
+      if (input$int_col_last2 == "" ||
+          !(input$int_col_last2 %in% colnames(data_other()))) {
+        
+        return(list(ok = FALSE, msg = "Select ID & intensity columns"))
+      }
+      
+    } else {
+      
+      # ---- STANDARD (e.g. MaxQuant) DATA ----
+      if (is.null(data2())) {
+        return(
+          if (isTRUE(input$data_mode)) {
+            list(ok = FALSE, msg = "Dataset 2: no data loaded")
+          } else {
+            list(ok = FALSE, msg = "No dataset loaded")
+          }
+        )
+      }
     }
+    
+    
+    #if (is.null(data2())) {
+    #  return(list(ok = FALSE, msg = "Dataset 2: no data loaded"))
+    #}
     
     if (is.null(expdesign2())) {
       return(list(ok = FALSE, msg = "Dataset 2: Exp. Template missing"))
