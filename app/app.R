@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.9"
+Version = "1.0.11"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -496,7 +496,8 @@ ui <- fluidPage(
                                                           width = 3),
                                                       box(radioButtons("p_adj",
                                                                        "Label type",
-                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values")
+                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values"),
+                                                                       selected = "p-adj values"
                                                       ),
                                                           width = 3)
                                                     ),
@@ -517,7 +518,8 @@ ui <- fluidPage(
                                                           width = 3),
                                                       box(radioButtons("p_adj_c2",
                                                                        "Label type",
-                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values")
+                                                                       choices = c("p-adj sig.","p-Val sig.", "p-adj values"),
+                                                                       selected = "p-adj values"
                                                       ),
                                                       width = 3)
                                                     ),
@@ -1958,8 +1960,6 @@ server <- shinyServer(function(input, output, session) {
     else if (input$data_type == "FragPipe"){
       if (input$exp == "LFQ") {
         inFile <- input$lfq_expr
-      } else if (input$exp == "TMT") {
-        inFile <- input$tmt_expr
       } else if (input$exp == "DIA") {
         inFile <- input$dia_expr
       }
@@ -2005,52 +2005,114 @@ server <- shinyServer(function(input, output, session) {
           data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)),  grep ("Sequence.length", colnames(data)), lfq_columns)]
         }
       }else if(input$exp == "DIA"){
-        line<-paste(Sys.time(),"FragPipe_DIA")
-        write(line,file="count.txt",append=TRUE)
-        temp_data <- read.table(inFile$datapath,
-                                header = T,
-                                sep="\t",
-                                check.names = T,
-                                stringsAsFactors = FALSE,
-                                fill= TRUE, # to fill any missing data
-                                quote = "",
-                                comment.char = "",
-                                blank.lines.skip = F,
-        )
-        temp_data<-temp_data %>% dplyr::filter(!grepl('contam_sp', Protein.Group))
-        temp_data<-temp_data %>% dplyr::filter(!grepl('rev_sp', Protein.Group)) 
+        line <- paste(Sys.time(), "FragPipe_DIA")
+        write(line, file = "count.txt", append = TRUE)
         
-        data<-temp_data %>% 
+        # Read input file
+        data <- read.table(inFile$datapath,
+                           header = TRUE,
+                           sep = "\t",
+                           check.names = TRUE,
+                           stringsAsFactors = FALSE,
+                           fill = TRUE,
+                           quote = "",
+                           comment.char = "",
+                           blank.lines.skip = TRUE)
+        
+        # Rename key columns
+        data <- data %>%
           dplyr::rename(
-            Gene.names=Genes,
-            Protein.IDs=Protein.Group,
-            Protein_Names=Protein.Names,
-            Protein.names=First.Protein.Description,
-            #  Sequence.length=Protein.Length
+            Gene.names = Genes,
+            Protein.IDs = Protein.Group
           )
-        #Check for DiaNN 2.x output
-        if ("N.Proteotypic.Sequences" %in% colnames(data)) {
-          col_start<-7
-        } else {
-          col_start<-6
+
+        # Remove contaminants/reverse
+        data <- data %>%
+          dplyr::filter(!grepl("contam_sp|rev_sp", Protein.IDs))
+
+        # Clean protein IDs
+        data$Protein.IDs <- sub(";.*", "", data$Protein.IDs)
+        
+        # Robust detection of intensity columns
+
+        # Identify numeric columns
+        numeric_cols <- vapply(data, is.numeric, logical(1))
+        
+        # Define metadata (non-intensity) columns
+        meta_cols <- c(
+          "Gene.names", "Protein.IDs", "Protein.names",
+          "Sequence.length",
+          "Genes", "Protein.Group",
+          "First.Protein.Description",
+          "uniprot_entry", "uniprot_description",
+          "uniprot_length",
+          "N.Sequences", "N.Proteotypic.Sequences"
+        )
+        
+        # Keep only numeric columns that are NOT metadata
+        lfq_columns <- which(
+          numeric_cols & !(colnames(data) %in% meta_cols)
+        )
+        
+        # Safety fallback (in case nothing detected)
+        if (length(lfq_columns) == 0) {
+          warning("No intensity columns detected; using positional fallback")
+          
+          col_start <- if ("N.Proteotypic.Sequences" %in% colnames(data)) 7 else 6
+          lfq_columns <- seq.int(col_start, ncol(data))
         }
         
-        data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
-        lfq_columns<- col_start:ncol(data)
-        if(input$dia_species == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        if(input$dia_species == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "uniprot_entry", all.x = TRUE, all.y = FALSE)
-        data<-data_m %>% 
+        # Sanity check (prevents Shiny crashes)
+        if (!is.numeric(lfq_columns)) {
+          stop("lfq_columns is not numeric — check column detection logic")
+        }
+
+        # Load UniProt annotation
+        uniprot <- switch(input$dia_species,
+                          "Human" = read.csv("./uniprot/human_uniprot.tsv",
+                                             sep = "\t", stringsAsFactors = FALSE),
+                          "Mouse" = read.csv("./uniprot/mouse_uniprot.tsv",
+                                             sep = "\t", stringsAsFactors = FALSE))
+        
+        # Merge annotation
+        data <- dplyr::left_join(data, uniprot,
+                                 by = c("Protein.IDs" = "uniprot_entry"))
+        
+        # Smart protein description
+        # ensure columns exist + are character
+        if (!"First.Protein.Description" %in% colnames(data)) {
+          data$First.Protein.Description <- NA_character_
+        }
+        
+        if (!"uniprot_description" %in% colnames(data)) {
+          data$uniprot_description <- NA_character_
+        }
+        
+        data <- data %>%
           dplyr::rename(
-            Sequence.length=uniprot_length
+            Sequence.length = uniprot_length
+          ) %>%
+          dplyr::mutate(
+            First.Protein.Description = as.character(First.Protein.Description),
+            uniprot_description = as.character(uniprot_description),
+            Protein.names = dplyr::coalesce(
+              na_if(First.Protein.Description, ""),
+              uniprot_description
+            )
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)),grep("Sequence.length", colnames(data)), lfq_columns)]
-        data1<-data_2 %>% 
-          dplyr::rename(
-            Protein.names=uniprot_description)
-        data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
         
+        # Clean protein names
+        data$Protein.names <- gsub("\\s*\\(.*?\\)", "", data$Protein.names)
         
+        # Final dataset
+        data1 <- data %>%
+          dplyr::select(
+            Gene.names,
+            Protein.IDs,
+            Protein.names,
+            Sequence.length,
+            dplyr::all_of(colnames(data)[lfq_columns])
+          )
         
       } # end of DIA
     }
@@ -2099,8 +2161,6 @@ server <- shinyServer(function(input, output, session) {
     else if (input$data_type2 == "FragPipe"){
       if (input$exp2 == "LFQ") {
         inFile <- input$lfq_expr2
-      } else if (input$exp2 == "TMT") {
-        inFile <- input$tmt_expr2
       } else if (input$exp2 == "DIA") {
         inFile <- input$dia_expr2
       }
@@ -2147,50 +2207,113 @@ server <- shinyServer(function(input, output, session) {
         }
       }else if(input$exp2 == "DIA"){
         line<-paste(Sys.time(),"FragPipe_DIA_data2")
-        write(line,file="count.txt",append=TRUE)
-        temp_data <- read.table(inFile$datapath,
-                                header = T,
-                                sep="\t",
-                                check.names = T,
-                                stringsAsFactors = FALSE,
-                                fill= TRUE, # to fill any missing data
-                                quote = "",
-                                comment.char = "",
-                                blank.lines.skip = F,
-        )
-        temp_data<-temp_data %>% dplyr::filter(!grepl('contam_sp', Protein.Group))
-        temp_data<-temp_data %>% dplyr::filter(!grepl('rev_sp', Protein.Group)) 
+        write(line, file = "count.txt", append = TRUE)
         
-        data<-temp_data %>% 
+        # Read input file
+        data <- read.table(inFile$datapath,
+                           header = TRUE,
+                           sep = "\t",
+                           check.names = TRUE,
+                           stringsAsFactors = FALSE,
+                           fill = TRUE,
+                           quote = "",
+                           comment.char = "",
+                           blank.lines.skip = TRUE)
+        
+        # Rename key columns
+        data <- data %>%
           dplyr::rename(
-            Gene.names=Genes,
-            Protein.IDs=Protein.Group,
-            Protein_Names=Protein.Names,
-            Protein.names=First.Protein.Description,
-            #  Sequence.length=Protein.Length
+            Gene.names = Genes,
+            Protein.IDs = Protein.Group
           )
-        #Check for DiaNN 2.x output
-        if ("N.Proteotypic.Sequences" %in% colnames(data)) {
-          col_start<-7
-        } else {
-          col_start<-6
+        
+        # Remove contaminants/reverse
+        data <- data %>%
+          dplyr::filter(!grepl("contam_sp|rev_sp", Protein.IDs))
+        
+        # Clean protein IDs
+        data$Protein.IDs <- sub(";.*", "", data$Protein.IDs)
+        
+        # Robust detection of intensity columns
+        
+        # Identify numeric columns
+        numeric_cols <- vapply(data, is.numeric, logical(1))
+        
+        # Define metadata (non-intensity) columns
+        meta_cols <- c(
+          "Gene.names", "Protein.IDs", "Protein.names",
+          "Sequence.length",
+          "Genes", "Protein.Group",
+          "First.Protein.Description",
+          "uniprot_entry", "uniprot_description",
+          "uniprot_length",
+          "N.Sequences", "N.Proteotypic.Sequences"
+        )
+        
+        # Keep only numeric columns that are NOT metadata
+        lfq_columns <- which(
+          numeric_cols & !(colnames(data) %in% meta_cols)
+        )
+        
+        # Safety fallback (in case nothing detected)
+        if (length(lfq_columns) == 0) {
+          warning("No intensity columns detected; using positional fallback")
+          
+          col_start <- if ("N.Proteotypic.Sequences" %in% colnames(data)) 7 else 6
+          lfq_columns <- seq.int(col_start, ncol(data))
         }
         
+        # Sanity check (prevents Shiny crashes)
+        if (!is.numeric(lfq_columns)) {
+          stop("lfq_columns is not numeric — check column detection logic")
+        }
         
-        data$Protein.IDs  <- sub('\\;.*', '', data$Protein.IDs)
-        lfq_columns<- col_start:ncol(data)
-        if(input$dia_species2 == "Human"){uniprot<-read.csv("./uniprot/human_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        if(input$dia_species2 == "Mouse"){uniprot<-read.csv("./uniprot/mouse_uniprot.tsv", head=T, sep="\t", stringsAsFactors = FALSE)}
-        data_m<-merge(data, uniprot, by.x = "Protein.IDs", by.y = "uniprot_entry", all.x = TRUE, all.y = FALSE)
-        data<-data_m %>% 
+        # Load UniProt annotation
+        uniprot <- switch(input$dia_species2,
+                          "Human" = read.csv("./uniprot/human_uniprot.tsv",
+                                             sep = "\t", stringsAsFactors = FALSE),
+                          "Mouse" = read.csv("./uniprot/mouse_uniprot.tsv",
+                                             sep = "\t", stringsAsFactors = FALSE))
+        
+        # Merge annotation
+        data <- dplyr::left_join(data, uniprot,
+                                 by = c("Protein.IDs" = "uniprot_entry"))
+        
+        # Smart protein description
+        # ensure columns exist + are character
+        if (!"First.Protein.Description" %in% colnames(data)) {
+          data$First.Protein.Description <- NA_character_
+        }
+        
+        if (!"uniprot_description" %in% colnames(data)) {
+          data$uniprot_description <- NA_character_
+        }
+        
+        data <- data %>%
           dplyr::rename(
-            Sequence.length=uniprot_length
+            Sequence.length = uniprot_length
+          ) %>%
+          dplyr::mutate(
+            First.Protein.Description = as.character(First.Protein.Description),
+            uniprot_description = as.character(uniprot_description),
+            Protein.names = dplyr::coalesce(
+              na_if(First.Protein.Description, ""),
+              uniprot_description
+            )
           )
-        data_2<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("uniprot_description", colnames(data)),  grep("Sequence.length", colnames(data)), lfq_columns)]
-        data1<-data_2 %>% 
-          dplyr::rename(
-            Protein.names=uniprot_description)
-        data$Protein.names  <- gsub("\\(.*?\\)",".", data$Protein.names)
+        
+        # Clean protein names
+        data$Protein.names <- gsub("\\s*\\(.*?\\)", "", data$Protein.names)
+        
+        # Final dataset
+        data1 <- data %>%
+          dplyr::select(
+            Gene.names,
+            Protein.IDs,
+            Protein.names,
+            Sequence.length,
+            dplyr::all_of(colnames(data)[lfq_columns])
+          )
         
       } # end of DIA
     }
