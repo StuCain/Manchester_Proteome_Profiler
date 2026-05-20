@@ -201,7 +201,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.6.5
+Version:0.7.0
 
 ## Method details
  
@@ -448,22 +448,6 @@ print(params$heatmap_input()[[1]])
 if(params$data_mode == TRUE){print(params$heatmap_input2()[[1]])}
 ```
 \pagebreak
-
-## Significance Count Plot
-
-```{r signif_count_plot, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
-print(params$signif_plot_input())
-if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){sign_text<-"### Significance Count Plot (Comp 2)"}else sign_text<-""
-```
-\pagebreak
-
-`r sign_text`
-
-```{r signif_count_plot2, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
-if(params$data_mode == TRUE | params$comp_type == "2 Rounds of comparisons"){print(params$signif_plot_input2())}
-```
-\pagebreak
-
 
 ## Exploratory Analysis (QC Plots)
 
