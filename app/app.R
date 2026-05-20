@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.0.11"
+Version = "1.0.12"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1977,6 +1977,13 @@ server <- shinyServer(function(input, output, session) {
                               blank.lines.skip = F,
                               check.names = T)
         colnames(temp_data) <- make.unique(colnames(temp_data), "_")
+        
+        
+        # Detect DIA file mistakenly loaded
+        if (ncol(temp_data) > 0 && colnames(temp_data)[1] == "Protein.Group") {
+          stop(safeError("This is a DIA file. Please select the correct option from the drop-down box."))
+        }
+        
         if ("Protein" %in% colnames(temp_data)) {
           temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
         }
@@ -2178,6 +2185,12 @@ server <- shinyServer(function(input, output, session) {
                               blank.lines.skip = F,
                               check.names = T)
         colnames(temp_data) <- make.unique(colnames(temp_data), "_")
+        
+        # Detect DIA file mistakenly loaded
+        if (ncol(temp_data) > 0 && colnames(temp_data)[1] == "Protein.Group") {
+          stop(safeError("This is a DIA file. Please select the correct option from the drop-down box."))
+        }
+        
         if ("Protein" %in% colnames(temp_data)) {
           temp_data <- temp_data[!grepl("contam", temp_data$Protein),]
         }
