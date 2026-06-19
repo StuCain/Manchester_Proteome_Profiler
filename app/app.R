@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-Version = "1.1.0"
+mpp_version <- "1.1.1"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -312,9 +312,7 @@ ui <- fluidPage(
       #      tags$head(tags$style(HTML('.box {margin: 5px;}' ))),
       #      tags$head(tags$style(HTML('.box {margin-left: 0px;}' ))),
       #      tags$head(tags$style(HTML('.box {margin-right: 0px;}' ))),
-      #helpText(paste("By Stuart Cain, Version:", Version)),
-      #wellPanel(style = "background-color: #f8f9fa; padding: 5px; border-radius: 5px;", helpText(tags$span(paste("By Stuart Cain, Version:", Version, "- "), tags$a(href = "https://doi.org/10.64898/2026.05.14.725092", "Read the full preprint on bioRxiv", target = "_blank")))),
-      wellPanel(style = "background-color: #f8f9fa; padding: 10px 12px; border-radius: 20px; font-size: 12px;", tags$span("By Stuart Cain • Version:", Version, " • "), tags$a(href = "https://doi.org/10.64898/2026.05.14.725092", target = "_blank", style = "font-weight: bold; color: #2C7BE5; text-decoration: none;", "📄 bioRxiv")),
+      wellPanel(style = "background-color: #f8f9fa; padding: 10px 12px; border-radius: 20px; font-size: 12px;", tags$span("By Stuart Cain • Version:", mpp_version, " • "), tags$a(href = "https://doi.org/10.64898/2026.05.14.725092", target = "_blank", style = "font-weight: bold; color: #2C7BE5; text-decoration: none;", "📄 bioRxiv")),
       #set infobox height
       tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 20px;}'))),
       #Google Analytics
@@ -6271,6 +6269,7 @@ server <- shinyServer(function(input, output, session) {
                          BG_report_input = BG_report_input,
                          BG_cnet_input = BG_cnet_input,
                          box_plot_report_input = box_plot_report_input,
+                         mpp_version = mpp_version,
                          rendered_by_shiny = TRUE
           )
           

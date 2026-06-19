@@ -95,6 +95,7 @@ params:
   STR_report_input: NA
   STR_cnet_input: NA
   box_plot_report_input: NA
+  mpp_version: NA
   
   
 #  cvs_input: NA
@@ -201,7 +202,7 @@ knitr::include_graphics("app_logo.png")
 # Manchester Proteome Profiler Report (Short)
 ## `r format(Sys.time(), '%d %B, %Y')`
 
-Version:0.7.0
+Version:0.7.1
 
 ## Method details
  
@@ -313,6 +314,7 @@ The result output from `r params$data_type`  contains \textbf{`r nrow(params$dat
 `r results_text`
 
 ## Summary of parameters used:
+* MPP Version = \textbf{`r params$mpp_version`}
 * Input Data File Type= \textbf{`r params$data_type`}
 `r exp_text`
 `r lfq_int_text`
