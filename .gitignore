@@ -1,2 +1,5 @@
-
 sync.ffs_db
+.Renviron
+.Rhistory
+.RData
+.Ruserdata

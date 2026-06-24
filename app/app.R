@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-mpp_version <- "1.1.1"
+mpp_version <- "1.1.2"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1239,9 +1239,6 @@ ui <- fluidPage(
 ####Server####
 
 server <- shinyServer(function(input, output, session) {
-  #options(shiny.usecairo = TRUE)  # Force Cairo rendering in Shiny
-  #options(shiny.useragg = TRUE)
-  #options(shiny.graphics.device = ragg::agg_png)
   conversion_messages <- reactiveVal(NULL)
   #Set upper protein limit 
   upper_limit <- 170
@@ -1935,6 +1932,11 @@ server <- shinyServer(function(input, output, session) {
       maxdata<-read.csv(inFile$datapath, header = TRUE,
                         sep = "\t", stringsAsFactors = FALSE) %>%
         mutate(id = row_number())
+      #Filter Contaminants if coloumns available
+      if (all(c("Reverse", "Potential.contaminant") %in% names(maxdata))) {
+        maxdata <- maxdata[maxdata$Reverse != "+" & maxdata$Potential.contaminant != "+", ]
+      }
+      
       data1<-maxdata[, c(grep("Protein.IDs", colnames(maxdata)),grep("Protein.names", colnames(maxdata)),grep("Gene.names", colnames(maxdata)),  grep("LFQ.",colnames(maxdata)), grep ("\\Sequence.length\\b", colnames(maxdata)), grep("Reverse",colnames(maxdata)), grep("Potential.contaminant",colnames(maxdata)))]
     }
     
@@ -2001,9 +2003,7 @@ server <- shinyServer(function(input, output, session) {
           lfq_columns <- setdiff(lfq_columns, grep("Total Intensity", colnames(data)))
           lfq_columns <- setdiff(lfq_columns, grep("Unique Intensity", colnames(data)))
           data1<-data[, c(grep("Gene.names", colnames(data)), grep("Protein.IDs", colnames(data)), grep("Protein.names", colnames(data)), grep ("Sequence.length", colnames(data)), lfq_columns)]
-          #        data1<-data1 %>% 
-          #          rename_with(~ gsub(".Intensity", "", .x, fixed = TRUE))
-          
+
         } else if (input$lfq_type == "MaxLFQ") {
           lfq_columns<-grep("MaxLFQ", colnames(data))
           if (length(lfq_columns) == 0) {
@@ -2032,16 +2032,16 @@ server <- shinyServer(function(input, output, session) {
             Gene.names = Genes,
             Protein.IDs = Protein.Group
           )
-
+        
         # Remove contaminants/reverse
         data <- data %>%
           dplyr::filter(!grepl("contam_sp|rev_sp", Protein.IDs))
-
+        
         # Clean protein IDs
         data$Protein.IDs <- sub(";.*", "", data$Protein.IDs)
         
         # Robust detection of intensity columns
-
+        
         # Identify numeric columns
         numeric_cols <- vapply(data, is.numeric, logical(1))
         
@@ -2073,7 +2073,7 @@ server <- shinyServer(function(input, output, session) {
         if (!is.numeric(lfq_columns)) {
           stop("lfq_columns is not numeric — check column detection logic")
         }
-
+        
         # Load UniProt annotation
         uniprot <- switch(input$dia_species,
                           "Human" = read.csv("./uniprot/human_uniprot.tsv",
@@ -2143,6 +2143,11 @@ server <- shinyServer(function(input, output, session) {
       maxdata<-read.csv(inFile$datapath, header = TRUE,
                         sep = "\t", stringsAsFactors = FALSE) %>%
         mutate(id = row_number())
+      #Filter Contaminants
+      if (all(c("Reverse", "Potential.contaminant") %in% names(maxdata))) {
+        maxdata <- maxdata[maxdata$Reverse != "+" & maxdata$Potential.contaminant != "+", ]
+      }
+      
       data1<-maxdata[, c(grep("Protein.IDs", colnames(maxdata)),grep("Protein.names", colnames(maxdata)),grep("Gene.names", colnames(maxdata)),  grep("LFQ.",colnames(maxdata)), grep ("\\Sequence.length\\b", colnames(maxdata)), grep("Reverse",colnames(maxdata)), grep("Potential.contaminant",colnames(maxdata)))]
     }
     
@@ -2612,9 +2617,9 @@ server <- shinyServer(function(input, output, session) {
     if (input$data_type == "MaxQuant") {
       cols <- grep("^LFQ", colnames(df))
       
-      if (all(c("Reverse", "Potential.contaminant") %in% names(df))) {
-        df <- df[df$Reverse != "+" & df$Potential.contaminant != "+", ]
-      }
+#      if (all(c("Reverse", "Potential.contaminant") %in% names(df))) {
+#        df <- df[df$Reverse != "+" & df$Potential.contaminant != "+", ]
+#      }
       
       unique_names <- make_unique(df, "Gene.names", "Protein.IDs", delim = ";")
     }
