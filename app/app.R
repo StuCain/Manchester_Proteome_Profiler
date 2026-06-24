@@ -59,7 +59,7 @@ library(STRINGdb)
 #library(assertthat)
 source("R/functions.R")
 #source("R/functions_DEP.R")
-mpp_version <- "1.1.2"
+mpp_version <- "1.1.3"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -1243,8 +1243,14 @@ server <- shinyServer(function(input, output, session) {
   #Set upper protein limit 
   upper_limit <- 170
   
-  #Assign BioGrid search key (can be obtained from website)
-  key_assign <- "REMOVED"
+
+  #Assign BioGrid search key
+  key_assign <- Sys.getenv("BIOGRID_KEY")
+  
+  if (key_assign == "") {
+    warning("BIOGRID_KEY is not set")
+  }
+  
   
   # Allow reconnect if the session is interrupted
   session$allowReconnect("force")
