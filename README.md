@@ -161,5 +161,46 @@ docker run -d -p 3838:3838 stucain/mpp
 http://localhost:3838/
 ```
 
+
+# 🔑 BioGRID API Key Setup
+
+Some features in Manchester Proteome Profiler (e.g. BioGRID interaction networks) require a free BioGRID REST API key.
+
+### 1. Generate a BioGRID API key
+- Visit: https://thebiogrid.org/  
+- Navigate to **Downloads → Web Services** (or create/log in to your account)  
+- Generate an API key  
+
+---
+
+### 2. Add your API key locally
+
+Create a file called `.Renviron` in the root of the project directory (same folder as `app.R`) and add:
+
+``` sh
+BIOGRID_KEY=your_api_key_here
+```
+Restart your R session after adding this file.
+
+---
+
+### 3. Running the app
+
+The application will automatically detect the key using environment variables.
+
+If no key is detected:
+- BioGRID-dependent features will be unavailable  
+- Core analysis functionality remains unaffected  
+
+---
+
+### 4. Docker usage
+
+If running via Docker, pass the key using an environment file:
+
+``` sh
+docker run -p 3838:3838 --env-file .Renviron stucain/mpp
+```
+
 ## License
 This project is licensed under the GNU General Public License v3.0 - see the LICENSE file for details.
