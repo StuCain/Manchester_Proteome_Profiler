@@ -1,0 +1,22 @@
+# Secrets / local environment files
+.Renviron
+**/.Renviron
+.env
+**/.env
+*.key
+*.pem
+
+# Git data
+.git
+.gitignore
+.gitattributes.txt
+.gitignore.txt
+
+# RStudio / R session files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user
+
+# OS junk
+sync.ffs_db

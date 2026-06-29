@@ -196,7 +196,8 @@ If no key is detected:
 
 ### 4. Docker usage
 
-If running via Docker, pass the key using an environment file:
+If running via Docker, pass the key using an environment file
+Run the Docker command in the same location as the .Renviron file or include path:
 
 ``` sh
 docker run -p 3838:3838 --env-file .Renviron stucain/mpp
