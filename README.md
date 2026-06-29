@@ -168,14 +168,14 @@ Some features in Manchester Proteome Profiler (e.g. BioGRID interaction networks
 
 ### 1. Generate a BioGRID API key
 - Visit: https://thebiogrid.org/  
-- Navigate to **Downloads → Web Services** (or create/log in to your account)  
+- Navigate to **Tools → Web Services**   
 - Generate an API key  
 
 ---
 
 ### 2. Add your API key locally
 
-Create a file called `.Renviron` in the root of the project directory (same folder as `app.R`) and add:
+Create a file called `.Renviron` in the app directory (same folder as `app.R`) and add:
 
 ``` sh
 BIOGRID_KEY=your_api_key_here
