@@ -162,7 +162,7 @@ http://localhost:3838/
 ```
 
 
-# 🔑 BioGRID API Key Setup
+## 🔑 BioGRID API Key Setup
 
 Some features in Manchester Proteome Profiler (e.g. BioGRID interaction networks) require a free BioGRID REST API key.
 
