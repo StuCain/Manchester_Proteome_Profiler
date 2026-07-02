@@ -11,16 +11,12 @@
 #BiocManager::install("org.Mm.eg.db")
 #BiocManager::install("org.At.tair.db")
 #BiocManager::install("org.Xl.eg.db")
+#BiocManager::install('preprocessCore', configure.args='--disable-threading', force=TRUE, update=TRUE, type='source')
 #install.packages("devtools")  # if not already installed
-#library(devtools)
 #devtools::install_github("npjc/biogridr")
 #BiocManager::install("STRINGdb")
 
 
-# Set a custom temp directory for Shiny Server
-#if (.Platform$OS.type == "unix") {
-#Sys.setenv(TMPDIR = "/srv/shiny-server/tmp")
-#}
 library(DEP)
 library(tidyverse) #contains: ggplot2, dplyr, tidyr, 
 # readr, purr, tibble, stringr, forcats
@@ -51,15 +47,12 @@ library(biogridr)
 library(tidygraph)
 library(ggraph)
 library(STRINGdb)
-#library(ragg)   # must be installed
-#library(impute)  # For impute.knn
 
 #library(limma)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
-#source("R/functions_DEP.R")
-mpp_version <- "1.1.3"
+mpp_version <- "1.2.0"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -79,7 +72,6 @@ if (.Platform$OS.type == "unix") {
 } else if (.Platform$OS.type == "windows") {
   plan(multisession)
 }
-
 
 ####UI####
 ui <- fluidPage(
