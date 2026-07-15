@@ -52,7 +52,7 @@ library(STRINGdb)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
-mpp_version <- "1.2.0"
+mpp_version <- "1.2.1"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))

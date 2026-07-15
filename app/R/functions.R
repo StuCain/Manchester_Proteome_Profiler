@@ -4,7 +4,7 @@
 #design file. The DEP package is used to calculate foldchange values, which can be filtered using Cutoff values.
 #The complexHeatmap package is used to render heatmaps, and the clusters are then analysed by clusterprofiler
 
-Version = 5.20
+Version = 5.21
 
 
 set.seed(123) #random seed to give consistent kmeans clustering
@@ -558,9 +558,47 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
   pca_df <- pca$x %>% data.frame() %>% rownames_to_column() %>% 
     left_join(., data.frame(colData(dep)), by = c(rowname = "ID"))
   percent <- round(100 * pca$sdev^2/sum(pca$sdev^2), 1)
+  
+  
+  ## Robust factor handling
+  ## This keeps replicate legends in numeric order:
+  ## 1, 2, 3, ..., 10, 11, 12
+  ## rather than alphabetical order:
+  ## 1, 10, 11, 12, 2, 3...
   for (feat in indicate) {
-    pca_df[[feat]] <- as.factor(pca_df[[feat]])
+    
+    if (feat == "replicate") {
+      
+      replicate_values <- as.character(pca_df[[feat]])
+      
+      suppressWarnings({
+        replicate_numeric <- as.numeric(replicate_values)
+      })
+      
+      if (all(!is.na(replicate_numeric))) {
+        
+        pca_df[[feat]] <- factor(
+          replicate_values,
+          levels = as.character(sort(unique(replicate_numeric)))
+        )
+        
+      } else {
+        
+        pca_df[[feat]] <- factor(
+          replicate_values,
+          levels = mixedsort(unique(replicate_values))
+        )
+        
+      }
+      
+    } else {
+      
+      pca_df[[feat]] <- as.factor(pca_df[[feat]])
+      
+    }
   }
+  
+  
   scree_data <- data.frame(
     Component = 1:length(pca$sdev),
     Variance = round(100 * pca$sdev^2/sum(pca$sdev^2), 1)
@@ -588,16 +626,48 @@ plot_pca_txt<-function (dep, x = 1, y = 2, indicate = c("condition", "replicate"
     p <- p + geom_point(aes(col = pca_df[[indicate[1]]]), 
                         size = point_size) + labs(col = indicate[1])
   }
+  
   if (length(indicate) == 2) {
-    p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
-                            shape = pca_df[[indicate[2]]]), size = point_size) + 
-      labs(col = indicate[1], shape = indicate[2])
+    p <- p +
+      geom_point(
+        aes(
+          col = pca_df[[indicate[1]]],
+          shape = pca_df[[indicate[2]]]
+        ),
+        size = point_size
+      ) +
+      scale_shape_manual(
+        values = c(
+          16, 17, 15, 18, 19, 8,
+          0:14
+        )
+      ) +
+      labs(
+        col = indicate[1],
+        shape = indicate[2]
+      )
   }
+  
   if (length(indicate) == 3) {
-    p <- p + geom_point(aes(col = pca_df[[indicate[1]]], 
-                            shape = pca_df[[indicate[2]]]), size = point_size) + 
+    p <- p +
+      geom_point(
+        aes(
+          col = pca_df[[indicate[1]]],
+          shape = pca_df[[indicate[2]]]
+        ),
+        size = point_size
+      ) +
+      scale_shape_manual(
+        values = c(
+          16, 17, 15, 18, 19, 8,
+          0:14
+        )
+      ) +
       facet_wrap(~pca_df[[indicate[3]]]) +
-      labs(col = indicate[1], shape = indicate[2])
+      labs(
+        col = indicate[1],
+        shape = indicate[2]
+      )
   }
   if (label) {
     p <- p + geom_text(aes(label = rowname), size = label_size)
