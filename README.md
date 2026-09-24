@@ -3,10 +3,20 @@ Manchester Proteome Profiler (MPP) is an open-source R Shiny application that st
 
 <img
   src="app/www/Introduction.png"
-  alt="Alt text"
+  alt="Overview"
   title="Optional title"
   style="display: inline-block; margin: 0 auto; max-width: 100px">
   
+## Why MPP?
+
+Unlike many proteomics analysis tools, MPP:
+
+- Supports MaxQuant, FragPipe, Proteome Discoverer and custom formats
+- Allows dual-dataset comparison workflows
+- Integrates SAINTexpress analysis
+- Combines clustering, GO enrichment and interaction network analysis
+- Generates publication-ready reports
+- Requires no R programming knowledge
 
 ## Features
 - Supports single and dual dataset comparisons
@@ -42,7 +52,7 @@ There is currently a public server hosted by the University of Manchester availa
 ## Data Pipeline
 <img
   src="app/www/data_flow.jpg"
-  alt="Alt text"
+  alt="Data Pipeline"
   title="Optional title"
   style="display: inline-block; margin: 0 auto; max-width: 100px">
 
@@ -50,9 +60,9 @@ There is currently a public server hosted by the University of Manchester availa
 
 If you use Manchester Proteome Profiler in your research, please cite:
 
-> Cain, S.A., Fatima, M. & Humphries, M.J. *Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomic Analysis*. Journal of Proteome Research (submitted).
+> Cain, S.A., Fatima, M. & Humphries, M.J. *Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomic Analysis*. Journal of Proteome Research (2026).
 
-A DOI will be added upon publication.
+DOI: 10.1021/acs.jproteome.5c01140
 
 
 ## Installation
