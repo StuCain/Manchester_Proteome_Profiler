@@ -62,7 +62,7 @@ If you use Manchester Proteome Profiler in your research, please cite:
 
 > Cain, S.A., Fatima, M. & Humphries, M.J. *Manchester Proteome Profiler: A User-Friendly Platform for Quantitative Proteomic Analysis*. Journal of Proteome Research (2026).
 
-DOI: 10.1021/acs.jproteome.5c01140
+https://doi.org/10.1021/acs.jproteome.5c01140
 
 
 ## Installation

@@ -52,7 +52,7 @@ library(STRINGdb)
 #library(MSnbase)
 #library(assertthat)
 source("R/functions.R")
-mpp_version <- "1.2.1"
+mpp_version <- "1.3.0"
 
 # Force Shiny to use ragg device
 #options(shiny.graphics.device = function(...) ragg::agg_png(..., res = 150))
@@ -304,7 +304,7 @@ ui <- fluidPage(
       #      tags$head(tags$style(HTML('.box {margin: 5px;}' ))),
       #      tags$head(tags$style(HTML('.box {margin-left: 0px;}' ))),
       #      tags$head(tags$style(HTML('.box {margin-right: 0px;}' ))),
-      wellPanel(style = "background-color: #f8f9fa; padding: 10px 12px; border-radius: 20px; font-size: 12px;", tags$span("By Stuart Cain • Version:", mpp_version, " • "), tags$a(href = "https://doi.org/10.64898/2026.05.14.725092", target = "_blank", style = "font-weight: bold; color: #2C7BE5; text-decoration: none;", "📄 bioRxiv")),
+      wellPanel(style = "background-color: #f8f9fa; padding: 10px 12px; border-radius: 20px; font-size: 12px;", tags$span("By Stuart Cain • Version:", mpp_version, " • Please cite: "), tags$a(href = "https://doi.org/10.1021/acs.jproteome.5c01140", target = "_blank", style = "font-weight: bold; color: #2C7BE5; text-decoration: none;", "📄 J. Proteome Res.")),
       #set infobox height
       tags$head(tags$style(HTML('.info-box {min-height: 120px;} .info-box-icon {height: 120px; line-height: 120px;} .info-box-content {padding-top: 20px; padding-bottom: 20px;}'))),
       #Google Analytics
